@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(tree:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "mcp__Ref__ref_search_documentation",
+      "mcp__supabase__search_docs",
+      "mcp__Ref__ref_read_url"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

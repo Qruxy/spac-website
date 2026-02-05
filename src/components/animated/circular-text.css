@@ -1,0 +1,36 @@
+/**
+ * CircularText Component Styles
+ *
+ * Positions text characters in a circular arrangement
+ * around a center point using absolute positioning and rotation.
+ *
+ * For 300x300 container: center at 150px, orbit radius 90px
+ * Characters start at top: 60px (150 - 90), rotate around center
+ */
+
+.circular-text {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.circular-text__wrapper {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.circular-text__char {
+  position: absolute;
+  left: 50%;
+  top: 35px; /* Position 115px above center (150 - 115 = 35) - outside logo white border */
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  transform: translateX(-50%) rotate(var(--char-rotate, 0deg));
+  transform-origin: center 115px; /* Rotate around point 115px below = container center */
+  color: inherit;
+  white-space: nowrap;
+}

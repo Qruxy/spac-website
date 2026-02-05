@@ -1,0 +1,1062 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Account {
+  id                String  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime @db.Timestamptz(3)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime @db.Timestamptz(3)
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model User {
+  id                                String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  email                             String         @unique
+  emailVerified                     DateTime?      @map("email_verified") @db.Timestamptz(3)
+  firstName                         String         @map("first_name")
+  lastName                          String         @map("last_name")
+  phone                             String?
+  image                             String?
+  role                              UserRole       @default(MEMBER)
+  isValidated                       Boolean        @default(false) @map("is_validated")
+  qrUuid                            String         @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("qr_uuid")
+  // Payment provider customer IDs (keeping stripe column for migration compatibility)
+  stripeCustomerId                  String?        @unique @map("stripe_customer_id")
+  paypalSubscriberId                String?        @unique @map("paypal_subscriber_id")
+  familyId                          String?        @map("family_id")
+  family_role                       FamilyRole?
+  createdAt                         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                         DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  cognitoId                         String?        @map("cognito_id")
+  name                              String?
+  avatarUrl                         String?        @map("avatar_url")
+  isPrimaryMember                   Boolean?       @default(false) @map("is_primary_member")
+  applePassSerial                   String?        @map("apple_pass_serial")
+  googlePassId                      String?        @map("google_pass_id")
+  accounts                          Account[]
+  audit_logs                        AuditLog[]
+  eventsCreated                     Event[]        @relation("EventCreator")
+  listings_listings_buyer_idTousers Listing[]      @relation("listings_buyer_idTousers")
+  listings                          Listing[]
+  media                             Media[]
+  membership                        Membership?
+  offersGiven                       Offer[]        @relation("OfferBuyer")
+  payments                          Payment[]
+  checkInsPerformed                 Registration[] @relation("CheckInBy")
+  eventRegistrations                Registration[]
+  sessions                          Session[]
+  donations                         Donation[]
+  family                            Family?        @relation(fields: [familyId], references: [id])
+
+  @@index([cognitoId])
+  @@index([stripeCustomerId])
+  @@index([paypalSubscriberId])
+  @@map("users")
+}
+
+model Family {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  members   User[]
+
+  @@map("families")
+}
+
+model Membership {
+  id                     String              @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId                 String              @unique @map("user_id")
+  type                   MembershipType
+  interval               MembershipInterval?
+  status                 MemberStatus        @default(PENDING)
+  // Stripe fields (kept for migration compatibility, deprecated)
+  stripeSubscriptionId   String?             @unique @map("stripe_subscription_id")
+  stripePriceId          String?             @map("stripe_price_id")
+  stripeCurrentPeriodEnd DateTime?           @map("stripe_current_period_end") @db.Timestamp(6)
+  // PayPal fields (active)
+  paypalSubscriptionId   String?             @unique @map("paypal_subscription_id")
+  paypalPlanId           String?             @map("paypal_plan_id")
+  paypalCurrentPeriodEnd DateTime?           @map("paypal_current_period_end") @db.Timestamp(6)
+  // Common fields
+  startDate              DateTime?           @map("start_date") @db.Timestamptz(3)
+  endDate                DateTime?           @map("end_date") @db.Timestamptz(3)
+  createdAt              DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  cancelledAt            DateTime?           @map("cancelled_at") @db.Timestamp(6)
+  obsEligible            Boolean?            @default(false) @map("obs_eligible")
+  discountPercent        Int?                @default(0) @map("discount_percent")
+  user                   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([paypalSubscriptionId])
+  @@map("memberships")
+}
+
+model Event {
+  id                  String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  slug                String         @unique
+  title               String
+  description         String?
+  type                String         @default("MEETING")
+  status              EventStatus    @default(DRAFT)
+  startDate           DateTime       @map("start_date") @db.Timestamptz(3)
+  endDate             DateTime       @map("end_date") @db.Timestamptz(3)
+  timezone            String         @default("America/New_York")
+  locationName        String         @map("location_name")
+  locationAddress     String?        @map("location_address")
+  location_lat        Float?
+  location_lng        Float?
+  capacity            Int?
+  memberPrice         Decimal        @default(0) @map("member_price") @db.Decimal(10, 2)
+  guest_price         Decimal        @default(0) @db.Decimal(10, 2)
+  campingAvailable    Boolean        @default(false) @map("camping_available")
+  camping_price       Decimal        @default(0) @db.Decimal(10, 2)
+  registration_opens  DateTime?      @db.Timestamptz(3)
+  registration_closes DateTime?      @db.Timestamptz(3)
+  // Recurring event fields
+  isRecurring         Boolean        @default(false) @map("is_recurring")
+  recurrencePattern   String?        @map("recurrence_pattern") // DAILY, WEEKLY, BIWEEKLY, MONTHLY, YEARLY
+  recurrenceEndDate   DateTime?      @map("recurrence_end_date") @db.Timestamptz(3)
+  parentEventId       String?        @map("parent_event_id")
+  createdById         String         @map("created_by_id")
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdBy           User           @relation("EventCreator", fields: [createdById], references: [id])
+  parentEvent         Event?         @relation("RecurringEvents", fields: [parentEventId], references: [id])
+  childEvents         Event[]        @relation("RecurringEvents")
+  media               Media[]
+  registrations       Registration[]
+
+  @@index([status, startDate])
+  @@index([startDate])
+  @@index([type, status])
+  @@map("events")
+}
+
+model Registration {
+  id                   String             @id @default(dbgenerated("(gen_random_uuid())::text"))
+  eventId              String             @map("event_id")
+  userId               String             @map("user_id")
+  status               RegistrationStatus @default(PENDING)
+  guestCount           Int                @default(0) @map("guest_count")
+  campingRequested     Boolean            @default(false) @map("camping_requested")
+  dietary_restrictions String?
+  notes                String?
+  paymentId            String?            @map("payment_id")
+  amountPaid           Decimal?           @map("amount_paid") @db.Decimal(10, 2)
+  checkedInAt          DateTime?          @map("checked_in_at") @db.Timestamptz(3)
+  checkedInById        String?            @map("checked_in_by_id")
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  checkedInBy          User?              @relation("CheckInBy", fields: [checkedInById], references: [id])
+  event                Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  payment              Payment?           @relation(fields: [paymentId], references: [id])
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId, status])
+  @@index([userId])
+  @@map("registrations")
+}
+
+model Listing {
+  id                             String           @id @default(dbgenerated("(gen_random_uuid())::text"))
+  slug                           String           @unique
+  title                          String
+  description                    String
+  category                       ListingCategory
+  condition                      ListingCondition
+  price                          Decimal          @db.Decimal(10, 2)
+  is_negotiable                  Boolean          @default(true)
+  status                         ListingStatus    @default(DRAFT)
+  sellerId                       String           @map("seller_id")
+  soldPrice                      Decimal?         @map("sold_price") @db.Decimal(10, 2)
+  soldAt                         DateTime?        @map("sold_at") @db.Timestamptz(3)
+  buyer_id                       String?
+  archived_at                    DateTime?        @db.Timestamptz(3)
+  createdAt                      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                      DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  // Additional fields for equipment details
+  brand                          String?
+  model                          String?
+  yearMade                       Int?             @map("year_made")
+  originalPrice                  Decimal?         @map("original_price") @db.Decimal(10, 2)
+  location                       String?
+  minimumOffer                   Decimal?         @map("minimum_offer") @db.Decimal(10, 2)
+  shippingAvailable              Boolean          @default(false) @map("shipping_available")
+  localPickupOnly                Boolean          @default(true) @map("local_pickup_only")
+  viewCount                      Int              @default(0) @map("view_count")
+  users_listings_buyer_idTousers User?            @relation("listings_buyer_idTousers", fields: [buyer_id], references: [id])
+  seller                         User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  images                         Media[]
+  offers                         Offer[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([category, status])
+  @@map("listings")
+}
+
+model Offer {
+  id              String      @id @default(dbgenerated("(gen_random_uuid())::text"))
+  listingId       String      @map("listing_id")
+  buyerId         String      @map("buyer_id")
+  amount          Decimal     @db.Decimal(10, 2)
+  message         String?
+  status          OfferStatus @default(PENDING)
+  responseMessage String?     @map("response_message")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  buyer           User        @relation("OfferBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  listing         Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("offers")
+}
+
+model Media {
+  id             String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  type           MediaType
+  status         MediaStatus    @default(PENDING)
+  category       PhotoCategory?
+  url            String
+  thumbnailUrl   String?        @map("thumbnail_url")
+  filename       String
+  mimeType       String         @map("mime_type")
+  size           Int
+  width          Int?
+  height         Int?
+  alt            String?
+  caption        String?
+  uploaded_by_id String
+  eventId        String?        @map("event_id")
+  listingId      String?        @map("listing_id")
+  folder         String?
+  sort_order     Int            @default(0)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  event          Event?         @relation(fields: [eventId], references: [id])
+  listing        Listing?       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  users          User           @relation(fields: [uploaded_by_id], references: [id])
+  viewCount      Int            @default(0) @map("view_count")
+  likeCount      Int            @default(0) @map("like_count")
+
+  @@index([status, category, listingId])
+  @@index([uploaded_by_id])
+  @@index([status, createdAt])
+  @@map("media")
+}
+
+model Payment {
+  id                    String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId                String         @map("user_id")
+  type                  PaymentType
+  amount                Decimal        @db.Decimal(10, 2)
+  currency              String         @default("usd")
+  // Stripe fields (kept for migration compatibility, deprecated)
+  stripePaymentIntentId String?        @unique @map("stripe_payment_intent_id")
+  stripeInvoiceId       String?        @map("stripe_invoice_id")
+  // PayPal fields (active)
+  paypalOrderId         String?        @unique @map("paypal_order_id")
+  paypalCaptureId       String?        @map("paypal_capture_id")
+  // Common fields
+  status                String
+  description           String?
+  metadata              Json?
+  paidAt                DateTime?      @map("paid_at") @db.Timestamptz(3)
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  user                  User           @relation(fields: [userId], references: [id])
+  registrations         Registration[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([paypalOrderId])
+  @@map("payments")
+}
+
+model AuditLog {
+  id         String      @id @default(dbgenerated("(gen_random_uuid())::text"))
+  action     AuditAction
+  entityType String      @map("entity_type")
+  entityId   String      @map("entity_id")
+  user_id    String?
+  // Additional actor/subject fields used by some routes
+  actorId    String?     @map("actor_id")
+  subjectId  String?     @map("subject_id")
+  oldValues  Json?       @map("old_values")
+  newValues  Json?       @map("new_values")
+  metadata   Json?       // Flexible metadata field for additional context
+  ipAddress  String?     @map("ip_address")
+  userAgent  String?     @map("user_agent")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  users      User?       @relation(fields: [user_id], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([user_id])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model MigrationIdMapping {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  entity_type String
+  legacyId    String   @map("legacy_id")
+  newId       String   @map("new_id")
+  created_at  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([entity_type, legacyId])
+  @@map("migration_id_mappings")
+}
+
+model BoardMember {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name      String
+  title     String
+  email     String?
+  imageUrl  String?  @map("image_url")
+  bio       String?
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("board_members")
+}
+
+// ============================================
+// OBS (Observatory) Related Models
+// ============================================
+
+model OBSSession {
+  id              String          @id @default(dbgenerated("(gen_random_uuid())::text"))
+  title           String
+  description     String?
+  sessionDate     DateTime        @map("session_date") @db.Date
+  startTime       DateTime        @map("start_time") @db.Timestamptz(3)
+  endTime         DateTime?       @map("end_time") @db.Timestamptz(3)
+  status          OBSSessionStatus @default(SCHEDULED)
+  weather         String?         // Clear, Partly Cloudy, etc.
+  seeing          Int?            // 1-5 scale
+  transparency    Int?            // 1-5 scale
+  hostId          String          @map("host_id")
+  maxAttendees    Int?            @map("max_attendees")
+  notes           String?
+  isMembersOnly   Boolean         @default(true) @map("is_members_only")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  attendees       OBSAttendee[]
+  equipmentUsed   OBSEquipmentLog[]
+
+  @@index([sessionDate])
+  @@index([status])
+  @@map("obs_sessions")
+}
+
+model OBSAttendee {
+  id          String     @id @default(dbgenerated("(gen_random_uuid())::text"))
+  sessionId   String     @map("session_id")
+  userId      String     @map("user_id")
+  checkedInAt DateTime?  @map("checked_in_at") @db.Timestamptz(3)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  session     OBSSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@map("obs_attendees")
+}
+
+model OBSEquipment {
+  id              String           @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name            String
+  type            OBSEquipmentType
+  description     String?
+  manufacturer    String?
+  model           String?
+  serialNumber    String?          @map("serial_number")
+  purchaseDate    DateTime?        @map("purchase_date") @db.Date
+  purchasePrice   Decimal?         @map("purchase_price") @db.Decimal(10, 2)
+  condition       String?          // Excellent, Good, Fair, Needs Repair
+  location        String?          // Where stored
+  notes           String?
+  isAvailable     Boolean          @default(true) @map("is_available")
+  lastMaintenance DateTime?        @map("last_maintenance") @db.Date
+  nextMaintenance DateTime?        @map("next_maintenance") @db.Date
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  usageLogs       OBSEquipmentLog[]
+
+  @@index([type])
+  @@index([isAvailable])
+  @@map("obs_equipment")
+}
+
+model OBSEquipmentLog {
+  id          String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  equipmentId String       @map("equipment_id")
+  sessionId   String?      @map("session_id")
+  usedBy      String?      @map("used_by")
+  usedAt      DateTime     @default(now()) @map("used_at") @db.Timestamptz(3)
+  returnedAt  DateTime?    @map("returned_at") @db.Timestamptz(3)
+  notes       String?
+  condition   String?      // Condition when returned
+  equipment   OBSEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  session     OBSSession?  @relation(fields: [sessionId], references: [id])
+
+  @@map("obs_equipment_logs")
+}
+
+// ============================================
+// Document Management
+// ============================================
+
+model Document {
+  id          String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  title       String
+  type        DocumentType
+  description String?
+  fileUrl     String         @map("file_url")
+  filename    String
+  mimeType    String         @map("mime_type")
+  size        Int
+  version     Int            @default(1)
+  isPublic    Boolean        @default(false) @map("is_public")
+  uploadedById String        @map("uploaded_by_id")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([type])
+  @@index([isPublic])
+  @@map("documents")
+}
+
+// ============================================
+// Outreach & Public Events
+// ============================================
+
+model Outreach {
+  id              String          @id @default(dbgenerated("(gen_random_uuid())::text"))
+  title           String
+  description     String?
+  type            OutreachType
+  eventDate       DateTime        @map("event_date") @db.Date
+  startTime       DateTime?       @map("start_time") @db.Timestamptz(3)
+  endTime         DateTime?       @map("end_time") @db.Timestamptz(3)
+  location        String?
+  locationAddress String?         @map("location_address")
+  expectedAttendees Int?          @map("expected_attendees")
+  actualAttendees Int?            @map("actual_attendees")
+  organizerId     String          @map("organizer_id")
+  status          OutreachStatus  @default(PLANNED)
+  notes           String?
+  isPublic        Boolean         @default(true) @map("is_public")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  volunteers      OutreachVolunteer[]
+
+  @@index([eventDate])
+  @@index([status])
+  @@map("outreach_events")
+}
+
+model OutreachVolunteer {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  outreachId  String    @map("outreach_id")
+  userId      String    @map("user_id")
+  role        String?   // Lead, Presenter, Helper, etc.
+  hoursWorked Decimal?  @map("hours_worked") @db.Decimal(4, 2)
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  outreach    Outreach  @relation(fields: [outreachId], references: [id], onDelete: Cascade)
+
+  @@unique([outreachId, userId])
+  @@map("outreach_volunteers")
+}
+
+enum MembershipType {
+  FREE
+  INDIVIDUAL
+  FAMILY
+  STUDENT
+  LIFETIME
+}
+
+enum MembershipInterval {
+  MONTHLY
+  ANNUAL
+}
+
+enum MemberStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+}
+
+enum UserRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  WAITLISTED
+  CANCELLED
+  ATTENDED
+  NO_SHOW
+}
+
+enum ListingCategory {
+  TELESCOPE
+  MOUNT
+  EYEPIECE
+  CAMERA
+  FINDER
+  FOCUSER
+  ACCESSORY
+  BINOCULAR
+  SOLAR
+  BOOK
+  SOFTWARE
+  OTHER
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  SOLD
+  EXPIRED
+  REMOVED
+}
+
+enum ListingCondition {
+  NEW
+  LIKE_NEW
+  EXCELLENT
+  GOOD
+  FAIR
+  FOR_PARTS
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum MediaStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PhotoCategory {
+  DEEP_SKY
+  PLANETS
+  MOON
+  SUN
+  EVENTS
+  EQUIPMENT
+  NIGHTSCAPE
+  OTHER
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PAYMENT
+  SUBSCRIPTION_CHANGE
+  ROLE_CHANGE
+  APPROVAL
+  REJECTION
+  CHECK_IN
+}
+
+enum PaymentType {
+  SUBSCRIPTION
+  EVENT_TICKET
+  OBS_REGISTRATION
+  CAMPING_FEE
+  DONATION
+}
+
+// ============================================
+// Donations
+// ============================================
+
+model Donation {
+  id            String         @id @default(cuid())
+  amount        Int            // Amount in cents
+  currency      String         @default("usd")
+  tier          DonationTier?
+  recurring     Boolean        @default(false)
+  // Stripe field (kept for migration compatibility, deprecated)
+  stripeId      String?        @unique @map("stripe_id")
+  // PayPal fields (active)
+  paypalOrderId String?        @unique @map("paypal_order_id")
+  paypalSubscriptionId String? @unique @map("paypal_subscription_id")
+  // Common fields
+  userId        String?        @map("user_id")
+  anonymousName String?        @map("anonymous_name")
+  message       String?
+  status        DonationStatus @default(PENDING)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user          User?          @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([paypalOrderId])
+  @@map("donations")
+}
+
+enum DonationTier {
+  SUPPORTER   // $25+
+  PATRON      // $100+
+  BENEFACTOR  // $500+
+}
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum FamilyRole {
+  PRIMARY
+  SPOUSE
+  CHILD
+  OTHER
+}
+
+enum Role {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+// OBS Session Status
+enum OBSSessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  WEATHER_CANCELLED
+}
+
+// OBS Equipment Types
+enum OBSEquipmentType {
+  TELESCOPE
+  MOUNT
+  EYEPIECE
+  CAMERA
+  FILTER
+  FOCUSER
+  FINDER
+  POWER_SUPPLY
+  COMPUTER
+  ACCESSORY
+  BUILDING
+  OTHER
+}
+
+// Document Types
+enum DocumentType {
+  BYLAWS
+  MEETING_MINUTES
+  FINANCIAL_REPORT
+  NEWSLETTER
+  FORM
+  POLICY
+  GUIDE
+  OTHER
+}
+
+// Outreach Event Types
+enum OutreachType {
+  SCHOOL_VISIT
+  PUBLIC_STAR_PARTY
+  LIBRARY_EVENT
+  SCOUT_EVENT
+  PRIVATE_EVENT
+  FESTIVAL
+  LECTURE
+  WORKSHOP
+  OTHER
+}
+
+// Outreach Status
+enum OutreachStatus {
+  PLANNED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// ===================================
+// Outreach Committee
+// ===================================
+
+model OutreachCommitteeMember {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId    String   @map("user_id")
+  role      OutreachRole @default(VOLUNTEER)
+  joinedAt  DateTime @default(now()) @map("joined_at") @db.Timestamptz(3)
+  notes     String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([userId])
+  @@map("outreach_committee_members")
+}
+
+enum OutreachRole {
+  CHAIR
+  VICE_CHAIR
+  VOLUNTEER
+}
+
+// ===================================
+// Meeting Minutes & Motions
+// ===================================
+
+model MeetingMinutes {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  title       String
+  meetingDate DateTime @map("meeting_date") @db.Timestamptz(3)
+  meetingType MeetingType @default(BOARD)
+  content     String?  @db.Text
+  pdfUrl      String?  @map("pdf_url")
+  approved    Boolean  @default(false)
+  approvedAt  DateTime? @map("approved_at") @db.Timestamptz(3)
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  motions     Motion[]
+
+  @@map("meeting_minutes")
+}
+
+model Motion {
+  id              String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  meetingId       String   @map("meeting_id")
+  motionNumber    String   @map("motion_number")
+  description     String   @db.Text
+  movedBy         String?  @map("moved_by")
+  secondedBy      String?  @map("seconded_by")
+  votesFor        Int      @default(0) @map("votes_for")
+  votesAgainst    Int      @default(0) @map("votes_against")
+  abstentions     Int      @default(0)
+  status          MotionStatus @default(PENDING)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  meeting         MeetingMinutes @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@map("motions")
+}
+
+enum MeetingType {
+  BOARD
+  GENERAL
+  SPECIAL
+  ANNUAL
+}
+
+enum MotionStatus {
+  PENDING
+  PASSED
+  FAILED
+  TABLED
+  WITHDRAWN
+}
+
+// ===================================
+// Club Documents
+// ===================================
+
+model ClubDocument {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  title       String
+  description String?
+  category    DocumentCategory
+  fileUrl     String   @map("file_url")
+  filename    String
+  mimeType    String   @map("mime_type")
+  size        Int
+  year        Int?
+  month       Int?
+  isPublic    Boolean  @default(false) @map("is_public")
+  uploadedById String  @map("uploaded_by_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("club_documents")
+}
+
+enum DocumentCategory {
+  NEWSLETTER
+  MEETING_MINUTES
+  BYLAWS
+  POLICY
+  FORM
+  FINANCIAL
+  OTHER
+}
+
+// ===================================
+// OBS (Orange Blossom Special)
+// ===================================
+
+model OBSConfig {
+  id                 String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  year               Int      @unique
+  eventName          String   @map("event_name")
+  startDate          DateTime @map("start_date") @db.Timestamptz(3)
+  endDate            DateTime @map("end_date") @db.Timestamptz(3)
+  registrationOpens  DateTime @map("registration_opens") @db.Timestamptz(3)
+  registrationCloses DateTime @map("registration_closes") @db.Timestamptz(3)
+  earlyBirdDeadline  DateTime? @map("early_bird_deadline") @db.Timestamptz(3)
+  location           String
+  memberPrice        Decimal  @default(0) @map("member_price") @db.Decimal(10, 2)
+  nonMemberPrice     Decimal  @default(0) @map("non_member_price") @db.Decimal(10, 2)
+  earlyBirdDiscount  Decimal  @default(0) @map("early_bird_discount") @db.Decimal(10, 2)
+  campingPrice       Decimal  @default(0) @map("camping_price") @db.Decimal(10, 2)
+  mealPrice          Decimal  @default(0) @map("meal_price") @db.Decimal(10, 2)
+  capacity           Int      @default(200)
+  isActive           Boolean  @default(false) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  registrations      OBSRegistration[]
+  documents          OBSDocument[]
+  financials         OBSFinancial[]
+
+  @@map("obs_configs")
+}
+
+model OBSRegistration {
+  id              String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  obsConfigId     String   @map("obs_config_id")
+  firstName       String   @map("first_name")
+  lastName        String   @map("last_name")
+  email           String
+  phone           String?
+  address         String?
+  city            String?
+  state           String?
+  zip             String?
+  isMember        Boolean  @default(false) @map("is_member")
+  userId          String?  @map("user_id")
+  registrationType OBSRegistrationType @default(ATTENDEE) @map("registration_type")
+  campingRequested Boolean @default(false) @map("camping_requested")
+  mealRequested   Boolean  @default(false) @map("meal_requested")
+  dietaryRestrictions String? @map("dietary_restrictions")
+  tShirtSize      String?  @map("t_shirt_size")
+  arrivalDate     DateTime? @map("arrival_date") @db.Timestamptz(3)
+  departureDate   DateTime? @map("departure_date") @db.Timestamptz(3)
+  amountPaid      Decimal  @default(0) @map("amount_paid") @db.Decimal(10, 2)
+  paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
+  paymentMethod   String?  @map("payment_method")
+  paymentDate     DateTime? @map("payment_date") @db.Timestamptz(3)
+  paypalOrderId   String?  @unique @map("paypal_order_id")
+  checkedIn       Boolean  @default(false) @map("checked_in")
+  checkedInAt     DateTime? @map("checked_in_at") @db.Timestamptz(3)
+  checkedInById   String?  @map("checked_in_by_id")
+  badgePrinted    Boolean  @default(false) @map("badge_printed")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  obsConfig       OBSConfig @relation(fields: [obsConfigId], references: [id], onDelete: Cascade)
+
+  @@index([paypalOrderId])
+  @@map("obs_registrations")
+}
+
+model OBSDocument {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  obsConfigId String   @map("obs_config_id")
+  title       String
+  description String?
+  fileUrl     String   @map("file_url")
+  filename    String
+  category    OBSDocumentCategory @default(OTHER)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  obsConfig   OBSConfig @relation(fields: [obsConfigId], references: [id], onDelete: Cascade)
+
+  @@map("obs_documents")
+}
+
+model OBSFinancial {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  obsConfigId String   @map("obs_config_id")
+  category    String
+  description String
+  amount      Decimal  @db.Decimal(10, 2)
+  isIncome    Boolean  @default(true) @map("is_income")
+  date        DateTime @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  obsConfig   OBSConfig @relation(fields: [obsConfigId], references: [id], onDelete: Cascade)
+
+  @@map("obs_financials")
+}
+
+enum OBSRegistrationType {
+  ATTENDEE
+  SPEAKER
+  VENDOR
+  STAFF
+  VOLUNTEER
+}
+
+enum OBSDocumentCategory {
+  SCHEDULE
+  MAP
+  SPEAKER_BIO
+  VENDOR_INFO
+  VOLUNTEER_GUIDE
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  PARTIAL
+}
+
+// ===================================
+// Webhook Idempotency
+// ===================================
+
+model ProcessedWebhook {
+  id            String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  // Stripe field (kept for migration compatibility)
+  stripeEventId String?  @unique @map("stripe_event_id")
+  // PayPal field (active)
+  paypalEventId String?  @unique @map("paypal_event_id")
+  // Common fields
+  eventType     String   @map("event_type")
+  processedAt   DateTime @default(now()) @map("processed_at") @db.Timestamptz(3)
+  metadata      Json?
+
+  @@index([processedAt])
+  @@index([paypalEventId])
+  @@map("processed_webhooks")
+}
+
+// ===================================
+// VSA (Very Small Array)
+// ===================================
+
+model VSATarget {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name        String
+  description String?  @db.Text
+  objectType  String   @map("object_type")
+  constellation String?
+  rightAscension String? @map("right_ascension")
+  declination String?
+  magnitude   Float?
+  isCurrentTarget Boolean @default(false) @map("is_current_target")
+  imageUrl    String?  @map("image_url")
+  startDate   DateTime? @map("start_date") @db.Timestamptz(3)
+  endDate     DateTime? @map("end_date") @db.Timestamptz(3)
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("vsa_targets")
+}
+
+model VSAEquipment {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name        String
+  type        String
+  description String?  @db.Text
+  imageUrl    String?  @map("image_url")
+  specs       Json?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("vsa_equipment")
+}
+
+// ===================================
+// Newsletter Subscribers
+// ===================================
+
+model NewsletterSubscriber {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  email     String   @unique
+  status    String   @default("ACTIVE") // ACTIVE, UNSUBSCRIBED, BOUNCED
+  source    String?  // website_footer, registration, admin, etc.
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([status])
+  @@map("newsletter_subscribers")
+}

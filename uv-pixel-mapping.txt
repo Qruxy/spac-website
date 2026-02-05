@@ -1,0 +1,230 @@
+================================================================================
+UV MAPPING PIXEL COORDINATE REFERENCE
+3D Card Texture (card.glb - Mesh 0)
+================================================================================
+
+CANVAS SIZE: 1024 x 1024 pixels
+VISIBLE REGION ON 3D CARD: 1023 x 773 pixels
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ FULL 1024x1024 CANVAS                                                    ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+(0,0) ─────────────────────────────────────────────────────────── (1024,0)
+ │                                                                       │
+ │  ┌─────────────────────────────────────────────────────────────┐     │
+ │  │ Y=2  ← UV V=0.0022 (TOP EDGE OF CARD)                       │     │
+ │  │                                                              │     │
+ │  │                                                              │     │
+ │  │              ┌──────────────────────┐                        │     │
+ │  │              │   WASTED SPACE       │                        │     │
+ │  │              │   (not on 3D model)  │                        │     │
+ │  │              │                      │                        │     │
+ │  │              │      Y=0 to Y=2      │                        │     │
+ │  │              └──────────────────────┘                        │     │
+ │  │                                                              │     │
+ │  │  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓    │     │
+ │  │  ┃ Y=389  ← VISUAL CENTER OF CARD                      ┃    │     │
+ │  │  ┃           UV V=0.3797 (range center)                ┃    │     │
+ │  │  ┃           DRAW CONTENT HERE FOR CENTERED APPEARANCE  ┃    │     │
+ │  │  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛    │     │
+ │  │                                                              │     │
+ │  │                      ↓                                       │     │
+ │  │                                                              │     │
+ │  │              Current canvas center at Y=512                  │     │
+ │  │              (BELOW actual visual center)                    │     │
+ │  │                      ↓                                       │     │
+ │  │  ════════════════════════════════════════════════            │     │
+ │  │                                                              │     │
+ │  │                                                              │     │
+ │  │ Y=775 ← UV V=0.7572 (BOTTOM EDGE OF CARD)                   │     │
+ │  └─────────────────────────────────────────────────────────────┘     │
+ │  ↓                                                                    │
+ │  ╔═══════════════════════════════════════════════════════════╗       │
+ │  ║ WASTED SPACE - NOT VISIBLE ON 3D CARD                     ║       │
+ │  ║ Y=776 to Y=1024 (249 pixels)                              ║       │
+ │  ║ Anything drawn here will be CUT OFF                       ║       │
+ │  ╚═══════════════════════════════════════════════════════════╝       │
+ │                                                                       │
+(0,1024) ───────────────────────────────────────────────────── (1024,1024)
+
+
+================================================================================
+KEY PIXEL COORDINATES
+================================================================================
+
+┌─────────────────────────┬──────────────┬──────────────────────────────────┐
+│ Description             │ Y Position   │ UV V Coordinate                  │
+├─────────────────────────┼──────────────┼──────────────────────────────────┤
+│ Canvas Top Edge         │ Y = 0        │ V = 0.0000                       │
+│ Card Top Edge           │ Y = 2        │ V = 0.0022                       │
+│ Card Centroid (avg)     │ Y = 286      │ V = 0.2792 (weighted average)    │
+│ Card Visual Center      │ Y = 389      │ V = 0.3797 (geometric center)    │
+│ Canvas Center (wrong!)  │ Y = 512      │ V = 0.5000 (outside ideal range) │
+│ Card Bottom Edge        │ Y = 775      │ V = 0.7572                       │
+│ Canvas Bottom Edge      │ Y = 1024     │ V = 1.0000                       │
+└─────────────────────────┴──────────────┴──────────────────────────────────┘
+
+┌─────────────────────────┬──────────────┬──────────────────────────────────┐
+│ Description             │ X Position   │ UV U Coordinate                  │
+├─────────────────────────┼──────────────┼──────────────────────────────────┤
+│ Canvas Left Edge        │ X = 0        │ U = 0.0000                       │
+│ Card Left Edge          │ X = 1        │ U = 0.0008                       │
+│ Card Centroid (avg)     │ X = 396      │ U = 0.3871 (weighted average)    │
+│ Card Visual Center      │ X = 512      │ U = 0.5004 (geometric center)    │
+│ Canvas Center           │ X = 512      │ U = 0.5000 ✓ CORRECT             │
+│ Card Right Edge         │ X = 1024     │ U = 1.0000                       │
+│ Canvas Right Edge       │ X = 1024     │ U = 1.0000                       │
+└─────────────────────────┴──────────────┴──────────────────────────────────┘
+
+
+================================================================================
+REQUIRED CANVAS TRANSLATION OFFSET
+================================================================================
+
+To center content at the VISUAL CENTER of the 3D card:
+
+┌──────────────┬─────────────┬────────────────────────────────────────────┐
+│ Axis         │ Offset      │ Explanation                                │
+├──────────────┼─────────────┼────────────────────────────────────────────┤
+│ X (horiz)    │ 0 pixels    │ No offset needed (card is centered at X)   │
+│ Y (vert)     │ -123 pixels │ Shift UP by 123px (389 - 512 = -123)      │
+└──────────────┴─────────────┴────────────────────────────────────────────┘
+
+JavaScript code:
+```javascript
+const VISIBLE_CENTER_X = 512;  // Card X center (U = 0.5004)
+const VISIBLE_CENTER_Y = 389;  // Card Y center (V = 0.3797)
+const CANVAS_CENTER = 512;
+
+const offsetX = VISIBLE_CENTER_X - CANVAS_CENTER;  // = 0
+const offsetY = VISIBLE_CENTER_Y - CANVAS_CENTER;  // = -123
+
+ctx.translate(offsetX, offsetY);  // Shift coordinate system
+// Now drawing at (512, 512) appears at visible center!
+```
+
+
+================================================================================
+DRAWING SAFE ZONES
+================================================================================
+
+To ensure content appears on the 3D card:
+
+┌─────────────────────────┬────────────────────────────────────────────────┐
+│ Region                  │ Safe Zone (with margin)                        │
+├─────────────────────────┼────────────────────────────────────────────────┤
+│ Full Safe Area          │ X: [20, 1004], Y: [20, 755]                    │
+│ (20px margin)           │ Size: 984 x 735 pixels                         │
+├─────────────────────────┼────────────────────────────────────────────────┤
+│ Inner Safe Area         │ X: [50, 974], Y: [50, 725]                     │
+│ (50px margin)           │ Size: 924 x 675 pixels                         │
+├─────────────────────────┼────────────────────────────────────────────────┤
+│ Center Region           │ X: [256, 768], Y: [139, 639]                   │
+│ (centered 512x500)      │ Size: 512 x 500 pixels                         │
+└─────────────────────────┴────────────────────────────────────────────────┘
+
+AFTER applying translate(0, -123), these become:
+
+┌─────────────────────────┬────────────────────────────────────────────────┐
+│ Region                  │ Drawing Coordinates (after translate)          │
+├─────────────────────────┼────────────────────────────────────────────────┤
+│ Full Safe Area          │ X: [20, 1004], Y: [143, 878]                   │
+│ (20px margin)           │ Size: 984 x 735 pixels                         │
+├─────────────────────────┼────────────────────────────────────────────────┤
+│ Inner Safe Area         │ X: [50, 974], Y: [173, 848]                    │
+│ (50px margin)           │ Size: 924 x 675 pixels                         │
+├─────────────────────────┼────────────────────────────────────────────────┤
+│ Center Region           │ X: [256, 768], Y: [262, 762]                   │
+│ (centered 512x500)      │ Size: 512 x 500 pixels                         │
+└─────────────────────────┴────────────────────────────────────────────────┘
+
+
+================================================================================
+CURRENT CODE ISSUE
+================================================================================
+
+Current values in Lanyard.tsx (WRONG):
+```javascript
+const VISIBLE_CENTER_X = 325;  // ✗ Should be 512 (or 396 for centroid)
+const VISIBLE_CENTER_Y = 325;  // ✗ Should be 389 (or 286 for centroid)
+```
+
+This produces INCORRECT offset:
+```
+offsetX = 325 - 512 = -187 pixels  (shifts LEFT when shouldn't)
+offsetY = 325 - 512 = -187 pixels  (shifts UP too much)
+```
+
+Result: Content appears in UPPER-LEFT quadrant, not centered!
+
+
+================================================================================
+CORRECTED VALUES
+================================================================================
+
+Use UV RANGE CENTER (recommended):
+```javascript
+const VISIBLE_CENTER_X = 512;  // ✓ Horizontal center
+const VISIBLE_CENTER_Y = 389;  // ✓ Vertical center (at 38% not 50%)
+```
+
+This produces CORRECT offset:
+```
+offsetX = 512 - 512 = 0 pixels    (no horizontal shift - correct!)
+offsetY = 389 - 512 = -123 pixels (shift UP by 123px - correct!)
+```
+
+Result: Content appears CENTERED on the 3D card ✓
+
+
+================================================================================
+ALTERNATIVE: UV CENTROID
+================================================================================
+
+If you want to use the weighted average (centroid) instead:
+```javascript
+const VISIBLE_CENTER_X = 396;  // Centroid U = 0.3871
+const VISIBLE_CENTER_Y = 286;  // Centroid V = 0.2792
+```
+
+This produces:
+```
+offsetX = 396 - 512 = -116 pixels (shift LEFT)
+offsetY = 286 - 512 = -226 pixels (shift UP more)
+```
+
+Note: Centroid accounts for vertex density, but range center is more
+intuitive for visual centering. Use range center unless you have a
+specific reason to use centroid.
+
+
+================================================================================
+VERIFICATION CHECKLIST
+================================================================================
+
+After applying the fix, verify:
+
+[ ] Console shows: "Applying offset: X=0.0px, Y=-123.0px"
+[ ] Content drawn at (512, 512) appears centered on 3D card
+[ ] No content is cut off at edges
+[ ] The "L" marker appears in the center of the card face
+[ ] Grid labels are readable and aligned with card edges
+[ ] Cyan UV boundary line at Y=775 is at bottom edge of card
+[ ] All four corner markers (RED, GREEN, BLUE, YELLOW) are visible
+
+
+================================================================================
+SUMMARY
+================================================================================
+
+The card.glb model uses only 75.5% of the vertical texture space. The visible
+region is Y=[2, 775] pixels, with the visual center at Y=389 (not Y=512).
+
+FIX: Change VISIBLE_CENTER_Y from 325 to 389
+     Change VISIBLE_CENTER_X from 325 to 512
+
+This will produce offset (0, -123) which correctly centers content on the 3D
+card model.
+
+================================================================================

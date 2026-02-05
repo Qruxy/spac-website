@@ -1,0 +1,30 @@
+{
+  "name": "spac-mcp-servers",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "database": "tsx src/index.ts database",
+    "migration": "tsx src/index.ts migration",
+    "photos": "tsx src/index.ts photos"
+  },
+  "dependencies": {
+    "@mastra/core": "^0.24.6",
+    "@mastra/mcp": "^0.14.4",
+    "zod": "^3.23.8",
+    "pg": "^8.13.0",
+    "@aws-sdk/client-s3": "^3.682.0",
+    "sharp": "^0.33.5",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.9.0",
+    "@types/pg": "^8.11.10",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.2"
+  }
+}
