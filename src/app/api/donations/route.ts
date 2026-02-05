@@ -5,32 +5,47 @@
  */
 
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { createPayPalOrder, createPayPalSubscription, capturePayPalOrder, getPayPalAccessToken } from '@/lib/paypal';
 import { getSession } from '@/lib/auth';
+import { rateLimit, getRateLimitKey, RATE_LIMITS } from '@/lib/rate-limit';
+import { z } from 'zod';
+
+// Zod schema for donation validation
+const donationSchema = z.object({
+  amount: z.number()
+    .min(5, 'Minimum donation amount is $5')
+    .max(999999, 'Amount exceeds maximum limit'),
+  recurring: z.boolean().optional().default(false),
+  tier: z.enum(['SUPPORTER', 'PATRON', 'BENEFACTOR']).optional(),
+});
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting
+    const headersList = await headers();
+    const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const key = getRateLimitKey('donations', ip);
+    
+    if (!rateLimit(key, RATE_LIMITS.API_WRITE.limit, RATE_LIMITS.API_WRITE.windowMs)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
-    const { amount, recurring = false, tier } = body as {
-      amount: number;
-      recurring?: boolean;
-      tier?: string;
-    };
-
-    // Validate amount
-    if (!amount || typeof amount !== 'number' || amount < 5) {
+    
+    // Validate with Zod
+    const parseResult = donationSchema.safeParse(body);
+    if (!parseResult.success) {
       return NextResponse.json(
-        { error: 'Minimum donation amount is $5' },
+        { error: parseResult.error.errors[0]?.message || 'Invalid request' },
         { status: 400 }
       );
     }
-
-    if (amount > 999999) {
-      return NextResponse.json(
-        { error: 'Amount exceeds maximum limit' },
-        { status: 400 }
-      );
-    }
+    
+    const { amount, recurring, tier } = parseResult.data;
 
     // Get session (optional - donations can be anonymous)
     const session = await getSession();

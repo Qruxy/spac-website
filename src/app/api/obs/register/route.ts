@@ -5,28 +5,62 @@
  */
 
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createPayPalOrder } from '@/lib/paypal';
+import { rateLimit, getRateLimitKey, RATE_LIMITS } from '@/lib/rate-limit';
+import { z } from 'zod';
 
-interface RegistrationPayload {
-  obsConfigId: string;
-  registrationType: 'ATTENDEE' | 'SPEAKER' | 'VENDOR' | 'STAFF' | 'VOLUNTEER';
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  campingRequested?: boolean;
-  mealRequested?: boolean;
-  tShirtSize?: string;
-  dietaryRestrictions?: string;
-  notes?: string;
-}
+// Zod schema for OBS registration validation
+const obsRegistrationSchema = z.object({
+  obsConfigId: z.string().min(1, 'OBS config ID is required'),
+  registrationType: z.enum(['ATTENDEE', 'SPEAKER', 'VENDOR', 'STAFF', 'VOLUNTEER']).default('ATTENDEE'),
+  firstName: z.string()
+    .min(1, 'First name is required')
+    .max(100, 'First name too long')
+    .transform(v => v.trim()),
+  lastName: z.string()
+    .min(1, 'Last name is required')
+    .max(100, 'Last name too long')
+    .transform(v => v.trim()),
+  email: z.string()
+    .email('Invalid email address')
+    .toLowerCase()
+    .transform(v => v.trim()),
+  phone: z.string().max(20).optional().transform(v => v?.trim() || null),
+  campingRequested: z.boolean().optional().default(false),
+  mealRequested: z.boolean().optional().default(false),
+  tShirtSize: z.enum(['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL']).optional(),
+  dietaryRestrictions: z.string().max(500).optional().transform(v => v?.trim() || null),
+  notes: z.string().max(1000).optional().transform(v => v?.trim() || null),
+});
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting
+    const headersList = await headers();
+    const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const key = getRateLimitKey('obs_register', ip);
+    
+    if (!rateLimit(key, RATE_LIMITS.API_WRITE.limit, RATE_LIMITS.API_WRITE.windowMs)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const session = await getSession();
-    const body = (await request.json()) as RegistrationPayload;
+    const body = await request.json();
+
+    // Validate with Zod
+    const parseResult = obsRegistrationSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: parseResult.error.errors[0]?.message || 'Invalid request' },
+        { status: 400 }
+      );
+    }
 
     const {
       obsConfigId,
@@ -35,20 +69,12 @@ export async function POST(request: Request) {
       lastName,
       email,
       phone,
-      campingRequested = false,
-      mealRequested = false,
+      campingRequested,
+      mealRequested,
       tShirtSize,
       dietaryRestrictions,
       notes,
-    } = body;
-
-    // Validate required fields
-    if (!obsConfigId || !firstName || !lastName || !email) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
+    } = parseResult.data;
 
     // Get OBS config
     const obsConfig = await prisma.oBSConfig.findUnique({

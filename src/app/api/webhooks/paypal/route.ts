@@ -11,7 +11,8 @@ import { NextResponse } from 'next/server';
 import { verifyPayPalWebhook, getPayPalSubscription, type PayPalWebhookEvent } from '@/lib/paypal';
 import { prisma } from '@/lib/db';
 
-const webhookId = process.env.PAYPAL_WEBHOOK_ID!;
+const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+const isProduction = process.env.NODE_ENV === 'production';
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -26,8 +27,17 @@ export async function POST(request: Request) {
     'paypal-transmission-time': headersList.get('paypal-transmission-time') || '',
   };
 
-  // Verify webhook signature (skip in development if webhook ID not set)
-  if (webhookId) {
+  // Verify webhook signature - REQUIRED in production
+  if (!webhookId) {
+    if (isProduction) {
+      console.error('CRITICAL: PAYPAL_WEBHOOK_ID not configured in production!');
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+    console.warn('DEV MODE: Skipping PayPal webhook verification (PAYPAL_WEBHOOK_ID not set)');
+  } else {
     const isValid = await verifyPayPalWebhook(webhookId, paypalHeaders, body);
     if (!isValid) {
       console.error('PayPal webhook signature verification failed');

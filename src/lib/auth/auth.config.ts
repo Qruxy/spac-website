@@ -142,23 +142,16 @@ export const authOptions: NextAuthOptions = {
                 };
               }
 
-              // Find or create dev user (for other email-based logins)
-              let user = await prisma.user.findUnique({
-                where: { email: credentials.email },
+              // Find existing user (only allow existing users in dev mode - no auto-creation)
+              const user = await prisma.user.findUnique({
+                where: { email: credentials.email.toLowerCase() },
                 include: { membership: true },
               });
 
               if (!user) {
-                // Create dev user
-                user = await prisma.user.create({
-                  data: {
-                    email: credentials.email,
-                    firstName: 'Dev',
-                    lastName: 'User',
-                    role: credentials.email.includes('admin') ? 'ADMIN' : 'MEMBER',
-                  },
-                  include: { membership: true },
-                });
+                // Don't auto-create users - only allow existing DB users to login
+                console.warn(`Dev login attempted for non-existent user: ${credentials.email}`);
+                return null;
               }
 
               return {

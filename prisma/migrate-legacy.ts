@@ -19,8 +19,10 @@ import * as crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
-// Source file path
-const SOURCE_FILE = '/mnt/c/spac/Old PHP DB/12-3-25/localhost.json';
+// Source file path - update this to match your environment
+// For local Windows development: /mnt/c/spac/Old PHP DB/12-3-25/localhost.json
+// For Ubuntu server: ./Old PHP DB/12-3-25/localhost.json (relative to project root)
+const SOURCE_FILE = process.env.LEGACY_DATA_PATH || './Old PHP DB/12-3-25/localhost.json';
 
 // Statistics tracking
 const stats = {
