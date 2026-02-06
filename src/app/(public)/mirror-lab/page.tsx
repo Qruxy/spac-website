@@ -8,6 +8,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
+import nextDynamic from 'next/dynamic';
 import {
   Wrench,
   Clock,
@@ -21,6 +22,23 @@ import {
   Eye,
 } from 'lucide-react';
 import { MirrorLabHero, MirrorLabGallery, ProcessStep } from './MirrorLabClient';
+
+const GradientText = nextDynamic(
+  () => import('@/components/animated/gradient-text').then((mod) => mod.GradientText),
+  { ssr: false }
+);
+const FadeIn = nextDynamic(
+  () => import('@/components/animated/fade-in').then((mod) => mod.FadeIn),
+  { ssr: false }
+);
+const SpotlightCard = nextDynamic(
+  () => import('@/components/animated/spotlight-card').then((mod) => mod.SpotlightCard),
+  { ssr: false }
+);
+const StarBorder = nextDynamic(
+  () => import('@/components/animated/star-border').then((mod) => mod.StarBorder),
+  { ssr: false }
+);
 
 export const metadata: Metadata = {
   title: 'Mirror Lab | SPAC',
@@ -138,50 +156,61 @@ export default function MirrorLabPage() {
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 text-primary mb-4">
-                <Wrench className="h-5 w-5" />
-                <span className="text-sm font-medium uppercase tracking-wider">
-                  The Art & Science
-                </span>
+            <FadeIn>
+              <div>
+                <div className="inline-flex items-center gap-2 text-primary mb-4">
+                  <Wrench className="h-5 w-5" />
+                  <span className="text-sm font-medium uppercase tracking-wider">
+                    The Art & Science
+                  </span>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+                  What is{' '}
+                  <GradientText
+                    colors={['#818cf8', '#c084fc', '#f472b6', '#818cf8']}
+                    className="text-3xl md:text-4xl font-bold"
+                    animationSpeed={6}
+                  >
+                    Mirror Grinding?
+                  </GradientText>
+                </h2>
+                <div className="space-y-4 text-muted-foreground">
+                  <p className="text-lg">
+                    Mirror grinding is the art of transforming a flat disk of glass into a
+                    precision optical surface capable of revealing the wonders of the universe.
+                    It&apos;s a tradition dating back to the 1920s when amateur astronomers first
+                    discovered they could make their own telescope mirrors.
+                  </p>
+                  <p>
+                    Using nothing more than two pieces of glass, water, and abrasive compounds,
+                    you can create a parabolic mirror accurate to within a fraction of a wavelength
+                    of light. The process is meditative, rewarding, and connects you to a proud
+                    tradition of amateur telescope making.
+                  </p>
+                  <p>
+                    A hand-made mirror isn&apos;t just functional—it&apos;s a work of art. There&apos;s
+                    something profoundly satisfying about observing the cosmos through optics
+                    you crafted with your own hands.
+                  </p>
+                </div>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                What is Mirror Grinding?
-              </h2>
-              <div className="space-y-4 text-muted-foreground">
-                <p className="text-lg">
-                  Mirror grinding is the art of transforming a flat disk of glass into a
-                  precision optical surface capable of revealing the wonders of the universe.
-                  It&apos;s a tradition dating back to the 1920s when amateur astronomers first
-                  discovered they could make their own telescope mirrors.
-                </p>
-                <p>
-                  Using nothing more than two pieces of glass, water, and abrasive compounds,
-                  you can create a parabolic mirror accurate to within a fraction of a wavelength
-                  of light. The process is meditative, rewarding, and connects you to a proud
-                  tradition of amateur telescope making.
-                </p>
-                <p>
-                  A hand-made mirror isn&apos;t just functional—it&apos;s a work of art. There&apos;s
-                  something profoundly satisfying about observing the cosmos through optics
-                  you crafted with your own hands.
-                </p>
+            </FadeIn>
+            <FadeIn delay={0.15} direction="right">
+              <div className="relative">
+                <div className="aspect-square rounded-2xl overflow-hidden border border-border">
+                  <Image
+                    src="https://picsum.photos/seed/mirrorhero/800/800"
+                    alt="Mirror grinding process"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="absolute -bottom-6 -right-6 bg-primary text-primary-foreground rounded-xl p-6 shadow-xl">
+                  <div className="text-3xl font-bold">60+</div>
+                  <div className="text-sm">Years of ATM</div>
+                </div>
               </div>
-            </div>
-            <div className="relative">
-              <div className="aspect-square rounded-2xl overflow-hidden border border-border">
-                <Image
-                  src="https://picsum.photos/seed/mirrorhero/800/800"
-                  alt="Mirror grinding process"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="absolute -bottom-6 -right-6 bg-primary text-primary-foreground rounded-xl p-6 shadow-xl">
-                <div className="text-3xl font-bold">60+</div>
-                <div className="text-sm">Years of ATM</div>
-              </div>
-            </div>
+            </FadeIn>
           </div>
         </div>
       </section>
@@ -189,15 +218,24 @@ export default function MirrorLabPage() {
       {/* The Process - Interactive Steps */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              From Glass to Stars
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              The journey from a blank piece of glass to your first view through your
-              own telescope is unforgettable.
-            </p>
-          </div>
+          <FadeIn>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                From Glass to{' '}
+                <GradientText
+                  colors={['#fcd34d', '#f59e0b', '#d97706', '#fcd34d']}
+                  className="text-3xl md:text-4xl font-bold"
+                  animationSpeed={6}
+                >
+                  Stars
+                </GradientText>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                The journey from a blank piece of glass to your first view through your
+                own telescope is unforgettable.
+              </p>
+            </div>
+          </FadeIn>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {processSteps.map((step, index) => (
@@ -216,30 +254,33 @@ export default function MirrorLabPage() {
       {/* What You'll Learn */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              What You&apos;ll Learn
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Master the complete process of telescope mirror making with guidance
-              from experienced mentors.
-            </p>
-          </div>
+          <FadeIn>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                What You&apos;ll Learn
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Master the complete process of telescope mirror making with guidance
+                from experienced mentors.
+              </p>
+            </div>
+          </FadeIn>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {learningTopics.map((topic) => (
-              <div
-                key={topic.title}
-                className="bg-card border border-border rounded-xl p-6 hover:border-primary/50 transition-colors group"
-              >
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <topic.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {topic.title}
-                </h3>
-                <p className="text-muted-foreground">{topic.description}</p>
-              </div>
+            {learningTopics.map((topic, index) => (
+              <FadeIn key={topic.title} delay={index * 0.1}>
+                <SpotlightCard spotlightColor="rgba(139,92,246,0.12)" className="h-full rounded-xl">
+                  <div className="bg-card border border-border rounded-xl p-6 h-full">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                      <topic.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      {topic.title}
+                    </h3>
+                    <p className="text-muted-foreground">{topic.description}</p>
+                  </div>
+                </SpotlightCard>
+              </FadeIn>
             ))}
           </div>
         </div>
@@ -249,77 +290,95 @@ export default function MirrorLabPage() {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Workshop Information
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                Join us at the Mirror Lab and start your telescope-making journey.
-              </p>
-            </div>
+            <FadeIn>
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                  Workshop Information
+                </h2>
+                <p className="text-xl text-muted-foreground">
+                  Join us at the Mirror Lab and start your telescope-making journey.
+                </p>
+              </div>
+            </FadeIn>
 
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-card border border-border rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-blue-500" />
+              <FadeIn delay={0}>
+                <SpotlightCard spotlightColor="rgba(59,130,246,0.12)" className="h-full rounded-xl">
+                  <div className="bg-card border border-border rounded-xl p-6 h-full">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                        <MapPin className="h-5 w-5 text-blue-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground">Location</h3>
+                    </div>
+                    <p className="text-muted-foreground">
+                      Mirror Lab Building<br />
+                      St. Petersburg, FL<br />
+                      <span className="text-sm italic">
+                        (Address provided to registered members)
+                      </span>
+                    </p>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">Location</h3>
-                </div>
-                <p className="text-muted-foreground">
-                  Mirror Lab Building<br />
-                  St. Petersburg, FL<br />
-                  <span className="text-sm italic">
-                    (Address provided to registered members)
-                  </span>
-                </p>
-              </div>
+                </SpotlightCard>
+              </FadeIn>
 
-              <div className="bg-card border border-border rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-green-500" />
+              <FadeIn delay={0.1}>
+                <SpotlightCard spotlightColor="rgba(34,197,94,0.12)" className="h-full rounded-xl">
+                  <div className="bg-card border border-border rounded-xl p-6 h-full">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                        <Clock className="h-5 w-5 text-green-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground">Schedule</h3>
+                    </div>
+                    <p className="text-muted-foreground">
+                      <strong>Saturdays:</strong> 9:00 AM - 1:00 PM<br />
+                      <span className="text-sm">
+                        Additional sessions may be scheduled for active projects
+                      </span>
+                    </p>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">Schedule</h3>
-                </div>
-                <p className="text-muted-foreground">
-                  <strong>Saturdays:</strong> 9:00 AM - 1:00 PM<br />
-                  <span className="text-sm">
-                    Additional sessions may be scheduled for active projects
-                  </span>
-                </p>
-              </div>
+                </SpotlightCard>
+              </FadeIn>
 
-              <div className="bg-card border border-border rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-purple-500" />
+              <FadeIn delay={0.2}>
+                <SpotlightCard spotlightColor="rgba(168,85,247,0.12)" className="h-full rounded-xl">
+                  <div className="bg-card border border-border rounded-xl p-6 h-full">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-purple-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground">What to Bring</h3>
+                    </div>
+                    <ul className="text-muted-foreground space-y-1">
+                      <li>• Comfortable clothes (you will get wet)</li>
+                      <li>• Closed-toe shoes</li>
+                      <li>• Enthusiasm and patience</li>
+                      <li>• Notebook for notes</li>
+                    </ul>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">What to Bring</h3>
-                </div>
-                <ul className="text-muted-foreground space-y-1">
-                  <li>• Comfortable clothes (you will get wet)</li>
-                  <li>• Closed-toe shoes</li>
-                  <li>• Enthusiasm and patience</li>
-                  <li>• Notebook for notes</li>
-                </ul>
-              </div>
+                </SpotlightCard>
+              </FadeIn>
 
-              <div className="bg-card border border-border rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-amber-500" />
+              <FadeIn delay={0.3}>
+                <SpotlightCard spotlightColor="rgba(245,158,11,0.12)" className="h-full rounded-xl">
+                  <div className="bg-card border border-border rounded-xl p-6 h-full">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                        <DollarSign className="h-5 w-5 text-amber-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground">Cost</h3>
+                    </div>
+                    <p className="text-muted-foreground">
+                      <strong>Instruction:</strong> Free for SPAC members<br />
+                      <strong>Materials:</strong> ~$50-200 depending on mirror size<br />
+                      <span className="text-sm">
+                        Glass blanks, abrasives, and pitch included
+                      </span>
+                    </p>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">Cost</h3>
-                </div>
-                <p className="text-muted-foreground">
-                  <strong>Instruction:</strong> Free for SPAC members<br />
-                  <strong>Materials:</strong> ~$50-200 depending on mirror size<br />
-                  <span className="text-sm">
-                    Glass blanks, abrasives, and pitch included
-                  </span>
-                </p>
-              </div>
+                </SpotlightCard>
+              </FadeIn>
             </div>
           </div>
         </div>
@@ -328,14 +387,16 @@ export default function MirrorLabPage() {
       {/* Gallery Section */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Mirror Lab Gallery
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              See the magic happen at our workshop.
-            </p>
-          </div>
+          <FadeIn>
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Mirror Lab Gallery
+              </h2>
+              <p className="text-xl text-muted-foreground">
+                See the magic happen at our workshop.
+              </p>
+            </div>
+          </FadeIn>
 
           <MirrorLabGallery images={galleryImages} />
         </div>
@@ -352,13 +413,15 @@ export default function MirrorLabPage() {
             are ready to guide you every step of the way.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
+            <StarBorder
+              as={Link}
               href="/register"
-              className="flex items-center gap-2 rounded-lg bg-primary px-8 py-4 text-lg font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:scale-105"
+              color="#818cf8"
+              className="flex items-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold text-foreground transition-all hover:scale-105"
             >
               Join the Club
               <ArrowRight className="h-5 w-5" />
-            </Link>
+            </StarBorder>
             <Link
               href="/about#board"
               className="flex items-center gap-2 rounded-lg border border-border bg-background px-8 py-4 text-lg font-semibold text-foreground transition-all hover:bg-muted"

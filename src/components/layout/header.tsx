@@ -33,6 +33,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import spacLogo from '../../../public/images/spac-logo.png';
 
 // Primary navigation - shown in header
 const navigation = [
@@ -74,7 +75,7 @@ export function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 text-foreground">
             <NextImage
-              src="/images/spac-logo.png"
+              src={spacLogo}
               alt="SPAC"
               width={40}
               height={40}

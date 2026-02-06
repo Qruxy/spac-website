@@ -19,6 +19,7 @@ import { CircularText } from '@/components/animated/circular-text';
 import { BlurText } from '@/components/animated/blur-text';
 import { ShinyText } from '@/components/animated/shiny-text';
 import '@/components/animated/circular-text.css';
+import spacLogo from '../../../public/images/spac-logo.png';
 
 // Dynamic import Galaxy to avoid SSR issues with WebGL
 const Galaxy = dynamic(
@@ -87,7 +88,7 @@ export function HeroSection() {
 
               {/* Logo */}
               <Image
-                src="/images/spac-logo.png"
+                src={spacLogo}
                 alt="St. Petersburg Astronomy Club"
                 width={150}
                 height={150}

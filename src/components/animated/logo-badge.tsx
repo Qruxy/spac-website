@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { motion } from 'motion/react';
 import { CircularText } from './circular-text';
 import './circular-text.css';
+import spacLogo from '../../../public/images/spac-logo.png';
 
 interface LogoBadgeProps {
   text?: string;
@@ -68,7 +69,7 @@ export function LogoBadge({
 
         {/* Logo */}
         <Image
-          src="/images/spac-logo.png"
+          src={spacLogo}
           alt="St. Petersburg Astronomy Club"
           width={logoSize}
           height={logoSize}

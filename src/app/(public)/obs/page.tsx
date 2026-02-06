@@ -22,6 +22,14 @@ const Galaxy = dynamic(
   () => import('@/components/animated/galaxy').then((mod) => mod.default),
   { ssr: false }
 );
+const GradientText = dynamic(
+  () => import('@/components/animated/gradient-text').then((mod) => mod.GradientText),
+  { ssr: false }
+);
+const StarBorder = dynamic(
+  () => import('@/components/animated/star-border').then((mod) => mod.StarBorder),
+  { ssr: false }
+);
 
 export const metadata: Metadata = {
   title: 'Orange Blossom Special | SPAC',
@@ -78,7 +86,13 @@ export default async function OBSPage() {
         <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
           <Sun className="w-20 h-20 text-amber-400 mb-6" />
           <h1 className="text-4xl font-bold text-white mb-4 text-center">
-            Orange Blossom Special
+            <GradientText
+              colors={['#fbbf24', '#fb923c', '#f59e0b', '#fbbf24']}
+              className="text-4xl font-bold"
+              animationSpeed={5}
+            >
+              Orange Blossom Special
+            </GradientText>
           </h1>
           <p className="text-xl text-slate-400 mb-8 text-center max-w-md">
             No active OBS event at this time. Check back soon for our next star party!
@@ -137,9 +151,13 @@ export default async function OBSPage() {
 
           {/* Event Title */}
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-white mb-4">
-            <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 bg-clip-text text-transparent">
+            <GradientText
+              colors={['#fbbf24', '#fb923c', '#f59e0b', '#fbbf24']}
+              className="text-5xl sm:text-6xl md:text-7xl font-bold"
+              animationSpeed={5}
+            >
               Orange Blossom
-            </span>
+            </GradientText>
             <br />
             <span className="text-white">Special {activeOBS.year}</span>
           </h1>
@@ -180,13 +198,16 @@ export default async function OBSPage() {
             </div>
 
             {isRegistrationOpen && (
-              <a
+              <StarBorder
+                as="a"
                 href="#register"
-                className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold text-lg rounded-xl transition-all shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-105"
+                color="#f59e0b"
+                speed="4s"
+                className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-white font-bold text-lg rounded-xl transition-all hover:scale-105"
               >
                 Register Now
                 <ArrowRight className="w-5 h-5" />
-              </a>
+              </StarBorder>
             )}
           </div>
         </div>

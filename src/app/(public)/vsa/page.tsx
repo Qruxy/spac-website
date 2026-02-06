@@ -8,8 +8,30 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
+import nextDynamic from 'next/dynamic';
 import { prisma } from '@/lib/db/prisma';
 import { Telescope, Target, ExternalLink, Facebook, Star, Calendar } from 'lucide-react';
+
+const GradientText = nextDynamic(
+  () => import('@/components/animated/gradient-text').then((mod) => mod.GradientText),
+  { ssr: false }
+);
+const FadeIn = nextDynamic(
+  () => import('@/components/animated/fade-in').then((mod) => mod.FadeIn),
+  { ssr: false }
+);
+const SpotlightCard = nextDynamic(
+  () => import('@/components/animated/spotlight-card').then((mod) => mod.SpotlightCard),
+  { ssr: false }
+);
+const CountUp = nextDynamic(
+  () => import('@/components/animated/count-up').then((mod) => mod.CountUp),
+  { ssr: false }
+);
+const StarBorder = nextDynamic(
+  () => import('@/components/animated/star-border').then((mod) => mod.StarBorder),
+  { ssr: false }
+);
 
 export const metadata: Metadata = {
   title: 'VSA - Very Small Array | SPAC',
@@ -59,80 +81,108 @@ export default async function VSAPage() {
         </div>
 
         <div className="container mx-auto px-4 py-16 relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 border border-indigo-400/30 rounded-full mb-6">
-              <Telescope className="w-4 h-4 text-indigo-400" />
-              <span className="text-sm text-indigo-300 font-medium">Smart Telescope Program</span>
+          <FadeIn>
+            <div className="text-center max-w-4xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 border border-indigo-400/30 rounded-full mb-6">
+                <Telescope className="w-4 h-4 text-indigo-400" />
+                <span className="text-sm text-indigo-300 font-medium">Smart Telescope Program</span>
+              </div>
+              <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">
+                <GradientText
+                  colors={['#818cf8', '#c084fc', '#f472b6', '#818cf8']}
+                  className="text-5xl md:text-6xl font-bold"
+                  animationSpeed={6}
+                >
+                  Very Small Array
+                </GradientText>
+                <span className="block text-3xl md:text-4xl text-indigo-400 mt-2">(VSA)</span>
+              </h1>
+              <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
+                SPAC&apos;s smart telescope program makes deep-sky imaging accessible to everyone.
+                Our automated telescopes capture stunning images of celestial objects while you learn
+                about the wonders of the universe.
+              </p>
+
+              {/* Stats bar */}
+              <div className="flex items-center justify-center gap-8 mt-8">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-indigo-400">
+                    <CountUp to={targets.length} duration={1.5} />
+                  </div>
+                  <div className="text-sm text-slate-400">Active Targets</div>
+                </div>
+                <div className="h-8 w-px bg-slate-700" />
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-indigo-400">
+                    <CountUp to={equipment.length} duration={1.5} />
+                  </div>
+                  <div className="text-sm text-slate-400">Telescopes</div>
+                </div>
+              </div>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">
-              Very Small Array
-              <span className="block text-3xl md:text-4xl text-indigo-400 mt-2">(VSA)</span>
-            </h1>
-            <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-              SPAC&apos;s smart telescope program makes deep-sky imaging accessible to everyone. 
-              Our automated telescopes capture stunning images of celestial objects while you learn 
-              about the wonders of the universe.
-            </p>
-          </div>
+          </FadeIn>
         </div>
       </div>
 
       {/* Current Targets Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="flex items-center gap-3 mb-8">
-            <Target className="w-6 h-6 text-amber-400" />
-            <h2 className="text-3xl font-bold text-white">Current Targets</h2>
-          </div>
+          <FadeIn>
+            <div className="flex items-center gap-3 mb-8">
+              <Target className="w-6 h-6 text-amber-400" />
+              <h2 className="text-3xl font-bold text-white">Current Targets</h2>
+            </div>
+          </FadeIn>
 
           {targets.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {targets.map((target) => (
-                <div
-                  key={target.id}
-                  className="group relative bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden hover:border-indigo-500/50 transition-all duration-300"
-                >
-                  {target.imageUrl && (
-                    <div className="relative h-48 overflow-hidden">
-                      <Image
-                        src={target.imageUrl}
-                        alt={target.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
-                    </div>
-                  )}
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-white group-hover:text-indigo-400 transition-colors">
-                        {target.name}
-                      </h3>
-                      {target.magnitude && (
-                        <span className="flex items-center gap-1 text-sm text-amber-400">
-                          <Star className="w-3 h-3" />
-                          {target.magnitude.toFixed(1)}
-                        </span>
+              {targets.map((target, index) => (
+                <FadeIn key={target.id} delay={index * 0.1}>
+                  <SpotlightCard spotlightColor="rgba(99,102,241,0.15)" className="h-full rounded-xl">
+                    <div className="group relative bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden h-full">
+                      {target.imageUrl && (
+                        <div className="relative h-48 overflow-hidden">
+                          <Image
+                            src={target.imageUrl}
+                            alt={target.name}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
+                        </div>
                       )}
-                    </div>
-                    <p className="text-sm text-indigo-400 mb-2">{target.objectType}</p>
-                    {target.constellation && (
-                      <p className="text-sm text-slate-400 mb-3">in {target.constellation}</p>
-                    )}
-                    {target.description && (
-                      <p className="text-slate-300 text-sm line-clamp-3">{target.description}</p>
-                    )}
-                    {(target.startDate || target.endDate) && (
-                      <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                        <Calendar className="w-3 h-3" />
-                        <span>
-                          {target.startDate && new Date(target.startDate).toLocaleDateString()}
-                          {target.endDate && ` - ${new Date(target.endDate).toLocaleDateString()}`}
-                        </span>
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-xl font-semibold text-white group-hover:text-indigo-400 transition-colors">
+                            {target.name}
+                          </h3>
+                          {target.magnitude && (
+                            <span className="flex items-center gap-1 text-sm text-amber-400">
+                              <Star className="w-3 h-3" />
+                              {target.magnitude.toFixed(1)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-indigo-400 mb-2">{target.objectType}</p>
+                        {target.constellation && (
+                          <p className="text-sm text-slate-400 mb-3">in {target.constellation}</p>
+                        )}
+                        {target.description && (
+                          <p className="text-slate-300 text-sm line-clamp-3">{target.description}</p>
+                        )}
+                        {(target.startDate || target.endDate) && (
+                          <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
+                            <Calendar className="w-3 h-3" />
+                            <span>
+                              {target.startDate && new Date(target.startDate).toLocaleDateString()}
+                              {target.endDate && ` - ${new Date(target.endDate).toLocaleDateString()}`}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
+                    </div>
+                  </SpotlightCard>
+                </FadeIn>
               ))}
             </div>
           ) : (
@@ -148,33 +198,36 @@ export default async function VSAPage() {
       {equipment.length > 0 && (
         <section className="py-16 bg-slate-800/30">
           <div className="container mx-auto px-4">
-            <div className="flex items-center gap-3 mb-8">
-              <Telescope className="w-6 h-6 text-indigo-400" />
-              <h2 className="text-3xl font-bold text-white">Our Equipment</h2>
-            </div>
+            <FadeIn>
+              <div className="flex items-center gap-3 mb-8">
+                <Telescope className="w-6 h-6 text-indigo-400" />
+                <h2 className="text-3xl font-bold text-white">Our Equipment</h2>
+              </div>
+            </FadeIn>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {equipment.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:border-indigo-500/50 transition-colors"
-                >
-                  {item.imageUrl && (
-                    <div className="relative h-40 mb-4 rounded-lg overflow-hidden">
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                      />
+              {equipment.map((item, index) => (
+                <FadeIn key={item.id} delay={index * 0.1}>
+                  <SpotlightCard spotlightColor="rgba(99,102,241,0.15)" className="h-full rounded-xl">
+                    <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 h-full">
+                      {item.imageUrl && (
+                        <div className="relative h-40 mb-4 rounded-lg overflow-hidden">
+                          <Image
+                            src={item.imageUrl}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+                      <h3 className="text-lg font-semibold text-white mb-1">{item.name}</h3>
+                      <p className="text-sm text-indigo-400 mb-3">{item.type}</p>
+                      {item.description && (
+                        <p className="text-slate-300 text-sm">{item.description}</p>
+                      )}
                     </div>
-                  )}
-                  <h3 className="text-lg font-semibold text-white mb-1">{item.name}</h3>
-                  <p className="text-sm text-indigo-400 mb-3">{item.type}</p>
-                  {item.description && (
-                    <p className="text-slate-300 text-sm">{item.description}</p>
-                  )}
-                </div>
+                  </SpotlightCard>
+                </FadeIn>
               ))}
             </div>
           </div>
@@ -186,50 +239,54 @@ export default async function VSAPage() {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-8">
             {/* About VSA */}
-            <div className="bg-gradient-to-br from-slate-800/50 to-indigo-900/20 border border-slate-700/50 rounded-xl p-8">
-              <h2 className="text-2xl font-bold text-white mb-4">What is the VSA?</h2>
-              <div className="space-y-4 text-slate-300">
-                <p>
-                  The Very Small Array (VSA) is SPAC&apos;s innovative program that brings the power of 
-                  smart telescopes to our members. Using automated imaging systems, we capture detailed 
-                  images of deep-sky objects, planets, and other celestial wonders.
-                </p>
-                <p>
-                  Whether you&apos;re a seasoned astronomer or just starting your journey, the VSA provides 
-                  an accessible way to explore the cosmos. Our smart telescopes handle the complex tracking 
-                  and imaging, allowing you to focus on learning and discovery.
-                </p>
-                <p>
-                  Members can participate in observing sessions, learn image processing techniques, 
-                  and contribute to our growing collection of astronomical images.
-                </p>
+            <FadeIn>
+              <div className="bg-gradient-to-br from-slate-800/50 to-indigo-900/20 border border-slate-700/50 rounded-xl p-8 h-full">
+                <h2 className="text-2xl font-bold text-white mb-4">What is the VSA?</h2>
+                <div className="space-y-4 text-slate-300">
+                  <p>
+                    The Very Small Array (VSA) is SPAC&apos;s innovative program that brings the power of
+                    smart telescopes to our members. Using automated imaging systems, we capture detailed
+                    images of deep-sky objects, planets, and other celestial wonders.
+                  </p>
+                  <p>
+                    Whether you&apos;re a seasoned astronomer or just starting your journey, the VSA provides
+                    an accessible way to explore the cosmos. Our smart telescopes handle the complex tracking
+                    and imaging, allowing you to focus on learning and discovery.
+                  </p>
+                  <p>
+                    Members can participate in observing sessions, learn image processing techniques,
+                    and contribute to our growing collection of astronomical images.
+                  </p>
+                </div>
               </div>
-            </div>
+            </FadeIn>
 
             {/* Join the Community */}
-            <div className="bg-gradient-to-br from-blue-900/30 to-indigo-900/20 border border-blue-700/30 rounded-xl p-8">
-              <h2 className="text-2xl font-bold text-white mb-4">Join Our Community</h2>
-              <div className="space-y-4 text-slate-300 mb-6">
-                <p>
-                  Connect with fellow VSA enthusiasts on our Facebook group! Share your observations, 
-                  ask questions, and stay updated on upcoming sessions and targets.
-                </p>
-                <p>
-                  Our active community includes experienced astrophotographers who are always happy 
-                  to help newcomers get started with smart telescope imaging.
-                </p>
+            <FadeIn delay={0.15}>
+              <div className="bg-gradient-to-br from-blue-900/30 to-indigo-900/20 border border-blue-700/30 rounded-xl p-8 h-full">
+                <h2 className="text-2xl font-bold text-white mb-4">Join Our Community</h2>
+                <div className="space-y-4 text-slate-300 mb-6">
+                  <p>
+                    Connect with fellow VSA enthusiasts on our Facebook group! Share your observations,
+                    ask questions, and stay updated on upcoming sessions and targets.
+                  </p>
+                  <p>
+                    Our active community includes experienced astrophotographers who are always happy
+                    to help newcomers get started with smart telescope imaging.
+                  </p>
+                </div>
+                <a
+                  href="https://www.facebook.com/groups/spacvsa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors"
+                >
+                  <Facebook className="w-5 h-5" />
+                  Join VSA Facebook Group
+                  <ExternalLink className="w-4 h-4" />
+                </a>
               </div>
-              <a
-                href="https://www.facebook.com/groups/spacvsa"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors"
-              >
-                <Facebook className="w-5 h-5" />
-                Join VSA Facebook Group
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            </div>
+            </FadeIn>
           </div>
         </div>
       </section>
@@ -241,13 +298,15 @@ export default async function VSAPage() {
           <p className="text-slate-300 max-w-2xl mx-auto mb-8">
             Join SPAC and get access to our VSA program, star parties, educational workshops, and more!
           </p>
-          <Link
+          <StarBorder
+            as={Link}
             href="/register"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-500 hover:bg-indigo-400 text-white font-semibold rounded-lg transition-colors"
+            color="#818cf8"
+            className="inline-flex items-center gap-2 px-8 py-4 text-white font-semibold rounded-lg transition-all hover:scale-105"
           >
             Become a Member
             <ExternalLink className="w-4 h-4" />
-          </Link>
+          </StarBorder>
         </div>
       </section>
     </div>

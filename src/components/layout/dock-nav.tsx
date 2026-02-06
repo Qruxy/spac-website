@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import Dock, { type DockItemData } from '@/components/Dock';
 import { cn } from '@/lib/utils';
+import spacLogo from '../../../public/images/spac-logo.png';
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
@@ -97,7 +98,7 @@ export function DockNav() {
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-foreground">
             <NextImage
-              src="/images/spac-logo.png"
+              src={spacLogo}
               alt="SPAC"
               width={36}
               height={36}

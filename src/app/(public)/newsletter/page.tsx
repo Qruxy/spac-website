@@ -6,14 +6,25 @@
  */
 
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 import { Mail, Star, Sparkles } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import { NewsletterClient } from './newsletter-client';
 
-// Dynamic import for animated gradient text
-const GradientText = dynamic(
+const GradientText = nextDynamic(
   () => import('@/components/animated/gradient-text').then((mod) => mod.GradientText),
+  { ssr: false }
+);
+const FadeIn = nextDynamic(
+  () => import('@/components/animated/fade-in').then((mod) => mod.FadeIn),
+  { ssr: false }
+);
+const CountUp = nextDynamic(
+  () => import('@/components/animated/count-up').then((mod) => mod.CountUp),
+  { ssr: false }
+);
+const StarBorder = nextDynamic(
+  () => import('@/components/animated/star-border').then((mod) => mod.StarBorder),
   { ssr: false }
 );
 
@@ -122,9 +133,10 @@ export default async function NewsletterPage() {
     <div className="py-12">
       {/* Hero Section */}
       <section className="container mx-auto px-4 mb-12">
-        <div className="text-center max-w-3xl mx-auto">
-          {/* Newsletter Icon */}
-          <div className="flex justify-center mb-6">
+        <FadeIn>
+          <div className="text-center max-w-3xl mx-auto">
+            {/* Newsletter Icon */}
+            <div className="flex justify-center mb-6">
             <div className="relative">
               <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30">
                 <Mail className="h-12 w-12 text-indigo-400" />
@@ -159,7 +171,7 @@ export default async function NewsletterPage() {
           {total > 0 && (
             <div className="flex items-center justify-center gap-8 mt-8">
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary">{total}</p>
+                <p className="text-3xl font-bold text-primary"><CountUp to={total} duration={2} /></p>
                 <p className="text-sm text-muted-foreground">Issues</p>
               </div>
               {years.length > 0 && (
@@ -175,56 +187,63 @@ export default async function NewsletterPage() {
               )}
             </div>
           )}
-        </div>
+          </div>
+        </FadeIn>
       </section>
 
       {/* Newsletter Archive */}
-      <section className="container mx-auto px-4">
-        <NewsletterClient
-          initialNewsletters={newsletters}
-          initialYears={years}
-          initialTotal={total}
-          initialTotalPages={totalPages}
-        />
-      </section>
+      <FadeIn delay={0.1}>
+        <section className="container mx-auto px-4">
+          <NewsletterClient
+            initialNewsletters={newsletters}
+            initialYears={years}
+            initialTotal={total}
+            initialTotalPages={totalPages}
+          />
+        </section>
+      </FadeIn>
 
       {/* Subscribe CTA (for logged-in users or email signup) */}
-      <section className="container mx-auto px-4 mt-16">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-8 md:p-12 text-center">
-          {/* Background decoration */}
-          <div className="absolute inset-0 opacity-10">
-            <svg className="w-full h-full" viewBox="0 0 400 400">
-              <circle cx="50" cy="50" r="2" fill="white" />
-              <circle cx="150" cy="80" r="1.5" fill="white" />
-              <circle cx="300" cy="40" r="1" fill="white" />
-              <circle cx="350" cy="100" r="2" fill="white" />
-              <circle cx="80" cy="200" r="1.5" fill="white" />
-              <circle cx="250" cy="180" r="1" fill="white" />
-              <circle cx="380" cy="220" r="1.5" fill="white" />
-              <circle cx="100" cy="350" r="2" fill="white" />
-              <circle cx="200" cy="320" r="1" fill="white" />
-              <circle cx="320" cy="360" r="1.5" fill="white" />
-            </svg>
-          </div>
+      <FadeIn delay={0.2}>
+        <section className="container mx-auto px-4 mt-16">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-8 md:p-12 text-center">
+            {/* Background decoration */}
+            <div className="absolute inset-0 opacity-10">
+              <svg className="w-full h-full" viewBox="0 0 400 400">
+                <circle cx="50" cy="50" r="2" fill="white" />
+                <circle cx="150" cy="80" r="1.5" fill="white" />
+                <circle cx="300" cy="40" r="1" fill="white" />
+                <circle cx="350" cy="100" r="2" fill="white" />
+                <circle cx="80" cy="200" r="1.5" fill="white" />
+                <circle cx="250" cy="180" r="1" fill="white" />
+                <circle cx="380" cy="220" r="1.5" fill="white" />
+                <circle cx="100" cy="350" r="2" fill="white" />
+                <circle cx="200" cy="320" r="1" fill="white" />
+                <circle cx="320" cy="360" r="1.5" fill="white" />
+              </svg>
+            </div>
 
-          <div className="relative z-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-              Never Miss an Issue
-            </h2>
-            <p className="text-indigo-100 mb-6 max-w-xl mx-auto">
-              Join SPAC to receive the Celestial Observer directly in your inbox each month,
-              plus get access to member-exclusive content and events.
-            </p>
-            <a
-              href="/register"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white text-indigo-600 font-semibold hover:bg-indigo-50 transition-colors"
-            >
-              <Mail className="h-4 w-4" />
-              Become a Member
-            </a>
+            <div className="relative z-10">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                Never Miss an Issue
+              </h2>
+              <p className="text-indigo-100 mb-6 max-w-xl mx-auto">
+                Join SPAC to receive the Celestial Observer directly in your inbox each month,
+                plus get access to member-exclusive content and events.
+              </p>
+              <StarBorder
+                as="a"
+                href="/register"
+                color="#818cf8"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors"
+              >
+                <Mail className="h-4 w-4" />
+                Become a Member
+              </StarBorder>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </FadeIn>
     </div>
   );
 }

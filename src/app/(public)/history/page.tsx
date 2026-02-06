@@ -7,6 +7,7 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import nextDynamic from 'next/dynamic';
 import { ArrowRight, History, Star, Users } from 'lucide-react';
 import {
   HistoryHero,
@@ -14,6 +15,23 @@ import {
   NotableMembersSection,
   HistoricalPhotos,
 } from './HistoryClient';
+
+const GradientText = nextDynamic(
+  () => import('@/components/animated/gradient-text').then((mod) => mod.GradientText),
+  { ssr: false }
+);
+const FadeIn = nextDynamic(
+  () => import('@/components/animated/fade-in').then((mod) => mod.FadeIn),
+  { ssr: false }
+);
+const CountUp = nextDynamic(
+  () => import('@/components/animated/count-up').then((mod) => mod.CountUp),
+  { ssr: false }
+);
+const StarBorder = nextDynamic(
+  () => import('@/components/animated/star-border').then((mod) => mod.StarBorder),
+  { ssr: false }
+);
 
 export const metadata: Metadata = {
   title: 'Our History | SPAC',
@@ -167,35 +185,46 @@ export default function HistoryPage() {
       {/* Brief Intro */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4 text-center max-w-4xl">
-          <div className="inline-flex items-center gap-2 text-primary mb-4">
-            <History className="h-5 w-5" />
-            <span className="text-sm font-medium uppercase tracking-wider">
-              Our Story
-            </span>
-          </div>
-          <h2 className="text-3xl font-bold text-foreground mb-6">
-            A Legacy Written in Starlight
-          </h2>
-          <p className="text-xl text-muted-foreground">
-            From a small group of stargazers in 1927 to one of Florida&apos;s largest
-            and most active astronomy clubs, SPAC has been connecting people with
-            the cosmos for nearly a century. Our history is a testament to the
-            enduring human fascination with the night sky.
-          </p>
+          <FadeIn>
+            <div className="inline-flex items-center gap-2 text-primary mb-4">
+              <History className="h-5 w-5" />
+              <span className="text-sm font-medium uppercase tracking-wider">
+                Our Story
+              </span>
+            </div>
+            <h2 className="text-3xl font-bold text-foreground mb-6">
+              A Legacy Written in{' '}
+              <GradientText
+                colors={['#fcd34d', '#f59e0b', '#d97706', '#fcd34d']}
+                className="text-3xl font-bold"
+                animationSpeed={6}
+              >
+                Starlight
+              </GradientText>
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              From a small group of stargazers in 1927 to one of Florida&apos;s largest
+              and most active astronomy clubs, SPAC has been connecting people with
+              the cosmos for nearly a century. Our history is a testament to the
+              enduring human fascination with the night sky.
+            </p>
+          </FadeIn>
         </div>
       </section>
 
       {/* Interactive Timeline */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Our Journey Through Time
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Key moments that shaped the St. Petersburg Astronomy Club.
-            </p>
-          </div>
+          <FadeIn>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Our Journey Through Time
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Key moments that shaped the St. Petersburg Astronomy Club.
+              </p>
+            </div>
+          </FadeIn>
 
           <Timeline milestones={milestones} />
         </div>
@@ -204,20 +233,22 @@ export default function HistoryPage() {
       {/* Notable Members Section */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 text-primary mb-4">
-              <Star className="h-5 w-5" />
-              <span className="text-sm font-medium uppercase tracking-wider">
-                Honoring Our Legacy
-              </span>
+          <FadeIn>
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 text-primary mb-4">
+                <Star className="h-5 w-5" />
+                <span className="text-sm font-medium uppercase tracking-wider">
+                  Honoring Our Legacy
+                </span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Those Who Made Us Great
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Celebrating the members who have shaped SPAC through the decades.
+              </p>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Those Who Made Us Great
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Celebrating the members who have shaped SPAC through the decades.
-            </p>
-          </div>
+          </FadeIn>
 
           <NotableMembersSection members={notableMembers} />
         </div>
@@ -226,20 +257,22 @@ export default function HistoryPage() {
       {/* Photo Archive - Then vs Now */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 text-primary mb-4">
-              <Users className="h-5 w-5" />
-              <span className="text-sm font-medium uppercase tracking-wider">
-                Photo Archive
-              </span>
+          <FadeIn>
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 text-primary mb-4">
+                <Users className="h-5 w-5" />
+                <span className="text-sm font-medium uppercase tracking-wider">
+                  Photo Archive
+                </span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Then & Now
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                See how SPAC has evolved while staying true to our mission.
+              </p>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Then & Now
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              See how SPAC has evolved while staying true to our mission.
-            </p>
-          </div>
+          </FadeIn>
 
           <HistoricalPhotos photos={historicalPhotos} />
         </div>
@@ -249,22 +282,30 @@ export default function HistoryPage() {
       <section className="py-20 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-5xl font-bold text-primary mb-2">1927</div>
+            <FadeIn>
+              <div className="text-5xl font-bold text-primary mb-2">
+                <CountUp to={1927} duration={2.5} separator="," />
+              </div>
               <div className="text-muted-foreground">Year Founded</div>
-            </div>
-            <div>
-              <div className="text-5xl font-bold text-primary mb-2">97+</div>
+            </FadeIn>
+            <FadeIn delay={0.1}>
+              <div className="text-5xl font-bold text-primary mb-2">
+                <CountUp to={97} duration={2} />+
+              </div>
               <div className="text-muted-foreground">Years of Stargazing</div>
-            </div>
-            <div>
-              <div className="text-5xl font-bold text-primary mb-2">300+</div>
+            </FadeIn>
+            <FadeIn delay={0.2}>
+              <div className="text-5xl font-bold text-primary mb-2">
+                <CountUp to={300} duration={2} />+
+              </div>
               <div className="text-muted-foreground">Active Members</div>
-            </div>
-            <div>
-              <div className="text-5xl font-bold text-primary mb-2">50+</div>
+            </FadeIn>
+            <FadeIn delay={0.3}>
+              <div className="text-5xl font-bold text-primary mb-2">
+                <CountUp to={50} duration={2} />+
+              </div>
               <div className="text-muted-foreground">OBS Events</div>
-            </div>
+            </FadeIn>
           </div>
         </div>
       </section>
@@ -280,13 +321,15 @@ export default function HistoryPage() {
             mission of bringing astronomy to everyone.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
+            <StarBorder
+              as={Link}
               href="/register"
-              className="flex items-center gap-2 rounded-lg bg-primary px-8 py-4 text-lg font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:scale-105"
+              color="#818cf8"
+              className="flex items-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold text-foreground transition-all hover:scale-105"
             >
               Join SPAC Today
               <ArrowRight className="h-5 w-5" />
-            </Link>
+            </StarBorder>
             <Link
               href="/about"
               className="flex items-center gap-2 rounded-lg border border-border bg-background px-8 py-4 text-lg font-semibold text-foreground transition-all hover:bg-muted"
