@@ -51,6 +51,12 @@ credentials.json
 *.key
 secrets/
 
+# Legacy files - contain sensitive data
+Old PHP DB/
+Old SPAC PHP Site/
+SPAC Web Info.txt
+*.sql
+
 # Prisma
 prisma/migrations/.migration_lock.toml
 

@@ -41,7 +41,9 @@ const ALLOWED_DOMAINS = [
   'loremflickr.com',
   'via.placeholder.com',
   // Supabase storage
-  'kewstemxoxilubeafbut.supabase.co',
+  ...(process.env.NEXT_PUBLIC_SUPABASE_URL
+    ? [new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname]
+    : []),
 ];
 
 /**
