@@ -12,6 +12,14 @@ export const prisma = isStaticExport
   : (globalForPrisma.prisma ??
     new PrismaClient({
       log: ['error'],
+      // Pass URL explicitly so Prisma's engine uses the JS-inlined value
+      // (Amplify inlines env vars via next.config.js but Prisma's Rust binary
+      // reads OS env directly, not Node.js process.env)
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
     }));
 
 if (!isStaticExport && process.env.NODE_ENV !== 'production')
