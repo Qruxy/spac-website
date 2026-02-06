@@ -77,97 +77,97 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    // Development credentials provider (for testing without Cognito)
-    ...(process.env.NODE_ENV === 'development'
-      ? [
-          CredentialsProvider({
-            name: 'Development',
-            credentials: {
-              email: { label: 'Email / Username', type: 'text' },
-              password: { label: 'Password', type: 'password' },
-            },
-            async authorize(credentials, req) {
-              if (!credentials?.email) return null;
+    // Credentials provider (demo account + dev-mode DB login)
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email / Username', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
 
-              // Rate limiting for login attempts (by email)
-              const rateLimitKey = getRateLimitKey('login', credentials.email.toLowerCase());
-              if (!rateLimit(rateLimitKey, RATE_LIMITS.LOGIN.limit, RATE_LIMITS.LOGIN.windowMs)) {
-                console.warn(`Rate limit exceeded for login: ${credentials.email}`);
-                throw new Error('Too many login attempts. Please try again later.');
-              }
+        // Rate limiting for login attempts (by email)
+        const rateLimitKey = getRateLimitKey('login', credentials.email.toLowerCase());
+        if (!rateLimit(rateLimitKey, RATE_LIMITS.LOGIN.limit, RATE_LIMITS.LOGIN.windowMs)) {
+          console.warn(`Rate limit exceeded for login: ${credentials.email}`);
+          throw new Error('Too many login attempts. Please try again later.');
+        }
 
-              // Demo user with specific credentials
-              const DEMO_USER = {
-                username: 'demo',
-                password: 'Sp@C2025!',
-                email: 'demo@spac.local',
-                firstName: 'Demo',
-                lastName: 'Admin',
-                role: 'ADMIN' as const,
-              };
+        // Demo user with specific credentials
+        const DEMO_USER = {
+          username: 'demo',
+          password: 'Sp@C2025!',
+          email: 'demo@spac.local',
+          firstName: 'Demo',
+          lastName: 'Admin',
+          role: 'ADMIN' as const,
+        };
 
-              // Check if logging in as demo user
-              if (credentials.email === DEMO_USER.username || credentials.email === DEMO_USER.email) {
-                if (credentials.password !== DEMO_USER.password) {
-                  return null; // Invalid password
-                }
+        // Check if logging in as demo user
+        if (credentials.email === DEMO_USER.username || credentials.email === DEMO_USER.email) {
+          if (credentials.password !== DEMO_USER.password) {
+            return null;
+          }
 
-                // Find or create demo user
-                let user = await prisma.user.findUnique({
-                  where: { email: DEMO_USER.email },
-                  include: { membership: true },
-                });
+          // Find or create demo user in DB
+          let user = await prisma.user.findUnique({
+            where: { email: DEMO_USER.email },
+            include: { membership: true },
+          });
 
-                if (!user) {
-                  user = await prisma.user.create({
-                    data: {
-                      email: DEMO_USER.email,
-                      firstName: DEMO_USER.firstName,
-                      lastName: DEMO_USER.lastName,
-                      role: DEMO_USER.role,
-                    },
-                    include: { membership: true },
-                  });
-                }
+          if (!user) {
+            user = await prisma.user.create({
+              data: {
+                email: DEMO_USER.email,
+                firstName: DEMO_USER.firstName,
+                lastName: DEMO_USER.lastName,
+                role: DEMO_USER.role,
+              },
+              include: { membership: true },
+            });
+          }
 
-                return {
-                  id: user.id,
-                  email: user.email,
-                  name: `${user.firstName} ${user.lastName}`,
-                  role: user.role,
-                  qrUuid: user.qrUuid,
-                  membershipType: user.membership?.type || null,
-                  membershipStatus: user.membership?.status || null,
-                  stripeCustomerId: user.stripeCustomerId,
-                };
-              }
+          return {
+            id: user.id,
+            email: user.email,
+            name: `${user.firstName} ${user.lastName}`,
+            role: user.role,
+            qrUuid: user.qrUuid,
+            membershipType: user.membership?.type || null,
+            membershipStatus: user.membership?.status || null,
+            stripeCustomerId: user.stripeCustomerId,
+          };
+        }
 
-              // Find existing user (only allow existing users in dev mode - no auto-creation)
-              const user = await prisma.user.findUnique({
-                where: { email: credentials.email.toLowerCase() },
-                include: { membership: true },
-              });
+        // Development only: allow existing DB users to login by email
+        // (no password check - only for local development)
+        if (process.env.NODE_ENV === 'development') {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email.toLowerCase() },
+            include: { membership: true },
+          });
 
-              if (!user) {
-                // Don't auto-create users - only allow existing DB users to login
-                console.warn(`Dev login attempted for non-existent user: ${credentials.email}`);
-                return null;
-              }
+          if (!user) {
+            console.warn(`Dev login attempted for non-existent user: ${credentials.email}`);
+            return null;
+          }
 
-              return {
-                id: user.id,
-                email: user.email,
-                name: `${user.firstName} ${user.lastName}`,
-                role: user.role,
-                qrUuid: user.qrUuid,
-                membershipType: user.membership?.type || null,
-                membershipStatus: user.membership?.status || null,
-                stripeCustomerId: user.stripeCustomerId,
-              };
-            },
-          }),
-        ]
-      : []),
+          return {
+            id: user.id,
+            email: user.email,
+            name: `${user.firstName} ${user.lastName}`,
+            role: user.role,
+            qrUuid: user.qrUuid,
+            membershipType: user.membership?.type || null,
+            membershipStatus: user.membership?.status || null,
+            stripeCustomerId: user.stripeCustomerId,
+          };
+        }
+
+        return null;
+      },
+    }),
   ],
 
   callbacks: {
