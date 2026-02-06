@@ -16,22 +16,7 @@ export { authOptions } from './auth.config';
  * Cached per-request to prevent duplicate DB queries
  */
 export const getSession = cache(async () => {
-  if (process.env.GITHUB_PAGES === 'true') {
-    // Return demo session for static export builds so pages render with valid data.
-    // Runtime auth is handled client-side by DemoAuthGuard.
-    return {
-      user: {
-        id: 'demo-user-001',
-        name: 'Demo Admin',
-        email: 'demo@spac.local',
-        role: 'ADMIN' as const,
-        membershipType: 'INDIVIDUAL',
-        membershipStatus: 'ACTIVE',
-        qrUuid: 'demo-0001-uuid',
-      },
-      expires: new Date(Date.now() + 86400000).toISOString(),
-    };
-  }
+  if (process.env.GITHUB_PAGES === 'true') return null;
   return getServerSession(authOptions);
 });
 

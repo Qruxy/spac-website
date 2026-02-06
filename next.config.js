@@ -4,22 +4,18 @@ const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 
 // For static export (GitHub Pages), remove routes incompatible with static hosting:
 // - API routes (need server runtime)
-// - Email verification (requires server)
+// - Auth-gated sections (dashboard, admin, verify)
 // - Dynamic [param] page directories (modules fail to load without server deps)
-// Dashboard and admin are kept for demo auth (DemoAuthGuard + mock Prisma)
 if (isGitHubPages) {
   const fs = require('fs');
   const path = require('path');
 
-  // Directories to completely remove (keep dashboard/admin for demo auth)
+  // Directories to completely remove
   const dirsToRemove = [
     'src/app/api',
+    'src/app/(dashboard)',
+    'src/app/admin',
     'src/app/verify',
-    // Dashboard sub-pages that use headers() or other dynamic server features
-    'src/app/(dashboard)/leadership',
-    'src/app/(dashboard)/my-offers',
-    'src/app/(dashboard)/obs-admin',
-    'src/app/(dashboard)/outreach',
   ];
   for (const dir of dirsToRemove) {
     const fullPath = path.join(__dirname, dir);
@@ -46,23 +42,6 @@ if (isGitHubPages) {
     }
   }
   removeDynamicDirs(path.join(__dirname, 'src', 'app'));
-
-  // Replace admin [[...slug]] catch-all with simple client page
-  // (catch-all routes need generateStaticParams which fails in static export)
-  const adminSlugDir = path.join(__dirname, 'src/app/admin/[[...slug]]');
-  if (fs.existsSync(adminSlugDir)) {
-    fs.rmSync(adminSlugDir, { recursive: true, force: true });
-    console.log('[GitHub Pages] Replaced admin catch-all with simple page');
-  }
-  const adminPagePath = path.join(__dirname, 'src/app/admin/page.tsx');
-  fs.writeFileSync(adminPagePath, [
-    "'use client';",
-    "import { AdminWrapper } from '@/components/admin/AdminWrapper';",
-    "export default function AdminPage() {",
-    "  return <div className=\"h-screen\"><AdminWrapper /></div>;",
-    "}",
-    "",
-  ].join('\n'));
 }
 
 // Security headers for all routes
@@ -108,9 +87,6 @@ const nextConfig = {
     assetPrefix: '/spac-website/',
     typescript: { ignoreBuildErrors: true },
     eslint: { ignoreDuringBuilds: true },
-    env: {
-      NEXT_PUBLIC_DEMO_MODE: 'true',
-    },
   }),
   images: {
     // Disable image optimization for static export
