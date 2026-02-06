@@ -49,33 +49,36 @@ declare module 'next-auth/jwt' {
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // AWS Cognito Provider (primary)
-    CognitoProvider({
-      clientId: process.env.AUTH_COGNITO_ID!,
-      clientSecret: process.env.AUTH_COGNITO_SECRET!,
-      issuer: process.env.AUTH_COGNITO_ISSUER,
-      profile(profile) {
-        // Map Cognito groups to roles
-        const groups = profile['cognito:groups'] || [];
-        let role: 'MEMBER' | 'MODERATOR' | 'ADMIN' = 'MEMBER';
-        if (groups.includes('admins')) {
-          role = 'ADMIN';
-        } else if (groups.includes('moderators')) {
-          role = 'MODERATOR';
-        }
+    // AWS Cognito Provider (only if configured)
+    ...(process.env.AUTH_COGNITO_ID && process.env.AUTH_COGNITO_SECRET
+      ? [
+          CognitoProvider({
+            clientId: process.env.AUTH_COGNITO_ID,
+            clientSecret: process.env.AUTH_COGNITO_SECRET,
+            issuer: process.env.AUTH_COGNITO_ISSUER,
+            profile(profile) {
+              const groups = profile['cognito:groups'] || [];
+              let role: 'MEMBER' | 'MODERATOR' | 'ADMIN' = 'MEMBER';
+              if (groups.includes('admins')) {
+                role = 'ADMIN';
+              } else if (groups.includes('moderators')) {
+                role = 'MODERATOR';
+              }
 
-        return {
-          id: profile.sub,
-          email: profile.email,
-          name: `${profile.given_name || ''} ${profile.family_name || ''}`.trim() || profile.email,
-          role,
-          qrUuid: '', // Will be fetched from DB
-          membershipType: null,
-          membershipStatus: null,
-          stripeCustomerId: null,
-        };
-      },
-    }),
+              return {
+                id: profile.sub,
+                email: profile.email,
+                name: `${profile.given_name || ''} ${profile.family_name || ''}`.trim() || profile.email,
+                role,
+                qrUuid: '',
+                membershipType: null,
+                membershipStatus: null,
+                stripeCustomerId: null,
+              };
+            },
+          }),
+        ]
+      : []),
 
     // Credentials provider (demo account + dev-mode DB login)
     CredentialsProvider({
