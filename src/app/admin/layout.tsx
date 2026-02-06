@@ -3,10 +3,10 @@
  *
  * Minimal layout for admin panel - React Admin provides its own UI.
  * Includes GlobalDock for navigation back to public/dashboard areas.
- * Server-side auth check ensures only admins can access.
+ * In static export (demo mode), uses client-side auth guard.
+ * In production, uses server-side auth check.
  */
 
-import { requireAdmin } from '@/lib/auth';
 import { GlobalDock } from '@/components/layout';
 import { DemoAuthGuard } from '@/components/demo/DemoAuthGuard';
 
@@ -17,8 +17,11 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Server-side auth check - redirects non-admins
-  await requireAdmin();
+  // Server-side auth check (skipped in demo mode where getSession returns demo user)
+  if (!isDemoMode) {
+    const { requireAdmin } = await import('@/lib/auth');
+    await requireAdmin();
+  }
 
   return (
     <div className="admin-root pb-20">

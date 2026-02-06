@@ -31,8 +31,6 @@ if (isGitHubPages) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.isDirectory()) {
         const fullPath = path.join(dir, entry.name);
-        // Skip admin directory (has [[...slug]] catch-all needed for demo)
-        if (entry.name === 'admin') continue;
         if (entry.name.startsWith('[')) {
           fs.rmSync(fullPath, { recursive: true, force: true });
           console.log(`[GitHub Pages] Removed dynamic route: ${fullPath.replace(__dirname + '/', '')}`);
@@ -43,6 +41,23 @@ if (isGitHubPages) {
     }
   }
   removeDynamicDirs(path.join(__dirname, 'src', 'app'));
+
+  // Replace admin [[...slug]] catch-all with simple client page
+  // (catch-all routes need generateStaticParams which fails in static export)
+  const adminSlugDir = path.join(__dirname, 'src/app/admin/[[...slug]]');
+  if (fs.existsSync(adminSlugDir)) {
+    fs.rmSync(adminSlugDir, { recursive: true, force: true });
+    console.log('[GitHub Pages] Replaced admin catch-all with simple page');
+  }
+  const adminPagePath = path.join(__dirname, 'src/app/admin/page.tsx');
+  fs.writeFileSync(adminPagePath, [
+    "'use client';",
+    "import { AdminWrapper } from '@/components/admin/AdminWrapper';",
+    "export default function AdminPage() {",
+    "  return <div className=\"h-screen\"><AdminWrapper /></div>;",
+    "}",
+    "",
+  ].join('\n'));
 }
 
 // Security headers for all routes
