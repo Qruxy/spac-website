@@ -2,6 +2,8 @@
  * NextAuth.js API Route Handler
  */
 
+export const dynamic = 'force-dynamic';
+
 import NextAuth from 'next-auth';
 import { authOptions } from '@/lib/auth/auth.config';
 
