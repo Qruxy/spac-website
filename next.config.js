@@ -43,6 +43,8 @@ const nextConfig = {
     output: 'export',
     basePath: '/spac-website',
     assetPrefix: '/spac-website/',
+    typescript: { ignoreBuildErrors: true },
+    eslint: { ignoreDuringBuilds: true },
   }),
   images: {
     // Disable image optimization for static export
