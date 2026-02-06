@@ -15,6 +15,11 @@ if (isGitHubPages) {
   const dirsToRemove = [
     'src/app/api',
     'src/app/verify',
+    // Dashboard sub-pages that use headers() or other dynamic server features
+    'src/app/(dashboard)/leadership',
+    'src/app/(dashboard)/my-offers',
+    'src/app/(dashboard)/obs-admin',
+    'src/app/(dashboard)/outreach',
   ];
   for (const dir of dirsToRemove) {
     const fullPath = path.join(__dirname, dir);
