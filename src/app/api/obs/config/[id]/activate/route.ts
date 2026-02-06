@@ -1,3 +1,4 @@
+export function generateStaticParams() { return []; }
 /**
  * Activate OBS Config API
  * 

@@ -1,3 +1,4 @@
+export function generateStaticParams() { return []; }
 /**
  * Admin Single Board Member API
  *

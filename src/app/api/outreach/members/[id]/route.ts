@@ -1,3 +1,4 @@
+export function generateStaticParams() { return []; }
 /**
  * Single Outreach Committee Member API
  * 

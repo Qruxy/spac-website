@@ -1,3 +1,4 @@
+export function generateStaticParams() { return []; }
 /**
  * Single Meeting Minutes API
  * 
