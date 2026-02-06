@@ -1028,16 +1028,16 @@ const EventList = () => (
   </List>
 );
 
-// Sticky toolbars - positioned above the GlobalDock (fixed bottom nav)
+// Sticky toolbars positioned above the GlobalDock (fixed bottom nav ~80px)
 const CreateEventToolbar = () => (
   <Toolbar sx={{ position: 'sticky', bottom: '80px', zIndex: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
-    <SaveButton label="Create Event" />
+    <SaveButton label="Create Event" alwaysEnable />
   </Toolbar>
 );
 
 const EditEventToolbar = () => (
   <Toolbar sx={{ position: 'sticky', bottom: '80px', zIndex: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
-    <SaveButton label="Save Changes" />
+    <SaveButton label="Save Changes" alwaysEnable />
   </Toolbar>
 );
 
