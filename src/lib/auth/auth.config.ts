@@ -272,5 +272,5 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
-  debug: true, // Temporarily enabled for deployment debugging
+  debug: process.env.NODE_ENV === 'development',
 };

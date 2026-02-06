@@ -80,6 +80,21 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['three'],
+  // Inline server env vars at build time for Amplify
+  // (Amplify doesn't inject branch env vars into the runtime Lambda)
+  ...(!isGitHubPages && {
+    env: {
+      DATABASE_URL: process.env.DATABASE_URL,
+      DIRECT_URL: process.env.DIRECT_URL,
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
+      S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
+      S3_REGION: process.env.S3_REGION,
+      S3_BUCKET: process.env.S3_BUCKET,
+      CLOUDFRONT_DOMAIN: process.env.CLOUDFRONT_DOMAIN,
+    },
+  }),
   // GitHub Pages static export settings
   ...(isGitHubPages && {
     output: 'export',
