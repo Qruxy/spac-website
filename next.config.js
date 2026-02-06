@@ -2,12 +2,15 @@
 
 const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 
-// For static export (GitHub Pages), remove server-dependent routes
-// API routes can't be statically exported, and auth-gated pages (dashboard, admin,
-// leadership, verify) won't function without a server. Only public pages are needed for demo.
+// For static export (GitHub Pages), remove routes incompatible with static hosting:
+// - API routes (need server runtime)
+// - Auth-gated sections (dashboard, admin, verify)
+// - Dynamic [param] page directories (modules fail to load without server deps)
 if (isGitHubPages) {
   const fs = require('fs');
   const path = require('path');
+
+  // Directories to completely remove
   const dirsToRemove = [
     'src/app/api',
     'src/app/(dashboard)',
@@ -18,9 +21,27 @@ if (isGitHubPages) {
     const fullPath = path.join(__dirname, dir);
     if (fs.existsSync(fullPath)) {
       fs.rmSync(fullPath, { recursive: true, force: true });
-      console.log(`[GitHub Pages] Removed ${dir}/ (server-dependent)`);
+      console.log(`[GitHub Pages] Removed ${dir}/`);
     }
   }
+
+  // Also remove dynamic [param] directories from public routes
+  // (they have server-side deps that fail during static collection)
+  function removeDynamicDirs(dir) {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.name.startsWith('[')) {
+          fs.rmSync(fullPath, { recursive: true, force: true });
+          console.log(`[GitHub Pages] Removed dynamic route: ${fullPath.replace(__dirname + '/', '')}`);
+        } else {
+          removeDynamicDirs(fullPath);
+        }
+      }
+    }
+  }
+  removeDynamicDirs(path.join(__dirname, 'src', 'app'));
 }
 
 // Security headers for all routes
