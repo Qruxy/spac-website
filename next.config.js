@@ -2,14 +2,24 @@
 
 const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 
-// For static export (GitHub Pages), remove API routes since they can't be statically exported
+// For static export (GitHub Pages), remove server-dependent routes
+// API routes can't be statically exported, and auth-gated pages (dashboard, admin,
+// leadership, verify) won't function without a server. Only public pages are needed for demo.
 if (isGitHubPages) {
   const fs = require('fs');
   const path = require('path');
-  const apiDir = path.join(__dirname, 'src', 'app', 'api');
-  if (fs.existsSync(apiDir)) {
-    fs.rmSync(apiDir, { recursive: true, force: true });
-    console.log('[GitHub Pages] Removed src/app/api/ (not compatible with static export)');
+  const dirsToRemove = [
+    'src/app/api',
+    'src/app/(dashboard)',
+    'src/app/admin',
+    'src/app/verify',
+  ];
+  for (const dir of dirsToRemove) {
+    const fullPath = path.join(__dirname, dir);
+    if (fs.existsSync(fullPath)) {
+      fs.rmSync(fullPath, { recursive: true, force: true });
+      console.log(`[GitHub Pages] Removed ${dir}/ (server-dependent)`);
+    }
   }
 }
 
