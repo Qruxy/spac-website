@@ -1,4 +1,3 @@
-export function generateStaticParams() { return []; }
 /**
  * NextAuth.js API Route Handler
  */
