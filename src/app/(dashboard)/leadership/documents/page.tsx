@@ -37,12 +37,17 @@ export default async function DocumentsPage() {
 
   const documents = await getDocuments();
 
-  // Group by category
-  const documentsByCategory = documents.reduce((acc, doc) => {
+  // Group by category (serialize dates for client component)
+  const serialized = documents.map(doc => ({
+    ...doc,
+    createdAt: doc.createdAt.toISOString(),
+    updatedAt: doc.updatedAt.toISOString(),
+  }));
+  const documentsByCategory = serialized.reduce((acc, doc) => {
     if (!acc[doc.category]) acc[doc.category] = [];
     acc[doc.category].push(doc);
     return acc;
-  }, {} as Record<string, typeof documents>);
+  }, {} as Record<string, typeof serialized>);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 py-8">
