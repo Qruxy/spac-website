@@ -2,6 +2,17 @@
 
 const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 
+// For static export (GitHub Pages), remove API routes since they can't be statically exported
+if (isGitHubPages) {
+  const fs = require('fs');
+  const path = require('path');
+  const apiDir = path.join(__dirname, 'src', 'app', 'api');
+  if (fs.existsSync(apiDir)) {
+    fs.rmSync(apiDir, { recursive: true, force: true });
+    console.log('[GitHub Pages] Removed src/app/api/ (not compatible with static export)');
+  }
+}
+
 // Security headers for all routes
 const securityHeaders = [
   {
@@ -121,35 +132,37 @@ const nextConfig = {
     // Remove console.log in production
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
-  // Performance and security headers
-  async headers() {
-    return [
-      // Apply security headers to all routes
-      {
-        source: '/:path*',
-        headers: securityHeaders,
-      },
-      // Cache static assets
-      {
-        source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp|avif|woff|woff2)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
-        source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-    ];
-  },
+  // Performance and security headers (not used in static export)
+  ...(isGitHubPages ? {} : {
+    async headers() {
+      return [
+        // Apply security headers to all routes
+        {
+          source: '/:path*',
+          headers: securityHeaders,
+        },
+        // Cache static assets
+        {
+          source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp|avif|woff|woff2)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'public, max-age=31536000, immutable',
+            },
+          ],
+        },
+        {
+          source: '/_next/static/:path*',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'public, max-age=31536000, immutable',
+            },
+          ],
+        },
+      ];
+    },
+  }),
 };
 
 module.exports = nextConfig;
