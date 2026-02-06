@@ -27,6 +27,10 @@ export const metadata: Metadata = {
   description: 'Verify SPAC membership status',
 };
 
+export async function generateStaticParams() {
+  return [];
+}
+
 export default async function VerifyPage({ params }: VerifyPageProps) {
   const { uuid } = await params;
 

@@ -25,6 +25,10 @@ import {
 } from 'lucide-react';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { prisma } from '@/lib/db';
+
+export async function generateStaticParams() {
+  return [];
+}
 import { getSession } from '@/lib/auth';
 import { MakeOfferButton } from './make-offer-button';
 import { ImageGallery } from './image-gallery';

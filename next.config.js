@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 
+const isGitHubPages = process.env.GITHUB_PAGES === 'true';
+
 // Security headers for all routes
 const securityHeaders = [
   {
@@ -36,7 +38,15 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['three'],
+  // GitHub Pages static export settings
+  ...(isGitHubPages && {
+    output: 'export',
+    basePath: '/spac-website',
+    assetPrefix: '/spac-website/',
+  }),
   images: {
+    // Disable image optimization for static export
+    ...(isGitHubPages && { unoptimized: true }),
     // Enable AVIF for better compression (30-50% smaller than WebP)
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [

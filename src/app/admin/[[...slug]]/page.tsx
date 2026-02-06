@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   description: 'SPAC Administration Dashboard',
 };
 
+export async function generateStaticParams() {
+  return [];
+}
+
 export default async function AdminPage() {
   const session = await getSession();
 

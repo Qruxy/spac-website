@@ -26,6 +26,10 @@ import { EventRegistrationButton } from './registration-button';
 // ISR with 2-minute revalidation for event updates
 export const revalidate = 120;
 
+export async function generateStaticParams() {
+  return [];
+}
+
 interface EventPageProps {
   params: Promise<{ slug: string }>;
 }

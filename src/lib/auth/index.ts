@@ -16,6 +16,7 @@ export { authOptions } from './auth.config';
  * Cached per-request to prevent duplicate DB queries
  */
 export const getSession = cache(async () => {
+  if (process.env.GITHUB_PAGES === 'true') return null;
   return getServerSession(authOptions);
 });
 

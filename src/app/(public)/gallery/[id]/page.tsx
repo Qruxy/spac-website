@@ -28,6 +28,12 @@ import { getCachedPhoto, getCachedRelatedPhotos, getCachedPhotoIds } from '@/lib
 // Enable ISR with 60-second revalidation
 export const revalidate = 60;
 
+export async function generateStaticParams() {
+  if (process.env.GITHUB_PAGES === 'true') return [];
+  const ids = await getCachedPhotoIds();
+  return ids.map((id: string) => ({ id }));
+}
+
 // Pre-generate the most popular photos at build time
 export async function generateStaticParams() {
   try {

@@ -17,6 +17,10 @@ export const metadata: Metadata = {
   description: 'Edit your classified listing',
 };
 
+export async function generateStaticParams() {
+  return [];
+}
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
