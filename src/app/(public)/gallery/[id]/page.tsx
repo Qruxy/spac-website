@@ -34,16 +34,6 @@ export async function generateStaticParams() {
   return ids.map((id: string) => ({ id }));
 }
 
-// Pre-generate the most popular photos at build time
-export async function generateStaticParams() {
-  try {
-    const ids = await getCachedPhotoIds();
-    return ids.map((id) => ({ id }));
-  } catch {
-    return [];
-  }
-}
-
 interface PageProps {
   params: Promise<{ id: string }>;
 }

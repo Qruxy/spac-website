@@ -53,29 +53,6 @@ export async function generateMetadata({
   };
 }
 
-// Generate static params for known events
-export async function generateStaticParams() {
-  // Skip during build if no database connection
-  if (!process.env.DATABASE_URL) {
-    return [];
-  }
-
-  try {
-    const events = await prisma.event.findMany({
-      where: { status: 'PUBLISHED' },
-      select: { slug: true },
-      take: 20,
-    });
-
-    return events.map((event) => ({
-      slug: event.slug,
-    }));
-  } catch {
-    // Return empty array if database not available during build
-    return [];
-  }
-}
-
 export default async function EventPage({ params }: EventPageProps) {
   const { slug } = await params;
   const session = await getSession();

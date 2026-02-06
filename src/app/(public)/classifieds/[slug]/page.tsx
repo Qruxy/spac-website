@@ -25,10 +25,6 @@ import {
 } from 'lucide-react';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { prisma } from '@/lib/db';
-
-export async function generateStaticParams() {
-  return [];
-}
 import { getSession } from '@/lib/auth';
 import { MakeOfferButton } from './make-offer-button';
 import { ImageGallery } from './image-gallery';
@@ -40,23 +36,8 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-// Generate static params for popular listings
 export async function generateStaticParams() {
-  try {
-    const listings = await prisma.listing.findMany({
-      where: { status: 'ACTIVE' },
-      select: { slug: true },
-      take: 20,
-      orderBy: { viewCount: 'desc' },
-    });
-
-    return listings.map((listing) => ({
-      slug: listing.slug,
-    }));
-  } catch {
-    // Return empty array if database is not available during build
-    return [];
-  }
+  return [];
 }
 
 // Generate metadata
