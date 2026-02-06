@@ -1,4 +1,4 @@
-export function generateStaticParams() { return []; }
+export const dynamic = 'force-dynamic';
 /**
  * Single OBS Config API
  * 

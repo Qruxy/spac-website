@@ -39,7 +39,6 @@ import {
   Layout,
   AppBar,
   TitlePortal,
-  Menu,
   useRedirect,
   FormDataConsumer,
   useNotify,
@@ -60,8 +59,10 @@ import {
   Avatar,
   IconButton,
   Tooltip,
+  Button,
   alpha,
 } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 import {
   People as UsersIcon,
   Event as EventsIcon,
@@ -281,25 +282,8 @@ const adminTheme = createTheme({
     },
     MuiDrawer: {
       styleOverrides: {
-        paper: {
-          background: 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 100%)',
-          borderRight: '1px solid rgba(129, 140, 248, 0.15)',
-        },
-      },
-    },
-    MuiListItemButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          margin: '4px 8px',
-          '&.Mui-selected': {
-            background: 'linear-gradient(135deg, rgba(129, 140, 248, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%)',
-            borderLeft: '3px solid #818cf8',
-          },
-          '&:hover': {
-            background: 'rgba(129, 140, 248, 0.1)',
-          },
-        },
+        root: { display: 'none' },
+        paper: { display: 'none' },
       },
     },
   },
@@ -591,41 +575,97 @@ const Dashboard = () => {
 // Custom App Bar
 // ============================================
 
-const CustomAppBar = () => (
-  <AppBar>
-    <TitlePortal />
-    <Box sx={{ flex: 1 }} />
-    <Tooltip title="Back to Main Site">
-      <IconButton color="inherit" href="/dashboard" sx={{ mr: 1 }}>
-        <HomeIcon />
-      </IconButton>
-    </Tooltip>
-  </AppBar>
-);
+const navItems = [
+  { path: '/', label: 'Dashboard', icon: <DashboardIcon /> },
+  { path: '/users', label: 'Members', icon: <UsersIcon /> },
+  { path: '/events', label: 'Events', icon: <EventsIcon /> },
+  { path: '/memberships', label: 'Memberships', icon: <MembershipIcon /> },
+  { path: '/registrations', label: 'Registrations', icon: <RegistrationIcon /> },
+  { path: '/media', label: 'Media', icon: <MediaIcon /> },
+  { path: '/listings', label: 'Classifieds', icon: <ListingsIcon /> },
+  { path: '/board-members', label: 'Board', icon: <BoardIcon /> },
+];
+
+const CustomAppBar = () => {
+  const location = useLocation();
+  const redirect = useRedirect();
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
+  return (
+    <AppBar>
+      <TitlePortal />
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 0.5,
+          flex: 1,
+          overflowX: 'auto',
+          mx: 2,
+          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
+        }}
+      >
+        {navItems.map((item) => (
+          <Button
+            key={item.path}
+            startIcon={item.icon}
+            onClick={() => redirect(item.path)}
+            size="small"
+            sx={{
+              color: isActive(item.path) ? '#fff' : 'rgba(255,255,255,0.7)',
+              background: isActive(item.path)
+                ? 'linear-gradient(135deg, rgba(129, 140, 248, 0.3), rgba(99, 102, 241, 0.2))'
+                : 'transparent',
+              borderRadius: 2,
+              px: 1.5,
+              py: 0.75,
+              minWidth: 'auto',
+              whiteSpace: 'nowrap',
+              fontSize: '0.8rem',
+              fontWeight: isActive(item.path) ? 600 : 400,
+              '&:hover': {
+                background: 'rgba(129, 140, 248, 0.15)',
+              },
+            }}
+          >
+            {item.label}
+          </Button>
+        ))}
+      </Box>
+      <Tooltip title="Back to Main Site">
+        <IconButton color="inherit" href="/dashboard" sx={{ mr: 1 }}>
+          <HomeIcon />
+        </IconButton>
+      </Tooltip>
+    </AppBar>
+  );
+};
 
 // ============================================
 // Custom Menu
 // ============================================
 
-const CustomMenu = () => (
-  <Menu>
-    <Menu.DashboardItem primaryText="Dashboard" leftIcon={<DashboardIcon />} />
-    <Menu.ResourceItem name="users" primaryText="Members" leftIcon={<UsersIcon />} />
-    <Menu.ResourceItem name="events" primaryText="Events" leftIcon={<EventsIcon />} />
-    <Menu.ResourceItem name="memberships" primaryText="Memberships" leftIcon={<MembershipIcon />} />
-    <Menu.ResourceItem name="registrations" primaryText="Registrations" leftIcon={<RegistrationIcon />} />
-    <Menu.ResourceItem name="media" primaryText="Media Gallery" leftIcon={<MediaIcon />} />
-    <Menu.ResourceItem name="listings" primaryText="Classifieds" leftIcon={<ListingsIcon />} />
-    <Menu.ResourceItem name="board-members" primaryText="Board of Directors" leftIcon={<BoardIcon />} />
-  </Menu>
-);
+const CustomMenu = () => null;
 
 // ============================================
 // Custom Layout
 // ============================================
 
 const CustomLayout = (props: object) => (
-  <Layout {...props} appBar={CustomAppBar} menu={CustomMenu} />
+  <Layout
+    {...props}
+    appBar={CustomAppBar}
+    menu={CustomMenu}
+    sx={{
+      '& .RaSidebar-fixed': { display: 'none' },
+      '& .RaSidebar-root': { display: 'none', width: 0 },
+      '& .RaLayout-content': { marginLeft: '0 !important' },
+    }}
+  />
 );
 
 // ============================================

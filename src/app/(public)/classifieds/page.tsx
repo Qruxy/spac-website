@@ -11,7 +11,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 import {
   ShoppingBag,
   Filter,
