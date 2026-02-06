@@ -7,7 +7,8 @@
 
 import type { Metadata } from 'next';
 import nextDynamic from 'next/dynamic';
-import { Mail, Star, Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import { NewsletterClient } from './newsletter-client';
 
@@ -23,10 +24,6 @@ const CountUp = nextDynamic(
   () => import('@/components/animated/count-up').then((mod) => mod.CountUp),
   { ssr: false }
 );
-const StarBorder = nextDynamic(
-  () => import('@/components/animated/star-border').then((mod) => mod.StarBorder),
-  { ssr: false }
-);
 
 export const metadata: Metadata = {
   title: 'Celestial Observer Newsletter Archive | SPAC',
@@ -34,26 +31,16 @@ export const metadata: Metadata = {
     'Browse the complete archive of the Celestial Observer, the official newsletter of the St. Petersburg Astronomy Club.',
 };
 
-// ISR with 5-minute revalidation
 export const revalidate = 300;
 
 const ITEMS_PER_PAGE = 12;
 
 async function getNewsletters() {
   try {
-    // Run all queries in parallel using $transaction for performance
     const [newsletters, total, yearsResult] = await prisma.$transaction([
-      // Get newsletters
       prisma.clubDocument.findMany({
-        where: {
-          category: 'NEWSLETTER',
-          isPublic: true,
-        },
-        orderBy: [
-          { year: 'desc' },
-          { month: 'desc' },
-          { createdAt: 'desc' },
-        ],
+        where: { category: 'NEWSLETTER', isPublic: true },
+        orderBy: [{ year: 'desc' }, { month: 'desc' }, { createdAt: 'desc' }],
         take: ITEMS_PER_PAGE,
         select: {
           id: true,
@@ -68,20 +55,11 @@ async function getNewsletters() {
           createdAt: true,
         },
       }),
-      // Get total count
       prisma.clubDocument.count({
-        where: {
-          category: 'NEWSLETTER',
-          isPublic: true,
-        },
+        where: { category: 'NEWSLETTER', isPublic: true },
       }),
-      // Get distinct years
       prisma.clubDocument.findMany({
-        where: {
-          category: 'NEWSLETTER',
-          isPublic: true,
-          year: { not: null },
-        },
+        where: { category: 'NEWSLETTER', isPublic: true, year: { not: null } },
         select: { year: true },
         distinct: ['year'],
         orderBy: { year: 'desc' },
@@ -92,7 +70,6 @@ async function getNewsletters() {
       .map((r) => r.year)
       .filter((y): y is number => y !== null);
 
-    // Transform newsletters with month names
     const transformedNewsletters = newsletters.map((newsletter) => ({
       id: newsletter.id,
       title: newsletter.title,
@@ -117,12 +94,7 @@ async function getNewsletters() {
     };
   } catch (error) {
     console.error('Failed to fetch newsletters:', error);
-    return {
-      newsletters: [],
-      total: 0,
-      totalPages: 0,
-      years: [],
-    };
+    return { newsletters: [], total: 0, totalPages: 0, years: [] };
   }
 }
 
@@ -130,70 +102,57 @@ export default async function NewsletterPage() {
   const { newsletters, total, totalPages, years } = await getNewsletters();
 
   return (
-    <div className="py-12">
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 mb-12">
-        <FadeIn>
-          <div className="text-center max-w-3xl mx-auto">
-            {/* Newsletter Icon */}
-            <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30">
-                <Mail className="h-12 w-12 text-indigo-400" />
-              </div>
-              {/* Decorative stars */}
-              <Star className="absolute -top-2 -right-2 h-4 w-4 text-yellow-400 fill-yellow-400" />
-              <Sparkles className="absolute -bottom-1 -left-2 h-4 w-4 text-purple-400" />
-            </div>
-          </div>
+    <div className="min-h-screen">
+      {/* Hero */}
+      <section className="relative py-32 lg:py-44">
+        <div className="container mx-auto px-4">
+          <FadeIn>
+            <div className="text-center max-w-4xl mx-auto">
+              <p className="text-lg text-muted-foreground mb-4">Official Newsletter of SPAC</p>
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-foreground tracking-tight">
+                The{' '}
+                <GradientText
+                  colors={['#818cf8', '#a78bfa', '#818cf8']}
+                  className="text-5xl md:text-7xl lg:text-8xl font-bold"
+                  animationSpeed={8}
+                >
+                  Celestial Observer
+                </GradientText>
+              </h1>
+              <p className="mt-8 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Explore our archive of monthly newsletters featuring club news, observing reports,
+                member articles, and celestial event previews.
+              </p>
 
-          {/* Title */}
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 flex items-center justify-center gap-3 flex-wrap">
-            <span>The</span>
-            <GradientText
-              colors={['#818cf8', '#c084fc', '#f472b6', '#818cf8']}
-              className="text-4xl md:text-5xl font-bold"
-              animationSpeed={6}
-            >
-              Celestial Observer
-            </GradientText>
-          </h1>
-
-          <p className="text-xl text-muted-foreground mb-2">
-            Official Newsletter of the St. Petersburg Astronomy Club
-          </p>
-          <p className="text-muted-foreground">
-            Explore our archive of monthly newsletters featuring club news, observing reports,
-            member articles, and celestial event previews.
-          </p>
-
-          {/* Stats */}
-          {total > 0 && (
-            <div className="flex items-center justify-center gap-8 mt-8">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-primary"><CountUp to={total} duration={2} /></p>
-                <p className="text-sm text-muted-foreground">Issues</p>
-              </div>
-              {years.length > 0 && (
-                <>
-                  <div className="h-8 w-px bg-border" />
+              {total > 0 && (
+                <div className="flex items-center justify-center gap-8 mt-12">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-primary">
-                      {years[years.length - 1]}–{years[0]}
+                    <p className="text-3xl font-bold text-foreground tabular-nums">
+                      <CountUp to={total} duration={2} />
                     </p>
-                    <p className="text-sm text-muted-foreground">Archive Span</p>
+                    <p className="text-sm text-muted-foreground mt-1">Issues</p>
                   </div>
-                </>
+                  {years.length > 0 && (
+                    <>
+                      <div className="h-8 w-px bg-border" />
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-foreground tabular-nums">
+                          {years[years.length - 1]}\u2013{years[0]}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">Archive Span</p>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
-          )}
-          </div>
-        </FadeIn>
+          </FadeIn>
+        </div>
       </section>
 
       {/* Newsletter Archive */}
       <FadeIn delay={0.1}>
-        <section className="container mx-auto px-4">
+        <section className="container mx-auto px-4 pb-16">
           <NewsletterClient
             initialNewsletters={newsletters}
             initialYears={years}
@@ -203,47 +162,29 @@ export default async function NewsletterPage() {
         </section>
       </FadeIn>
 
-      {/* Subscribe CTA (for logged-in users or email signup) */}
-      <FadeIn delay={0.2}>
-        <section className="container mx-auto px-4 mt-16">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-8 md:p-12 text-center">
-            {/* Background decoration */}
-            <div className="absolute inset-0 opacity-10">
-              <svg className="w-full h-full" viewBox="0 0 400 400">
-                <circle cx="50" cy="50" r="2" fill="white" />
-                <circle cx="150" cy="80" r="1.5" fill="white" />
-                <circle cx="300" cy="40" r="1" fill="white" />
-                <circle cx="350" cy="100" r="2" fill="white" />
-                <circle cx="80" cy="200" r="1.5" fill="white" />
-                <circle cx="250" cy="180" r="1" fill="white" />
-                <circle cx="380" cy="220" r="1.5" fill="white" />
-                <circle cx="100" cy="350" r="2" fill="white" />
-                <circle cx="200" cy="320" r="1" fill="white" />
-                <circle cx="320" cy="360" r="1.5" fill="white" />
-              </svg>
-            </div>
-
-            <div className="relative z-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                Never Miss an Issue
+      {/* Subscribe CTA */}
+      <section className="py-24 lg:py-32 bg-muted/20">
+        <div className="container mx-auto px-4">
+          <FadeIn>
+            <div className="max-w-2xl mx-auto text-center">
+              <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight mb-6">
+                Never miss an issue
               </h2>
-              <p className="text-indigo-100 mb-6 max-w-xl mx-auto">
+              <p className="text-lg text-muted-foreground mb-10">
                 Join SPAC to receive the Celestial Observer directly in your inbox each month,
                 plus get access to member-exclusive content and events.
               </p>
-              <StarBorder
-                as="a"
+              <Link
                 href="/register"
-                color="#818cf8"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-full px-8 py-4 text-lg font-medium hover:bg-primary/90 transition-colors"
               >
-                <Mail className="h-4 w-4" />
                 Become a Member
-              </StarBorder>
+                <ArrowRight className="h-5 w-5" />
+              </Link>
             </div>
-          </div>
-        </section>
-      </FadeIn>
+          </FadeIn>
+        </div>
+      </section>
     </div>
   );
 }

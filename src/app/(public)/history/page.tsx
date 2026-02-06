@@ -2,13 +2,13 @@
  * History/Timeline Page
  *
  * Celebrating 97 years of stargazing at SPAC.
- * Interactive timeline with key milestones.
+ * Clean Apple-like design with interactive timeline.
  */
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
-import { ArrowRight, History, Star, Users } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import {
   HistoryHero,
   Timeline,
@@ -26,10 +26,6 @@ const FadeIn = nextDynamic(
 );
 const CountUp = nextDynamic(
   () => import('@/components/animated/count-up').then((mod) => mod.CountUp),
-  { ssr: false }
-);
-const StarBorder = nextDynamic(
-  () => import('@/components/animated/star-border').then((mod) => mod.StarBorder),
   { ssr: false }
 );
 
@@ -86,7 +82,7 @@ const milestones = [
     year: '1990s',
     title: 'Website Launched',
     description:
-      'SPAC embraced the digital age by launching its first website, making club information and event schedules accessible to a wider audience. Email newsletters began supplementing print communications.',
+      'SPAC embraced the digital age by launching its first website, making club information and event schedules accessible to a wider audience.',
     image: 'https://picsum.photos/seed/history1990/600/400',
   },
   {
@@ -99,7 +95,7 @@ const milestones = [
     year: '2010s',
     title: 'VSA Smart Telescope Program',
     description:
-      'The club launched the Very Small Array (VSA) smart telescope program, making deep-sky imaging accessible to members of all experience levels through automated telescope systems.',
+      'The club launched the Very Small Array (VSA) smart telescope program, making deep-sky imaging accessible to members of all experience levels.',
     image: 'https://picsum.photos/seed/history2010/600/400',
     highlight: true,
   },
@@ -107,7 +103,7 @@ const milestones = [
     year: '2020s',
     title: 'Modern Era',
     description:
-      'SPAC continues to thrive with over 300 active members, a modern website, active social media presence, and a blend of traditional observing and cutting-edge technology. The future is bright!',
+      'SPAC continues to thrive with over 300 active members, a modern website, active social media presence, and a blend of traditional observing and cutting-edge technology.',
     image: 'https://picsum.photos/seed/history2020/600/400',
   },
 ];
@@ -116,193 +112,140 @@ const notableMembers = [
   {
     name: 'Charter Members',
     role: 'Founders (1927)',
-    description:
-      'The visionary amateur astronomers who gathered to form SPAC in 1927, establishing a legacy that continues today.',
+    description: 'The visionary amateur astronomers who gathered to form SPAC in 1927.',
     image: 'https://picsum.photos/seed/founder/400/400',
   },
   {
     name: 'Mirror Lab Masters',
     role: 'ATM Instructors',
-    description:
-      'Generations of skilled telescope makers who have passed down the art of mirror grinding to hundreds of members.',
+    description: 'Generations of skilled telescope makers who passed down the art of mirror grinding.',
     image: 'https://picsum.photos/seed/atmmaster/400/400',
   },
   {
     name: 'Outreach Champions',
     role: 'Education Team',
-    description:
-      'Dedicated volunteers who have brought the wonder of astronomy to thousands of students and community members.',
+    description: 'Dedicated volunteers who brought astronomy to thousands of students.',
     image: 'https://picsum.photos/seed/outreach/400/400',
   },
   {
     name: 'OBS Organizers',
     role: 'Event Coordinators',
-    description:
-      'The tireless volunteers who have made the Orange Blossom Special a beloved annual tradition for over 50 years.',
+    description: 'Tireless volunteers who made the Orange Blossom Special an annual tradition.',
     image: 'https://picsum.photos/seed/obs/400/400',
   },
 ];
 
 const historicalPhotos = [
-  {
-    src: 'https://picsum.photos/seed/vintage1/800/600',
-    caption: 'Early club meeting, circa 1930s',
-    era: 'Then',
-  },
-  {
-    src: 'https://picsum.photos/seed/modern1/800/600',
-    caption: 'Modern general meeting',
-    era: 'Now',
-  },
-  {
-    src: 'https://picsum.photos/seed/vintage2/800/600',
-    caption: 'Original mirror grinding workshop',
-    era: 'Then',
-  },
-  {
-    src: 'https://picsum.photos/seed/modern2/800/600',
-    caption: 'Current Mirror Lab facility',
-    era: 'Now',
-  },
-  {
-    src: 'https://picsum.photos/seed/vintage3/800/600',
-    caption: 'Early OBS star party',
-    era: 'Then',
-  },
-  {
-    src: 'https://picsum.photos/seed/modern3/800/600',
-    caption: 'Recent OBS gathering',
-    era: 'Now',
-  },
+  { src: 'https://picsum.photos/seed/vintage1/800/600', caption: 'Early club meeting, circa 1930s', era: 'Then' as const },
+  { src: 'https://picsum.photos/seed/modern1/800/600', caption: 'Modern general meeting', era: 'Now' as const },
+  { src: 'https://picsum.photos/seed/vintage2/800/600', caption: 'Original mirror grinding workshop', era: 'Then' as const },
+  { src: 'https://picsum.photos/seed/modern2/800/600', caption: 'Current Mirror Lab facility', era: 'Now' as const },
+  { src: 'https://picsum.photos/seed/vintage3/800/600', caption: 'Early OBS star party', era: 'Then' as const },
+  { src: 'https://picsum.photos/seed/modern3/800/600', caption: 'Recent OBS gathering', era: 'Now' as const },
 ];
 
 export default function HistoryPage() {
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
+      {/* Hero */}
       <HistoryHero />
 
-      {/* Brief Intro */}
-      <section className="py-16 bg-muted/30">
+      {/* Intro */}
+      <section className="py-24 lg:py-32 bg-muted/20">
         <div className="container mx-auto px-4 text-center max-w-4xl">
           <FadeIn>
-            <div className="inline-flex items-center gap-2 text-primary mb-4">
-              <History className="h-5 w-5" />
-              <span className="text-sm font-medium uppercase tracking-wider">
-                Our Story
-              </span>
-            </div>
-            <h2 className="text-3xl font-bold text-foreground mb-6">
-              A Legacy Written in{' '}
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight mb-8">
+              A legacy written in{' '}
               <GradientText
-                colors={['#fcd34d', '#f59e0b', '#d97706', '#fcd34d']}
-                className="text-3xl font-bold"
-                animationSpeed={6}
+                colors={['#fcd34d', '#f59e0b', '#fcd34d']}
+                className="text-3xl md:text-5xl font-bold"
+                animationSpeed={8}
               >
-                Starlight
+                starlight
               </GradientText>
             </h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-muted-foreground leading-relaxed">
               From a small group of stargazers in 1927 to one of Florida&apos;s largest
               and most active astronomy clubs, SPAC has been connecting people with
-              the cosmos for nearly a century. Our history is a testament to the
-              enduring human fascination with the night sky.
+              the cosmos for nearly a century.
             </p>
           </FadeIn>
         </div>
       </section>
 
-      {/* Interactive Timeline */}
-      <section className="py-20">
+      {/* Timeline */}
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4">
           <FadeIn>
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Our Journey Through Time
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">
+                Our journey through time
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Key moments that shaped the St. Petersburg Astronomy Club.
-              </p>
             </div>
           </FadeIn>
-
           <Timeline milestones={milestones} />
         </div>
       </section>
 
-      {/* Notable Members Section */}
-      <section className="py-20 bg-muted/30">
+      {/* Notable Members */}
+      <section className="py-24 lg:py-32 bg-muted/20">
         <div className="container mx-auto px-4">
           <FadeIn>
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 text-primary mb-4">
-                <Star className="h-5 w-5" />
-                <span className="text-sm font-medium uppercase tracking-wider">
-                  Honoring Our Legacy
-                </span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Those Who Made Us Great
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">
+                Those who made us great
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Celebrating the members who have shaped SPAC through the decades.
+              <p className="mt-6 text-lg text-muted-foreground">
+                Celebrating the members who shaped SPAC through the decades.
               </p>
             </div>
           </FadeIn>
-
           <NotableMembersSection members={notableMembers} />
         </div>
       </section>
 
-      {/* Photo Archive - Then vs Now */}
-      <section className="py-20">
+      {/* Photo Archive */}
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4">
           <FadeIn>
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 text-primary mb-4">
-                <Users className="h-5 w-5" />
-                <span className="text-sm font-medium uppercase tracking-wider">
-                  Photo Archive
-                </span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Then & Now
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">
+                Then &amp; now
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="mt-6 text-lg text-muted-foreground">
                 See how SPAC has evolved while staying true to our mission.
               </p>
             </div>
           </FadeIn>
-
           <HistoricalPhotos photos={historicalPhotos} />
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10">
+      {/* Stats */}
+      <section className="py-24 bg-muted/20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto text-center">
             <FadeIn>
-              <div className="text-5xl font-bold text-primary mb-2">
+              <div className="text-5xl font-bold text-foreground mb-2 tabular-nums">
                 <CountUp to={1927} duration={2.5} separator="," />
               </div>
               <div className="text-muted-foreground">Year Founded</div>
             </FadeIn>
             <FadeIn delay={0.1}>
-              <div className="text-5xl font-bold text-primary mb-2">
-                <CountUp to={97} duration={2} />+
+              <div className="text-5xl font-bold text-foreground mb-2 tabular-nums">
+                <CountUp to={97} duration={2} /><span className="text-primary">+</span>
               </div>
               <div className="text-muted-foreground">Years of Stargazing</div>
             </FadeIn>
             <FadeIn delay={0.2}>
-              <div className="text-5xl font-bold text-primary mb-2">
-                <CountUp to={300} duration={2} />+
+              <div className="text-5xl font-bold text-foreground mb-2 tabular-nums">
+                <CountUp to={300} duration={2} /><span className="text-primary">+</span>
               </div>
               <div className="text-muted-foreground">Active Members</div>
             </FadeIn>
             <FadeIn delay={0.3}>
-              <div className="text-5xl font-bold text-primary mb-2">
-                <CountUp to={50} duration={2} />+
+              <div className="text-5xl font-bold text-foreground mb-2 tabular-nums">
+                <CountUp to={50} duration={2} /><span className="text-primary">+</span>
               </div>
               <div className="text-muted-foreground">OBS Events</div>
             </FadeIn>
@@ -310,33 +253,33 @@ export default function HistoryPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
+      {/* CTA */}
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Be Part of Our Next Chapter
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Join the next generation of SPAC members and help us continue our
-            mission of bringing astronomy to everyone.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <StarBorder
-              as={Link}
-              href="/register"
-              color="#818cf8"
-              className="flex items-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold text-foreground transition-all hover:scale-105"
-            >
-              Join SPAC Today
-              <ArrowRight className="h-5 w-5" />
-            </StarBorder>
-            <Link
-              href="/about"
-              className="flex items-center gap-2 rounded-lg border border-border bg-background px-8 py-4 text-lg font-semibold text-foreground transition-all hover:bg-muted"
-            >
-              Learn More About Us
-            </Link>
-          </div>
+          <FadeIn>
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight mb-6">
+              Be part of our next chapter
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-10">
+              Join the next generation of SPAC members and help us continue our
+              mission of bringing astronomy to everyone.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-full px-8 py-4 text-lg font-medium hover:bg-primary/90 transition-colors"
+              >
+                Join SPAC Today
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+              <Link
+                href="/about"
+                className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-lg font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Learn More About Us
+              </Link>
+            </div>
+          </FadeIn>
         </div>
       </section>
     </div>

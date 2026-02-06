@@ -2,25 +2,14 @@
  * Mirror Lab Page
  *
  * Information about SPAC's telescope mirror grinding workshop.
- * A unique hands-on astronomy experience.
+ * Apple-like clean design with creative animations.
  */
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import nextDynamic from 'next/dynamic';
-import {
-  Wrench,
-  Clock,
-  MapPin,
-  DollarSign,
-  Users,
-  CheckCircle,
-  ArrowRight,
-  Sparkles,
-  Telescope,
-  Eye,
-} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { MirrorLabHero, MirrorLabGallery, ProcessStep } from './MirrorLabClient';
 
 const GradientText = nextDynamic(
@@ -29,14 +18,6 @@ const GradientText = nextDynamic(
 );
 const FadeIn = nextDynamic(
   () => import('@/components/animated/fade-in').then((mod) => mod.FadeIn),
-  { ssr: false }
-);
-const SpotlightCard = nextDynamic(
-  () => import('@/components/animated/spotlight-card').then((mod) => mod.SpotlightCard),
-  { ssr: false }
-);
-const StarBorder = nextDynamic(
-  () => import('@/components/animated/star-border').then((mod) => mod.StarBorder),
   { ssr: false }
 );
 
@@ -50,27 +31,22 @@ const learningTopics = [
   {
     title: 'Rough Grinding',
     description: 'Shape raw glass into a parabolic curve using progressively finer abrasives.',
-    icon: Wrench,
   },
   {
     title: 'Fine Grinding & Polishing',
     description: 'Achieve optical-quality smoothness with cerium oxide and pitch laps.',
-    icon: Sparkles,
   },
   {
     title: 'Figuring & Testing',
     description: 'Perfect your mirror using Foucault and Ronchi tests to achieve precision.',
-    icon: Eye,
   },
   {
     title: 'Mirror Cell Design',
     description: 'Learn to build proper mirror supports for optimal performance.',
-    icon: CheckCircle,
   },
   {
     title: 'Telescope Construction',
     description: 'Assemble your completed mirror into a working telescope.',
-    icon: Telescope,
   },
 ];
 
@@ -79,7 +55,7 @@ const processSteps = [
     step: 1,
     title: 'Start with Raw Glass',
     description:
-      'Begin with a glass blank - typically Pyrex for thermal stability. Common sizes range from 6" to 12" diameter.',
+      'Begin with a glass blank\u2014typically Pyrex for thermal stability. Common sizes range from 6" to 12" diameter.',
   },
   {
     step: 2,
@@ -97,7 +73,7 @@ const processSteps = [
     step: 4,
     title: 'Polishing',
     description:
-      'Switch to a pitch lap with cerium oxide. The surface becomes optically smooth - you can see your reflection!',
+      'Switch to a pitch lap with cerium oxide. The surface becomes optically smooth\u2014you can see your reflection.',
   },
   {
     step: 5,
@@ -109,77 +85,46 @@ const processSteps = [
     step: 6,
     title: 'Coating',
     description:
-      'Once figured, your mirror is sent out for professional aluminum coating - then it\'s ready for first light!',
+      'Once figured, your mirror is sent out for professional aluminum coating\u2014then it\'s ready for first light.',
   },
 ];
 
 const galleryImages = [
-  {
-    src: 'https://picsum.photos/seed/mirror1/600/400',
-    alt: 'Mirror grinding in progress',
-    caption: 'Rough grinding a 10" mirror blank',
-  },
-  {
-    src: 'https://picsum.photos/seed/mirror2/600/400',
-    alt: 'Foucault test setup',
-    caption: 'Foucault knife-edge test in action',
-  },
-  {
-    src: 'https://picsum.photos/seed/mirror3/600/400',
-    alt: 'Completed mirror',
-    caption: 'A freshly coated 8" primary mirror',
-  },
-  {
-    src: 'https://picsum.photos/seed/mirror4/600/400',
-    alt: 'Workshop environment',
-    caption: 'Our well-equipped mirror grinding workshop',
-  },
-  {
-    src: 'https://picsum.photos/seed/mirror5/600/400',
-    alt: 'Completed telescope',
-    caption: 'Member-built Dobsonian telescope',
-  },
-  {
-    src: 'https://picsum.photos/seed/mirror6/600/400',
-    alt: 'Polishing session',
-    caption: 'Fine polishing with pitch lap',
-  },
+  { src: 'https://picsum.photos/seed/mirror1/600/400', alt: 'Mirror grinding in progress', caption: 'Rough grinding a 10" mirror blank' },
+  { src: 'https://picsum.photos/seed/mirror2/600/400', alt: 'Foucault test setup', caption: 'Foucault knife-edge test in action' },
+  { src: 'https://picsum.photos/seed/mirror3/600/400', alt: 'Completed mirror', caption: 'A freshly coated 8" primary mirror' },
+  { src: 'https://picsum.photos/seed/mirror4/600/400', alt: 'Workshop environment', caption: 'Our well-equipped mirror grinding workshop' },
+  { src: 'https://picsum.photos/seed/mirror5/600/400', alt: 'Completed telescope', caption: 'Member-built Dobsonian telescope' },
+  { src: 'https://picsum.photos/seed/mirror6/600/400', alt: 'Polishing session', caption: 'Fine polishing with pitch lap' },
 ];
 
 export default function MirrorLabPage() {
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
+      {/* Hero */}
       <MirrorLabHero />
 
-      {/* What is Mirror Grinding Section */}
-      <section className="py-20 bg-muted/30">
+      {/* What is Mirror Grinding */}
+      <section className="py-24 lg:py-32 bg-muted/20">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
             <FadeIn>
               <div>
-                <div className="inline-flex items-center gap-2 text-primary mb-4">
-                  <Wrench className="h-5 w-5" />
-                  <span className="text-sm font-medium uppercase tracking-wider">
-                    The Art & Science
-                  </span>
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+                <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight mb-8">
                   What is{' '}
                   <GradientText
-                    colors={['#818cf8', '#c084fc', '#f472b6', '#818cf8']}
-                    className="text-3xl md:text-4xl font-bold"
-                    animationSpeed={6}
+                    colors={['#818cf8', '#a78bfa', '#818cf8']}
+                    className="text-3xl md:text-5xl font-bold"
+                    animationSpeed={8}
                   >
-                    Mirror Grinding?
+                    mirror grinding?
                   </GradientText>
                 </h2>
-                <div className="space-y-4 text-muted-foreground">
+                <div className="space-y-5 text-muted-foreground leading-relaxed">
                   <p className="text-lg">
                     Mirror grinding is the art of transforming a flat disk of glass into a
                     precision optical surface capable of revealing the wonders of the universe.
-                    It&apos;s a tradition dating back to the 1920s when amateur astronomers first
-                    discovered they could make their own telescope mirrors.
+                    It&apos;s a tradition dating back to the 1920s.
                   </p>
                   <p>
                     Using nothing more than two pieces of glass, water, and abrasive compounds,
@@ -188,63 +133,57 @@ export default function MirrorLabPage() {
                     tradition of amateur telescope making.
                   </p>
                   <p>
-                    A hand-made mirror isn&apos;t just functional—it&apos;s a work of art. There&apos;s
+                    A hand-made mirror isn&apos;t just functional\u2014it&apos;s a work of art. There&apos;s
                     something profoundly satisfying about observing the cosmos through optics
                     you crafted with your own hands.
                   </p>
                 </div>
               </div>
             </FadeIn>
-            <FadeIn delay={0.15} direction="right">
-              <div className="relative">
-                <div className="aspect-square rounded-2xl overflow-hidden border border-border">
-                  <Image
-                    src="https://picsum.photos/seed/mirrorhero/800/800"
-                    alt="Mirror grinding process"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="absolute -bottom-6 -right-6 bg-primary text-primary-foreground rounded-xl p-6 shadow-xl">
-                  <div className="text-3xl font-bold">60+</div>
-                  <div className="text-sm">Years of ATM</div>
-                </div>
+            <FadeIn delay={0.15}>
+              <div className="relative aspect-square rounded-2xl overflow-hidden">
+                <Image
+                  src="https://picsum.photos/seed/mirrorhero/800/800"
+                  alt="Mirror grinding process"
+                  fill
+                  className="object-cover"
+                />
               </div>
             </FadeIn>
           </div>
         </div>
       </section>
 
-      {/* The Process - Interactive Steps */}
-      <section className="py-20">
+      {/* The Process */}
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4">
           <FadeIn>
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                From Glass to{' '}
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">
+                From glass to{' '}
                 <GradientText
-                  colors={['#fcd34d', '#f59e0b', '#d97706', '#fcd34d']}
-                  className="text-3xl md:text-4xl font-bold"
-                  animationSpeed={6}
+                  colors={['#fcd34d', '#f59e0b', '#fcd34d']}
+                  className="text-3xl md:text-5xl font-bold"
+                  animationSpeed={8}
                 >
-                  Stars
+                  starlight
                 </GradientText>
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="mt-6 text-lg text-muted-foreground">
                 The journey from a blank piece of glass to your first view through your
                 own telescope is unforgettable.
               </p>
             </div>
           </FadeIn>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {processSteps.map((step, index) => (
               <ProcessStep
                 key={step.step}
                 step={step.step}
                 title={step.title}
                 description={step.description}
-                delay={index * 0.1}
+                delay={index * 0.08}
               />
             ))}
           </div>
@@ -252,34 +191,28 @@ export default function MirrorLabPage() {
       </section>
 
       {/* What You'll Learn */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-24 lg:py-32 bg-muted/20">
         <div className="container mx-auto px-4">
           <FadeIn>
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                What You&apos;ll Learn
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">
+                What you&apos;ll learn
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Master the complete process of telescope mirror making with guidance
-                from experienced mentors.
+              <p className="mt-6 text-lg text-muted-foreground">
+                Master the complete process with guidance from experienced mentors.
               </p>
             </div>
           </FadeIn>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {learningTopics.map((topic, index) => (
-              <FadeIn key={topic.title} delay={index * 0.1}>
-                <SpotlightCard spotlightColor="rgba(139,92,246,0.12)" className="h-full rounded-xl">
-                  <div className="bg-card border border-border rounded-xl p-6 h-full">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                      <topic.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">
-                      {topic.title}
-                    </h3>
-                    <p className="text-muted-foreground">{topic.description}</p>
-                  </div>
-                </SpotlightCard>
+              <FadeIn key={topic.title} delay={index * 0.08}>
+                <div className="rounded-2xl bg-card/50 p-8 hover:bg-card transition-colors duration-300 h-full">
+                  <h3 className="text-xl font-semibold text-foreground mb-3">
+                    {topic.title}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">{topic.description}</p>
+                </div>
               </FadeIn>
             ))}
           </div>
@@ -287,148 +220,101 @@ export default function MirrorLabPage() {
       </section>
 
       {/* Workshop Info */}
-      <section className="py-20">
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <FadeIn>
-              <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                  Workshop Information
-                </h2>
-                <p className="text-xl text-muted-foreground">
-                  Join us at the Mirror Lab and start your telescope-making journey.
+          <FadeIn>
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">
+                Workshop details
+              </h2>
+            </div>
+          </FadeIn>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <FadeIn delay={0}>
+              <div className="rounded-2xl bg-card/50 p-8 h-full">
+                <h3 className="text-lg font-semibold text-foreground mb-3">Location</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Mirror Lab Building, St. Petersburg, FL.
+                  Address provided to registered members.
                 </p>
               </div>
             </FadeIn>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <FadeIn delay={0}>
-                <SpotlightCard spotlightColor="rgba(59,130,246,0.12)" className="h-full rounded-xl">
-                  <div className="bg-card border border-border rounded-xl p-6 h-full">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                        <MapPin className="h-5 w-5 text-blue-500" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-foreground">Location</h3>
-                    </div>
-                    <p className="text-muted-foreground">
-                      Mirror Lab Building<br />
-                      St. Petersburg, FL<br />
-                      <span className="text-sm italic">
-                        (Address provided to registered members)
-                      </span>
-                    </p>
-                  </div>
-                </SpotlightCard>
-              </FadeIn>
-
-              <FadeIn delay={0.1}>
-                <SpotlightCard spotlightColor="rgba(34,197,94,0.12)" className="h-full rounded-xl">
-                  <div className="bg-card border border-border rounded-xl p-6 h-full">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                        <Clock className="h-5 w-5 text-green-500" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-foreground">Schedule</h3>
-                    </div>
-                    <p className="text-muted-foreground">
-                      <strong>Saturdays:</strong> 9:00 AM - 1:00 PM<br />
-                      <span className="text-sm">
-                        Additional sessions may be scheduled for active projects
-                      </span>
-                    </p>
-                  </div>
-                </SpotlightCard>
-              </FadeIn>
-
-              <FadeIn delay={0.2}>
-                <SpotlightCard spotlightColor="rgba(168,85,247,0.12)" className="h-full rounded-xl">
-                  <div className="bg-card border border-border rounded-xl p-6 h-full">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-purple-500" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-foreground">What to Bring</h3>
-                    </div>
-                    <ul className="text-muted-foreground space-y-1">
-                      <li>• Comfortable clothes (you will get wet)</li>
-                      <li>• Closed-toe shoes</li>
-                      <li>• Enthusiasm and patience</li>
-                      <li>• Notebook for notes</li>
-                    </ul>
-                  </div>
-                </SpotlightCard>
-              </FadeIn>
-
-              <FadeIn delay={0.3}>
-                <SpotlightCard spotlightColor="rgba(245,158,11,0.12)" className="h-full rounded-xl">
-                  <div className="bg-card border border-border rounded-xl p-6 h-full">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                        <DollarSign className="h-5 w-5 text-amber-500" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-foreground">Cost</h3>
-                    </div>
-                    <p className="text-muted-foreground">
-                      <strong>Instruction:</strong> Free for SPAC members<br />
-                      <strong>Materials:</strong> ~$50-200 depending on mirror size<br />
-                      <span className="text-sm">
-                        Glass blanks, abrasives, and pitch included
-                      </span>
-                    </p>
-                  </div>
-                </SpotlightCard>
-              </FadeIn>
-            </div>
+            <FadeIn delay={0.08}>
+              <div className="rounded-2xl bg-card/50 p-8 h-full">
+                <h3 className="text-lg font-semibold text-foreground mb-3">Schedule</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Saturdays, 9:00 AM \u2013 1:00 PM.
+                  Additional sessions may be scheduled for active projects.
+                </p>
+              </div>
+            </FadeIn>
+            <FadeIn delay={0.16}>
+              <div className="rounded-2xl bg-card/50 p-8 h-full">
+                <h3 className="text-lg font-semibold text-foreground mb-3">What to Bring</h3>
+                <ul className="text-muted-foreground space-y-1 leading-relaxed">
+                  <li>Comfortable clothes (you will get wet)</li>
+                  <li>Closed-toe shoes</li>
+                  <li>Enthusiasm and patience</li>
+                  <li>Notebook for notes</li>
+                </ul>
+              </div>
+            </FadeIn>
+            <FadeIn delay={0.24}>
+              <div className="rounded-2xl bg-card/50 p-8 h-full">
+                <h3 className="text-lg font-semibold text-foreground mb-3">Cost</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Instruction is free for SPAC members.
+                  Materials run ~$50\u2013200 depending on mirror size.
+                  Glass blanks, abrasives, and pitch included.
+                </p>
+              </div>
+            </FadeIn>
           </div>
         </div>
       </section>
 
-      {/* Gallery Section */}
-      <section className="py-20 bg-muted/30">
+      {/* Gallery */}
+      <section className="py-24 lg:py-32 bg-muted/20">
         <div className="container mx-auto px-4">
           <FadeIn>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Mirror Lab Gallery
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">
+                From the workshop
               </h2>
-              <p className="text-xl text-muted-foreground">
-                See the magic happen at our workshop.
-              </p>
             </div>
           </FadeIn>
-
           <MirrorLabGallery images={galleryImages} />
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10">
+      {/* CTA */}
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Ready to Build Your Own Telescope?
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Join SPAC and start your mirror-making journey. Our experienced mentors
-            are ready to guide you every step of the way.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <StarBorder
-              as={Link}
-              href="/register"
-              color="#818cf8"
-              className="flex items-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold text-foreground transition-all hover:scale-105"
-            >
-              Join the Club
-              <ArrowRight className="h-5 w-5" />
-            </StarBorder>
-            <Link
-              href="/about#board"
-              className="flex items-center gap-2 rounded-lg border border-border bg-background px-8 py-4 text-lg font-semibold text-foreground transition-all hover:bg-muted"
-            >
-              Contact Us
-            </Link>
-          </div>
+          <FadeIn>
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight mb-6">
+              Ready to build your own telescope?
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-10">
+              Join SPAC and start your mirror-making journey. Our experienced mentors
+              are ready to guide you every step of the way.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-full px-8 py-4 text-lg font-medium hover:bg-primary/90 transition-colors"
+              >
+                Join the Club
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+              <Link
+                href="/about#board"
+                className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-4 text-lg font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Contact Us
+              </Link>
+            </div>
+          </FadeIn>
         </div>
       </section>
     </div>

@@ -5,18 +5,20 @@
  *
  * Contains the actual login form logic with useSearchParams.
  * Separated from page.tsx to allow proper Suspense wrapping.
+ * Supports demo mode for static GitHub Pages deployment.
  */
 
 import { useState } from 'react';
-import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { LogIn, Loader2, AlertCircle } from 'lucide-react';
+import { demoLogin } from '@/lib/demo-auth';
+
+const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { status } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,23 +27,24 @@ export function LoginForm() {
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const urlError = searchParams.get('error');
 
-  // Redirect if already authenticated
-  if (status === 'authenticated') {
-    router.push(callbackUrl);
-    return null;
-  }
-
-  const handleCognitoLogin = async () => {
-    setIsLoading(true);
-    setError('');
-    await signIn('cognito', { callbackUrl });
-  };
-
   const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
+    if (isDemoMode) {
+      const success = demoLogin(email, password);
+      if (success) {
+        router.push(callbackUrl);
+      } else {
+        setError('Invalid username or password');
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Production: use NextAuth
+    const { signIn } = await import('next-auth/react');
     const result = await signIn('credentials', {
       email,
       password,
@@ -54,6 +57,14 @@ export function LoginForm() {
     } else {
       router.push(callbackUrl);
     }
+  };
+
+  const handleCognitoLogin = async () => {
+    if (isDemoMode) return;
+    setIsLoading(true);
+    setError('');
+    const { signIn } = await import('next-auth/react');
+    await signIn('cognito', { callbackUrl });
   };
 
   return (
@@ -75,32 +86,46 @@ export function LoginForm() {
         </div>
       )}
 
-      {/* Cognito Login Button */}
-      <button
-        onClick={handleCognitoLogin}
-        disabled={isLoading}
-        className="w-full flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          <LogIn className="h-5 w-5" />
-        )}
-        Sign in with SPAC Account
-      </button>
+      {/* Cognito Login Button - hidden in demo mode */}
+      {!isDemoMode && (
+        <button
+          onClick={handleCognitoLogin}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <LogIn className="h-5 w-5" />
+          )}
+          Sign in with SPAC Account
+        </button>
+      )}
 
-      {/* Development Credentials Form */}
-      <>
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or sign in with credentials
-            </span>
-          </div>
+      {/* Demo Mode Banner */}
+      {isDemoMode && (
+        <div className="mb-4 rounded-md bg-primary/10 border border-primary/20 p-3 text-sm text-primary">
+          <p className="font-medium">Demo Mode</p>
+          <p className="text-muted-foreground mt-1">
+            Username: <code className="text-primary">demo</code> &middot; Password: <code className="text-primary">Sp@C2025!</code>
+          </p>
         </div>
+      )}
+
+      {/* Credentials Form */}
+      <>
+        {!isDemoMode && (
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                Or sign in with credentials
+              </span>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleCredentialsLogin} className="space-y-4">
           <div>
@@ -108,7 +133,7 @@ export function LoginForm() {
               htmlFor="email"
               className="block text-sm font-medium text-foreground mb-1"
             >
-              Username / Email
+              Username
             </label>
             <input
               id="email"
@@ -142,23 +167,33 @@ export function LoginForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50"
+            className={`w-full rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+              isDemoMode
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
           >
-            Sign In
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
       </>
 
       {/* Sign Up Link */}
-      <div className="mt-6 text-center text-sm">
-        <span className="text-muted-foreground">Don&apos;t have an account? </span>
-        <Link
-          href="/register"
-          className="text-primary hover:underline font-medium"
-        >
-          Join SPAC
-        </Link>
-      </div>
+      {!isDemoMode && (
+        <div className="mt-6 text-center text-sm">
+          <span className="text-muted-foreground">Don&apos;t have an account? </span>
+          <Link
+            href="/register"
+            className="text-primary hover:underline font-medium"
+          >
+            Join SPAC
+          </Link>
+        </div>
+      )}
     </>
   );
 }

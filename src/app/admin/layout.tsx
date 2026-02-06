@@ -8,6 +8,9 @@
 
 import { requireAdmin } from '@/lib/auth';
 import { GlobalDock } from '@/components/layout';
+import { DemoAuthGuard } from '@/components/demo/DemoAuthGuard';
+
+const isDemoMode = process.env.GITHUB_PAGES === 'true';
 
 export default async function AdminLayout({
   children,
@@ -16,10 +19,14 @@ export default async function AdminLayout({
 }) {
   // Server-side auth check - redirects non-admins
   await requireAdmin();
-  
+
   return (
     <div className="admin-root pb-20">
-      {children}
+      {isDemoMode ? (
+        <DemoAuthGuard requireAdmin>{children}</DemoAuthGuard>
+      ) : (
+        children
+      )}
       <GlobalDock />
     </div>
   );

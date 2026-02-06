@@ -4,17 +4,16 @@ const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 
 // For static export (GitHub Pages), remove routes incompatible with static hosting:
 // - API routes (need server runtime)
-// - Auth-gated sections (dashboard, admin, verify)
+// - Email verification (requires server)
 // - Dynamic [param] page directories (modules fail to load without server deps)
+// Dashboard and admin are kept for demo auth (DemoAuthGuard + mock Prisma)
 if (isGitHubPages) {
   const fs = require('fs');
   const path = require('path');
 
-  // Directories to completely remove
+  // Directories to completely remove (keep dashboard/admin for demo auth)
   const dirsToRemove = [
     'src/app/api',
-    'src/app/(dashboard)',
-    'src/app/admin',
     'src/app/verify',
   ];
   for (const dir of dirsToRemove) {
@@ -32,6 +31,8 @@ if (isGitHubPages) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.isDirectory()) {
         const fullPath = path.join(dir, entry.name);
+        // Skip admin directory (has [[...slug]] catch-all needed for demo)
+        if (entry.name === 'admin') continue;
         if (entry.name.startsWith('[')) {
           fs.rmSync(fullPath, { recursive: true, force: true });
           console.log(`[GitHub Pages] Removed dynamic route: ${fullPath.replace(__dirname + '/', '')}`);
@@ -87,6 +88,9 @@ const nextConfig = {
     assetPrefix: '/spac-website/',
     typescript: { ignoreBuildErrors: true },
     eslint: { ignoreDuringBuilds: true },
+    env: {
+      NEXT_PUBLIC_DEMO_MODE: 'true',
+    },
   }),
   images: {
     // Disable image optimization for static export
