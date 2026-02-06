@@ -46,6 +46,9 @@ import {
   useUpdate,
   useRefresh,
   useRecordContext,
+  Toolbar,
+  SaveButton,
+  required,
 } from 'react-admin';
 import { dataProvider } from './data-provider';
 import {
@@ -1025,14 +1028,29 @@ const EventList = () => (
   </List>
 );
 
+// Sticky toolbars - positioned above the GlobalDock (fixed bottom nav)
+const CreateEventToolbar = () => (
+  <Toolbar sx={{ position: 'sticky', bottom: '80px', zIndex: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
+    <SaveButton label="Create Event" />
+  </Toolbar>
+);
+
+const EditEventToolbar = () => (
+  <Toolbar sx={{ position: 'sticky', bottom: '80px', zIndex: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
+    <SaveButton label="Save Changes" />
+  </Toolbar>
+);
+
 const EventEdit = () => {
   const notify = useNotify();
+  const redirect = useRedirect();
 
   return (
     <Edit
       mutationOptions={{
         onSuccess: () => {
           notify('Event updated successfully', { type: 'success' });
+          redirect('list', 'events');
         },
         onError: (error: Error & { body?: { error?: string; details?: string } }) => {
           const message = error?.body?.details || error?.body?.error || error?.message || 'Failed to update event';
@@ -1041,7 +1059,7 @@ const EventEdit = () => {
         },
       }}
     >
-      <SimpleForm>
+      <SimpleForm toolbar={<EditEventToolbar />}>
         <FormSection title="Basic Information">
           <TextInput source="title" fullWidth required sx={{ mb: 2 }} />
           <TextInput source="slug" fullWidth helperText="URL-friendly identifier" sx={{ mb: 2 }} />
@@ -1154,12 +1172,14 @@ const EventEdit = () => {
 
 const EventCreate = () => {
   const notify = useNotify();
+  const redirect = useRedirect();
 
   return (
     <Create
       mutationOptions={{
         onSuccess: () => {
           notify('Event created successfully', { type: 'success' });
+          redirect('list', 'events');
         },
         onError: (error: Error & { body?: { error?: string; details?: string } }) => {
           const message = error?.body?.details || error?.body?.error || error?.message || 'Failed to create event';
@@ -1168,7 +1188,7 @@ const EventCreate = () => {
         },
       }}
     >
-      <SimpleForm>
+      <SimpleForm toolbar={<CreateEventToolbar />}>
         <FormSection title="Basic Information">
           <TextInput source="title" fullWidth required sx={{ mb: 2 }} />
           <TextInput source="slug" fullWidth helperText="Leave blank to auto-generate from title" sx={{ mb: 2 }} />
@@ -1198,7 +1218,7 @@ const EventCreate = () => {
                 { id: 'EDUCATIONAL', name: 'Educational' },
               ]}
               fullWidth
-              isRequired
+              validate={required('Event type is required')}
               onCreate={(value) => ({ id: value?.toUpperCase().replace(/\s+/g, '_'), name: value })}
               helperText="Select or type custom event type"
             />
