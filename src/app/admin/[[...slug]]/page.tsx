@@ -15,9 +15,7 @@ export const metadata: Metadata = {
   description: 'SPAC Administration Dashboard',
 };
 
-export async function generateStaticParams() {
-  return [];
-}
+export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
   const session = await getSession();
