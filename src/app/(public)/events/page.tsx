@@ -8,12 +8,14 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
+
+export const dynamic = 'force-static';
 import { prisma } from '@/lib/db';
 import EventsView from '@/components/events/EventsView';
 
 // Dynamic import for animated component
-const RotatingText = dynamic(
+const RotatingText = nextDynamic(
   () => import('@/components/animated/rotating-text').then((mod) => mod.RotatingText),
   { ssr: false }
 );

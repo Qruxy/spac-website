@@ -6,6 +6,8 @@
  */
 
 import { Metadata } from 'next';
+
+export const dynamic = 'force-static';
 import Link from 'next/link';
 import { CheckCircle, Calendar, Mail, ArrowRight, Home, AlertCircle } from 'lucide-react';
 import { prisma } from '@/lib/db';

@@ -9,7 +9,9 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
+
+export const dynamic = 'force-static';
 import {
   ShoppingBag,
   Filter,
@@ -29,11 +31,11 @@ import { prisma } from '@/lib/db';
 import { formatDistanceToNow } from 'date-fns';
 
 // Dynamic imports for animated components
-const GradientText = dynamic(
+const GradientText = nextDynamic(
   () => import('@/components/animated/gradient-text').then((mod) => mod.GradientText),
   { ssr: false }
 );
-const StarBorder = dynamic(
+const StarBorder = nextDynamic(
   () => import('@/components/animated/star-border').then((mod) => mod.StarBorder),
   { ssr: false }
 );

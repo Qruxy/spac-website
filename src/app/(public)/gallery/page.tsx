@@ -7,7 +7,9 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
+
+export const dynamic = 'force-static';
 import {
   Camera,
   Filter,
@@ -21,12 +23,12 @@ import type { PhotoCategory } from '@prisma/client';
 import { GalleryClient } from './gallery-client';
 
 // Dynamic imports for animated components
-const GradientText = dynamic(
+const GradientText = nextDynamic(
   () => import('@/components/animated/gradient-text').then((mod) => mod.GradientText),
   { ssr: false }
 );
 
-const CircularGallery = dynamic(
+const CircularGallery = nextDynamic(
   () => import('@/components/animated/circular-gallery').then((mod) => mod.CircularGallery),
   { ssr: false }
 );
