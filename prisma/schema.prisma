@@ -160,6 +160,7 @@ model Event {
   isRecurring         Boolean        @default(false) @map("is_recurring")
   recurrencePattern   String?        @map("recurrence_pattern") // DAILY, WEEKLY, BIWEEKLY, MONTHLY, YEARLY
   recurrenceEndDate   DateTime?      @map("recurrence_end_date") @db.Timestamptz(3)
+  imageUrl            String?        @map("image_url")
   parentEventId       String?        @map("parent_event_id")
   createdById         String         @map("created_by_id")
   createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)

@@ -100,7 +100,7 @@ export function HeroSection() {
             {/* Spinning Text Ring - z-20 to appear above logo */}
             <div className="absolute inset-0 z-20" style={{ color: '#60a5fa' }}>
               <CircularText
-                text="★ ST. PETE ASTRONOMY CLUB ★ SINCE 1927 ★ "
+                text="★ ST. PETE ASTRONOMY CLUB · SINCE 1927 · "
                 spinDuration={20}
                 onHover="speedUp"
                 className="font-bold"
@@ -111,18 +111,11 @@ export function HeroSection() {
 
         <div className="mb-4">
           <BlurText
-            text="St. Pete"
-            className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl bg-gradient-to-r from-blue-400 via-blue-300 to-blue-400 bg-clip-text text-transparent justify-center"
-            delay={80}
-            animateBy="characters"
-            direction="top"
-          />
-          <BlurText
-            text="Astronomy Club"
-            className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl justify-center"
+            text="St. Pete Astronomy Club"
+            className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl bg-gradient-to-r from-blue-400 via-white to-blue-400 bg-clip-text text-transparent justify-center"
             delay={60}
             animateBy="characters"
-            direction="bottom"
+            direction="top"
           />
         </div>
 

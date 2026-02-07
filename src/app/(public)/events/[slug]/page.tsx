@@ -23,12 +23,7 @@ import { getSession } from '@/lib/auth';
 import { formatPrice } from '@/lib/paypal/products';
 import { EventRegistrationButton } from './registration-button';
 
-// ISR with 2-minute revalidation for event updates
-export const revalidate = 120;
-
-export async function generateStaticParams() {
-  return [];
-}
+export const dynamic = 'force-dynamic';
 
 interface EventPageProps {
   params: Promise<{ slug: string }>;
@@ -136,7 +131,16 @@ export default async function EventPage({ params }: EventPageProps) {
             </h1>
           </div>
 
-          {/* Event Image - placeholder for now */}
+          {/* Event Image */}
+          {event.imageUrl && (
+            <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden">
+              <img
+                src={event.imageUrl}
+                alt={event.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
           {/* Description */}
           <div className="prose prose-invert max-w-none">

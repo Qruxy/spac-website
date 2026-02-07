@@ -146,7 +146,7 @@ export function GalleryClient({ photos }: GalleryClientProps) {
           scaleOnHover={true}
           hoverScale={0.98}
           blurToFocus={true}
-          gap={16}
+          gap={20}
         />
       ) : (
         <div className="text-center py-12">
@@ -182,92 +182,61 @@ function PhotoCard({ photo, onClick }: PhotoCardProps) {
   const categoryLabel = categories.find(c => c.id === photo.category)?.label || 'Photo';
 
   return (
-    <GlareHover
-      borderRadius="12px"
-      borderColor="hsl(var(--border))"
-      glareColor="#06b6d4"
-      glareOpacity={0.15}
-      onClick={onClick}
-    >
-      <div className="w-full h-full rounded-xl overflow-hidden bg-card border border-border group">
-        {/* Image */}
-        <div className="relative w-full h-full bg-slate-900">
-          {photo.url ? (
-            <Image
-              src={photo.thumbnailUrl || photo.url}
-              alt={photo.alt || photo.caption || 'Gallery photo'}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-              <Star className="h-12 w-12 text-slate-700" />
-            </div>
-          )}
-
-          {/* Category badge */}
-          {photo.category && (
-            <div className="absolute top-3 left-3 z-20">
-              <span className="inline-flex items-center rounded-full bg-black/60 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-white">
-                {categoryLabel}
-              </span>
-            </div>
-          )}
-
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
-
-          {/* View icon - centered */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">
-            <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm">
-              <Eye className="h-6 w-6 text-white" />
-            </div>
+    <div onClick={onClick} className="cursor-pointer group">
+      {/* Image Container */}
+      <div className="relative w-full h-full rounded-xl overflow-hidden bg-slate-900 border border-border/50 group-hover:border-primary/40 transition-all duration-300">
+        {photo.url ? (
+          <Image
+            src={photo.thumbnailUrl || photo.url}
+            alt={photo.alt || photo.caption || 'Gallery photo'}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+            <Star className="h-12 w-12 text-slate-700" />
           </div>
+        )}
 
-          {/* Hover overlay content - bottom */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-            {/* Title */}
-            <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2 drop-shadow-lg">
-              {photo.caption || 'Untitled'}
-            </h3>
-            
-            {/* Photographer */}
-            <div className="flex items-center gap-2 text-sm text-white/90 drop-shadow-md">
-              <User className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="flex items-center gap-1 truncate">
-                {photographerName}
-                <VerifiedBadge
-                  isAdmin={photo.users.role === 'ADMIN'}
-                  isValidated={photo.users.isValidated}
-                  size="sm"
-                />
-              </span>
-            </div>
+        {/* Category badge */}
+        {photo.category && (
+          <div className="absolute top-3 left-3 z-20">
+            <span className="inline-flex items-center rounded-full bg-black/60 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-white">
+              {categoryLabel}
+            </span>
+          </div>
+        )}
 
-            {/* Equipment (if available) */}
-            {photo.equipment && (
-              <div className="flex items-center gap-2 text-sm text-white/80 mt-1 drop-shadow-md">
-                <Telescope className="h-3.5 w-3.5 flex-shrink-0" />
-                <span className="truncate">{photo.equipment}</span>
-              </div>
-            )}
+        {/* Always-visible gradient overlay at bottom */}
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-10" />
 
-            {/* Date */}
-            <div className="flex items-center gap-2 text-sm text-white/80 mt-1 drop-shadow-md">
-              <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-              <span>
-                {new Date(photo.createdAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </span>
-            </div>
+        {/* View icon on hover */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">
+          <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm">
+            <Eye className="h-6 w-6 text-white" />
+          </div>
+        </div>
+
+        {/* Always-visible info at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
+          <h3 className="text-base font-semibold text-white line-clamp-1 drop-shadow-lg">
+            {photo.caption || 'Untitled'}
+          </h3>
+          <div className="flex items-center gap-2 mt-1.5 text-sm text-white/80 drop-shadow-md">
+            <User className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="flex items-center gap-1 truncate">
+              {photographerName}
+              <VerifiedBadge
+                isAdmin={photo.users.role === 'ADMIN'}
+                isValidated={photo.users.isValidated}
+                size="sm"
+              />
+            </span>
           </div>
         </div>
       </div>
-    </GlareHover>
+    </div>
   );
 }
 

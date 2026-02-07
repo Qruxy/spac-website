@@ -82,6 +82,7 @@ export async function POST(request: Request) {
       isRecurring,
       recurrencePattern,
       recurrenceEndDate,
+      imageUrl,
     } = body;
 
     // Parse dates safely: date-only strings (no T) default to noon UTC to avoid timezone shift
@@ -133,6 +134,7 @@ export async function POST(request: Request) {
       isRecurring: isRecurring ?? false,
       recurrencePattern: recurrencePattern || null,
       recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
+      imageUrl: imageUrl || null,
       createdById: auth.userId!,
     };
 

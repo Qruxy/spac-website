@@ -95,6 +95,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       isRecurring,
       recurrencePattern,
       recurrenceEndDate,
+      imageUrl,
     } = body;
 
     // Build update data object with correct Prisma schema field names
@@ -143,6 +144,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     if (recurrenceEndDate !== undefined) {
       updateData.recurrenceEndDate = recurrenceEndDate ? new Date(recurrenceEndDate) : null;
     }
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl || null;
 
     const event = await prisma.event.update({
       where: { id },

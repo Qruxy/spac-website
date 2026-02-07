@@ -77,6 +77,8 @@ import {
   Groups as BoardIcon,
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
+  OpenInNew as ExternalLinkIcon,
+  Language as WebIcon,
 } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
@@ -745,11 +747,72 @@ const CustomAppBar = () => {
           </Button>
         ))}
       </Box>
-      <Tooltip title="Back to Main Site">
-        <IconButton color="inherit" href="/dashboard" sx={{ mr: 1 }}>
-          <HomeIcon />
-        </IconButton>
-      </Tooltip>
+      {/* Divider */}
+      <Box sx={{ width: '1px', height: 24, bgcolor: 'rgba(255,255,255,0.2)', mx: 1 }} />
+
+      {/* Main Site Links */}
+      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexShrink: 0 }}>
+        <Button
+          size="small"
+          href="/"
+          startIcon={<HomeIcon />}
+          sx={{
+            color: 'rgba(255,255,255,0.85)',
+            fontSize: '0.75rem',
+            minWidth: 'auto',
+            whiteSpace: 'nowrap',
+            px: 1,
+            '&:hover': { background: 'rgba(255,255,255,0.1)' },
+          }}
+        >
+          Home
+        </Button>
+        <Button
+          size="small"
+          href="/events"
+          sx={{
+            color: 'rgba(255,255,255,0.85)',
+            fontSize: '0.75rem',
+            minWidth: 'auto',
+            whiteSpace: 'nowrap',
+            px: 1,
+            '&:hover': { background: 'rgba(255,255,255,0.1)' },
+          }}
+        >
+          Events
+        </Button>
+        <Button
+          size="small"
+          href="/gallery"
+          sx={{
+            color: 'rgba(255,255,255,0.85)',
+            fontSize: '0.75rem',
+            minWidth: 'auto',
+            whiteSpace: 'nowrap',
+            px: 1,
+            '&:hover': { background: 'rgba(255,255,255,0.1)' },
+          }}
+        >
+          Gallery
+        </Button>
+        <Button
+          size="small"
+          href="/dashboard"
+          startIcon={<ExternalLinkIcon sx={{ fontSize: '14px !important' }} />}
+          sx={{
+            color: '#818cf8',
+            fontSize: '0.75rem',
+            minWidth: 'auto',
+            whiteSpace: 'nowrap',
+            px: 1,
+            border: '1px solid rgba(129, 140, 248, 0.3)',
+            borderRadius: 2,
+            '&:hover': { background: 'rgba(129, 140, 248, 0.15)', borderColor: 'rgba(129, 140, 248, 0.5)' },
+          }}
+        >
+          Dashboard
+        </Button>
+      </Box>
     </AppBar>
   );
 };
@@ -1367,6 +1430,13 @@ const EventCreate = () => {
             rows={6}
             fullWidth
             helperText="Describe the event, what to bring, expectations, etc."
+            sx={{ mb: 2 }}
+          />
+          <TextInput
+            source="imageUrl"
+            label="Cover Image URL"
+            fullWidth
+            helperText="Paste a URL for the event cover image (uploaded to S3 or external link)"
             sx={{ mb: 2 }}
           />
         </FormSection>

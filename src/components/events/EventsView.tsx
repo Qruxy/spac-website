@@ -260,13 +260,13 @@ export default function EventsView({ events, initialType = 'all' }: EventsViewPr
                                 </span>
                               )}
                               {event.memberPrice === 0 && event.guestPrice === 0 && (
-                                <span className="text-green-400 font-medium">
-                                  Free Event
+                                <span className="inline-flex items-center gap-1 rounded-full bg-green-500/15 border border-green-500/30 px-3 py-1 text-xs font-bold text-green-400 uppercase tracking-wide">
+                                  Free
                                 </span>
                               )}
                               {(event.memberPrice > 0 || event.guestPrice > 0) && (
-                                <span className="text-primary font-medium">
-                                  ${event.memberPrice} members
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-400">
+                                  ${event.memberPrice} members {event.guestPrice > 0 && `· $${event.guestPrice} guests`}
                                 </span>
                               )}
                             </div>
