@@ -29,15 +29,10 @@ import { getSession } from '@/lib/auth';
 import { MakeOfferButton } from './make-offer-button';
 import { ImageGallery } from './image-gallery';
 
-// ISR with 2-minute revalidation for listing updates
-export const revalidate = 120;
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-}
-
-export async function generateStaticParams() {
-  return [];
 }
 
 // Generate metadata
@@ -49,7 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     select: {
       title: true,
       description: true,
-      askingPrice: true,
+      price: true,
       images: {
         where: { status: 'APPROVED' },
         take: 1,
@@ -62,7 +57,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: 'Listing Not Found' };
   }
 
-  const price = Number(listing.askingPrice);
+  const price = Number(listing.price);
 
   return {
     title: `${listing.title} - $${price.toLocaleString()}`,
@@ -134,7 +129,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
           id: true,
           url: true,
           thumbnailUrl: true,
-          altText: true,
+          alt: true,
           caption: true,
           width: true,
           height: true,
@@ -325,8 +320,8 @@ export default async function ListingDetailPage({ params }: PageProps) {
               </h1>
 
               <div className="text-3xl font-bold text-primary mb-4">
-                ${Number(listing.askingPrice).toLocaleString()}
-                {listing.acceptsOffers && (
+                ${Number(listing.price).toLocaleString()}
+                {listing.is_negotiable && (
                   <span className="ml-2 text-sm font-normal text-muted-foreground">
                     or best offer
                   </span>
@@ -353,11 +348,11 @@ export default async function ListingDetailPage({ params }: PageProps) {
                 <div className="space-y-3">
                   {!isOwner && session?.user ? (
                     <>
-                      {listing.acceptsOffers && (
+                      {listing.is_negotiable && (
                         <MakeOfferButton
                           listingSlug={listing.slug}
                           listingTitle={listing.title}
-                          askingPrice={Number(listing.askingPrice)}
+                          askingPrice={Number(listing.price)}
                         />
                       )}
                       <button

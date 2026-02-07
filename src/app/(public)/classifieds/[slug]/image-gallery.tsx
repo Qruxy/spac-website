@@ -14,7 +14,7 @@ interface GalleryImage {
   id: string;
   url: string;
   thumbnailUrl: string | null;
-  altText: string | null;
+  alt: string | null;
   caption: string | null;
   width: number | null;
   height: number | null;
@@ -62,7 +62,7 @@ export function ImageGallery({ images, title }: ImageGalleryProps) {
             <>
               <Image
                 src={currentImage.url}
-                alt={currentImage.altText || title}
+                alt={currentImage.alt || title}
                 fill
                 className="object-contain"
                 sizes="(max-width: 768px) 100vw, 66vw"
@@ -169,7 +169,7 @@ export function ImageGallery({ images, title }: ImageGalleryProps) {
           >
             <Image
               src={currentImage.url}
-              alt={currentImage.altText || title}
+              alt={currentImage.alt || title}
               fill
               className="object-contain"
               sizes="100vw"

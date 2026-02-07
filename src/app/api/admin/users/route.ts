@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const { field, order } = parseSortParams(searchParams);
     const filters = parseFilterParams(searchParams);
 
-    const where = buildWhereClause(filters, ['name', 'email']);
+    const where = buildWhereClause(filters, ['name', 'email', 'firstName', 'lastName']);
 
     const [data, total] = await Promise.all([
       prisma.user.findMany({

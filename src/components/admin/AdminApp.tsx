@@ -309,57 +309,80 @@ const StatCard = ({
   color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
   subtitle?: string;
   gradient?: string;
-}) => (
-  <Card
-    sx={{
-      height: '100%',
-      position: 'relative',
-      overflow: 'hidden',
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 3,
-        background: gradient || `linear-gradient(90deg, ${adminTheme.palette[color].main}, ${adminTheme.palette[color].light})`,
-      },
-    }}
-  >
-    <CardContent sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <Box>
-          <Typography
-            color="text.secondary"
-            variant="overline"
-            sx={{ fontWeight: 600, letterSpacing: '0.1em', fontSize: '0.7rem' }}
-          >
-            {title}
-          </Typography>
-          <Typography variant="h3" sx={{ fontWeight: 700, mt: 1, color: 'text.primary' }}>
-            {value}
-          </Typography>
-          {subtitle && (
-            <Typography color="text.secondary" variant="body2" sx={{ mt: 1, opacity: 0.7 }}>
-              {subtitle}
+}) => {
+  const colorMain = adminTheme.palette[color].main;
+  const colorLight = adminTheme.palette[color].light;
+  const grad = gradient || `linear-gradient(135deg, ${colorMain}, ${colorLight})`;
+  return (
+    <Card
+      sx={{
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        background: `linear-gradient(135deg, ${alpha(colorMain, 0.06)} 0%, rgba(26, 26, 46, 0.9) 100%)`,
+        border: `1px solid ${alpha(colorMain, 0.15)}`,
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          border: `1px solid ${alpha(colorMain, 0.35)}`,
+          boxShadow: `0 0 20px ${alpha(colorMain, 0.1)}`,
+          transform: 'translateY(-2px)',
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: grad,
+        },
+      }}
+    >
+      <CardContent sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <Box>
+            <Typography
+              color="text.secondary"
+              variant="overline"
+              sx={{ fontWeight: 600, letterSpacing: '0.1em', fontSize: '0.7rem' }}
+            >
+              {title}
             </Typography>
-          )}
+            <Typography
+              variant="h3"
+              sx={{
+                fontWeight: 700,
+                mt: 1,
+                background: grad,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              {value}
+            </Typography>
+            {subtitle && (
+              <Typography color="text.secondary" variant="body2" sx={{ mt: 1, opacity: 0.7 }}>
+                {subtitle}
+              </Typography>
+            )}
+          </Box>
+          <Avatar
+            sx={{
+              background: `linear-gradient(135deg, ${alpha(colorMain, 0.2)}, ${alpha(colorMain, 0.05)})`,
+              border: `1px solid ${alpha(colorMain, 0.3)}`,
+              width: 56,
+              height: 56,
+              color: colorMain,
+            }}
+          >
+            <Icon sx={{ fontSize: 28 }} />
+          </Avatar>
         </Box>
-        <Avatar
-          sx={{
-            background: `linear-gradient(135deg, ${alpha(adminTheme.palette[color].main, 0.2)}, ${alpha(adminTheme.palette[color].main, 0.05)})`,
-            border: `1px solid ${alpha(adminTheme.palette[color].main, 0.3)}`,
-            width: 56,
-            height: 56,
-            color: adminTheme.palette[color].main,
-          }}
-        >
-          <Icon sx={{ fontSize: 28 }} />
-        </Avatar>
-      </Box>
-    </CardContent>
-  </Card>
-);
+      </CardContent>
+    </Card>
+  );
+};
 
 interface ActivityEntry {
   id: string;
@@ -494,10 +517,16 @@ const Dashboard = () => {
 
       {/* Pending Items Alert */}
       {stats && (stats.pendingMedia > 0 || stats.pendingListings > 0) && (
-        <Card sx={{ mt: 4, borderColor: 'warning.main', borderWidth: 1 }}>
+        <Card
+          sx={{
+            mt: 4,
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(26, 26, 46, 0.9) 100%)',
+            border: '1px solid rgba(245, 158, 11, 0.25)',
+          }}
+        >
           <CardContent sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1.5, color: 'warning.main' }}>
-              ⚠️ Items Requiring Attention
+              <span style={{ fontSize: '1.2rem' }}>!</span> Items Requiring Attention
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               {stats.pendingMedia > 0 && (
@@ -505,7 +534,7 @@ const Dashboard = () => {
                   label={`${stats.pendingMedia} Media Pending Review`}
                   color="warning"
                   onClick={() => redirect('/media?filter=%7B%22status%22%3A%22PENDING%22%7D')}
-                  sx={{ cursor: 'pointer' }}
+                  sx={{ cursor: 'pointer', fontWeight: 600 }}
                 />
               )}
               {stats.pendingListings > 0 && (
@@ -513,7 +542,7 @@ const Dashboard = () => {
                   label={`${stats.pendingListings} Listings Pending Approval`}
                   color="warning"
                   onClick={() => redirect('/listings?filter=%7B%22status%22%3A%22PENDING_APPROVAL%22%7D')}
-                  sx={{ cursor: 'pointer' }}
+                  sx={{ cursor: 'pointer', fontWeight: 600 }}
                 />
               )}
             </Box>
@@ -522,10 +551,15 @@ const Dashboard = () => {
       )}
 
       <Box sx={{ mt: 4, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
-        <Card>
+        <Card
+          sx={{
+            background: 'linear-gradient(135deg, rgba(129, 140, 248, 0.04) 0%, rgba(26, 26, 46, 0.95) 100%)',
+            border: '1px solid rgba(129, 140, 248, 0.12)',
+          }}
+        >
           <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <TrendingIcon sx={{ color: 'primary.main' }} />
+            <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5, color: '#a5b4fc' }}>
+              <TrendingIcon sx={{ color: '#818cf8' }} />
               Quick Actions
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -546,11 +580,13 @@ const Dashboard = () => {
                     py: 3,
                     px: 1,
                     fontSize: '0.95rem',
-                    background: 'rgba(129, 140, 248, 0.05)',
-                    border: '1px solid rgba(129, 140, 248, 0.15)',
+                    background: 'rgba(129, 140, 248, 0.04)',
+                    border: '1px solid rgba(129, 140, 248, 0.12)',
+                    transition: 'all 0.2s ease',
                     '&:hover': {
-                      background: 'rgba(129, 140, 248, 0.15)',
+                      background: 'rgba(129, 140, 248, 0.12)',
                       borderColor: 'rgba(129, 140, 248, 0.3)',
+                      transform: 'translateX(4px)',
                     },
                   }}
                   icon={action.icon}
@@ -560,30 +596,44 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          sx={{
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.04) 0%, rgba(26, 26, 46, 0.95) 100%)',
+            border: '1px solid rgba(245, 158, 11, 0.12)',
+          }}
+        >
           <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <StarIcon sx={{ color: 'secondary.main' }} />
+            <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5, color: '#fbbf24' }}>
+              <StarIcon sx={{ color: '#f59e0b' }} />
               Membership Breakdown
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
               {stats?.membershipsByType && Object.entries(stats.membershipsByType).map(([type, count]) => (
                 <Box key={type} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography color="text.secondary">{type}</Typography>
-                  <Chip label={count} color="primary" size="small" variant="outlined" />
+                  <Chip
+                    label={count}
+                    size="small"
+                    sx={{
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid rgba(245, 158, 11, 0.25)',
+                      color: '#fbbf24',
+                      fontWeight: 600,
+                    }}
+                  />
                 </Box>
               ))}
               {stats && (
                 <>
-                  <Box sx={{ borderTop: '1px solid rgba(129, 140, 248, 0.2)', pt: 2, mt: 1 }}>
+                  <Box sx={{ borderTop: '1px solid rgba(129, 140, 248, 0.15)', pt: 2, mt: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography color="text.secondary">New Users (30 days)</Typography>
-                      <Chip label={stats.newUsersThisMonth} color="success" size="small" />
+                      <Chip label={stats.newUsersThisMonth} color="success" size="small" sx={{ fontWeight: 600 }} />
                     </Box>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography color="text.secondary">Confirmed Registrations</Typography>
-                    <Chip label={stats.confirmedRegistrations} color="info" size="small" />
+                    <Chip label={stats.confirmedRegistrations} color="info" size="small" sx={{ fontWeight: 600 }} />
                   </Box>
                 </>
               )}
@@ -594,9 +644,15 @@ const Dashboard = () => {
 
       {/* Recent Activity & Top Events */}
       <Box sx={{ mt: 4, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
-        <Card>
+        <Card
+          sx={{
+            background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.04) 0%, rgba(26, 26, 46, 0.95) 100%)',
+            border: '1px solid rgba(34, 197, 94, 0.12)',
+          }}
+        >
           <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 3 }}>
+            <Typography variant="h6" sx={{ mb: 3, color: '#4ade80', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <TrendingIcon sx={{ color: '#22c55e' }} />
               Recent Activity
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -609,9 +665,11 @@ const Dashboard = () => {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       p: 1.5,
-                      borderRadius: 1,
-                      background: 'rgba(129, 140, 248, 0.03)',
-                      border: '1px solid rgba(129, 140, 248, 0.08)',
+                      borderRadius: 1.5,
+                      background: 'rgba(34, 197, 94, 0.03)',
+                      border: '1px solid rgba(34, 197, 94, 0.08)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': { background: 'rgba(34, 197, 94, 0.08)' },
                     }}
                   >
                     <Box>
@@ -627,6 +685,7 @@ const Dashboard = () => {
                       size="small"
                       color={entry.action === 'CREATE' ? 'success' : entry.action === 'DELETE' ? 'error' : 'default'}
                       variant="outlined"
+                      sx={{ fontWeight: 600, fontSize: '0.7rem' }}
                     />
                   </Box>
                 ))
@@ -637,9 +696,15 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          sx={{
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(26, 26, 46, 0.95) 100%)',
+            border: '1px solid rgba(59, 130, 246, 0.12)',
+          }}
+        >
           <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 3 }}>
+            <Typography variant="h6" sx={{ mb: 3, color: '#60a5fa', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <EventsIcon sx={{ color: '#3b82f6' }} />
               Top Upcoming Events
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -653,11 +718,16 @@ const Dashboard = () => {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       p: 2,
-                      borderRadius: 1,
+                      borderRadius: 1.5,
                       cursor: 'pointer',
-                      background: 'rgba(129, 140, 248, 0.03)',
-                      border: '1px solid rgba(129, 140, 248, 0.08)',
-                      '&:hover': { background: 'rgba(129, 140, 248, 0.1)' },
+                      background: 'rgba(59, 130, 246, 0.03)',
+                      border: '1px solid rgba(59, 130, 246, 0.08)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        background: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: 'rgba(59, 130, 246, 0.2)',
+                        transform: 'translateX(4px)',
+                      },
                     }}
                   >
                     <Box>
@@ -668,7 +738,16 @@ const Dashboard = () => {
                         {new Date(event.startDate).toLocaleDateString()}
                       </Typography>
                     </Box>
-                    <Chip label={`${event.registrations} reg`} size="small" color="primary" variant="outlined" />
+                    <Chip
+                      label={`${event.registrations} reg`}
+                      size="small"
+                      sx={{
+                        background: 'rgba(59, 130, 246, 0.1)',
+                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                        color: '#60a5fa',
+                        fontWeight: 600,
+                      }}
+                    />
                   </Box>
                 ))
               ) : (
@@ -1087,7 +1166,7 @@ const UserFilter = (props: object) => (
 );
 
 const UserList = () => (
-  <List filters={<UserFilter />} sort={{ field: 'createdAt', order: 'DESC' }}>
+  <List filters={<UserFilter />} sort={{ field: 'createdAt', order: 'DESC' }} perPage={25}>
     <Datagrid rowClick="edit" bulkActionButtons={false}>
       <FunctionField
         label="Member"
@@ -1238,7 +1317,7 @@ const EventFilter = (props: object) => (
 );
 
 const EventList = () => (
-  <List filters={<EventFilter />} sort={{ field: 'startDate', order: 'DESC' }}>
+  <List filters={<EventFilter />} sort={{ field: 'startDate', order: 'DESC' }} perPage={25}>
     <Datagrid rowClick="edit">
       <TextField source="title" />
       <FunctionField
@@ -1573,7 +1652,7 @@ const MembershipFilter = (props: object) => (
 );
 
 const MembershipList = () => (
-  <List filters={<MembershipFilter />}>
+  <List filters={<MembershipFilter />} perPage={25}>
     <Datagrid rowClick="edit">
       <ReferenceField source="userId" reference="users" label="Member">
         <FunctionField
@@ -2049,7 +2128,7 @@ const ListingFilter = (props: object) => (
 );
 
 const ListingList = () => (
-  <List filters={<ListingFilter />} sort={{ field: 'createdAt', order: 'DESC' }}>
+  <List filters={<ListingFilter />} sort={{ field: 'createdAt', order: 'DESC' }} perPage={25}>
     <Datagrid rowClick="edit">
       <TextField source="title" />
       <FunctionField
