@@ -195,6 +195,7 @@ export async function POST(request: Request) {
 
     // Parse and validate request body with Zod
     const body = await request.json();
+    console.log('Listing create payload:', JSON.stringify(body));
     const parseResult = CreateListingSchema.safeParse(body);
 
     if (!parseResult.success) {
@@ -202,8 +203,11 @@ export async function POST(request: Request) {
         field: e.path.join('.'),
         message: e.message,
       }));
+      console.error('Listing validation errors:', JSON.stringify(errors));
+      // Build human-readable error message including field details
+      const fieldMessages = errors.map((e) => `${e.field}: ${e.message}`).join('; ');
       return NextResponse.json(
-        { error: 'Validation failed', details: errors },
+        { error: `Validation failed: ${fieldMessages}`, details: errors },
         { status: 400 }
       );
     }
@@ -264,13 +268,13 @@ export async function POST(request: Request) {
         description,
         category,
         condition,
-        price: parseFloat(askingPrice), // Schema uses 'price', API accepts 'askingPrice' for compatibility
+        price: askingPrice,
         is_negotiable: acceptsOffers ?? true,
-        minimumOffer: minimumOffer ? parseFloat(minimumOffer) : null,
+        minimumOffer: minimumOffer ?? null,
         brand: brand || null,
         model: model || null,
-        yearMade: yearMade ? parseInt(yearMade) : null,
-        originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+        yearMade: yearMade ?? null,
+        originalPrice: originalPrice ?? null,
         location: location || null,
         shippingAvailable: shippingAvailable ?? false,
         localPickupOnly: localPickupOnly ?? true,
