@@ -111,11 +111,18 @@ export function HeroSection() {
 
         <div className="mb-4">
           <BlurText
-            text="St. Pete Astronomy Club"
-            className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl bg-gradient-to-r from-blue-400 via-white to-blue-400 bg-clip-text text-transparent justify-center"
-            delay={60}
+            text="St. Pete"
+            className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl text-blue-400 justify-center"
+            delay={80}
             animateBy="characters"
             direction="top"
+          />
+          <BlurText
+            text="Astronomy Club"
+            className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl justify-center"
+            delay={60}
+            animateBy="characters"
+            direction="bottom"
           />
         </div>
 

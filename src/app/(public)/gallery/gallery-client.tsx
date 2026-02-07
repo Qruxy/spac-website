@@ -2,10 +2,9 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
-import { Search, Camera, User, Calendar, Eye, Star, Telescope } from 'lucide-react';
+import { Search, Camera, User, Eye, Star, Telescope } from 'lucide-react';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Masonry, type MasonryItem } from '@/components/animated/masonry';
-import { GlareHover } from '@/components/animated/glare-hover';
 import { PhotoModal } from './photo-modal';
 import type { PhotoCategory } from '@prisma/client';
 
@@ -92,9 +91,9 @@ export function GalleryClient({ photos }: GalleryClientProps) {
     return filteredPhotos.map((photo, index) => ({
       id: photo.id,
       img: photo.thumbnailUrl || photo.url,
-      // Use deterministic heights based on index to avoid hydration issues
-      // Heights cycle through 400, 500, 550, 450, 600 for visual variety
-      height: [400, 500, 550, 450, 600][index % 5],
+      // Heights are halved by Masonry component internally
+      // So these values produce actual rendered heights of 400-600px
+      height: [800, 1000, 1100, 900, 1200][index % 5],
       onClick: () => handlePhotoClick(photo),
       children: (
         <PhotoCard photo={photo} onClick={() => handlePhotoClick(photo)} />
@@ -146,7 +145,7 @@ export function GalleryClient({ photos }: GalleryClientProps) {
           scaleOnHover={true}
           hoverScale={0.98}
           blurToFocus={true}
-          gap={20}
+          gap={24}
         />
       ) : (
         <div className="text-center py-12">
@@ -182,15 +181,14 @@ function PhotoCard({ photo, onClick }: PhotoCardProps) {
   const categoryLabel = categories.find(c => c.id === photo.category)?.label || 'Photo';
 
   return (
-    <div onClick={onClick} className="cursor-pointer group">
-      {/* Image Container */}
-      <div className="relative w-full h-full rounded-xl overflow-hidden bg-slate-900 border border-border/50 group-hover:border-primary/40 transition-all duration-300">
+    <div onClick={onClick} className="w-full h-full cursor-pointer group">
+      <div className="relative w-full h-full rounded-xl overflow-hidden bg-slate-900 border border-white/10 group-hover:border-primary/50 transition-all duration-300 shadow-lg shadow-black/20">
         {photo.url ? (
           <Image
             src={photo.thumbnailUrl || photo.url}
             alt={photo.alt || photo.caption || 'Gallery photo'}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
@@ -201,31 +199,31 @@ function PhotoCard({ photo, onClick }: PhotoCardProps) {
 
         {/* Category badge */}
         {photo.category && (
-          <div className="absolute top-3 left-3 z-20">
-            <span className="inline-flex items-center rounded-full bg-black/60 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-white">
+          <div className="absolute top-4 left-4 z-20">
+            <span className="inline-flex items-center rounded-full bg-black/70 backdrop-blur-md px-3.5 py-1.5 text-sm font-medium text-white shadow-lg">
               {categoryLabel}
             </span>
           </div>
         )}
 
-        {/* Always-visible gradient overlay at bottom */}
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-10" />
+        {/* Gradient overlay - always visible */}
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/95 via-black/60 to-transparent z-10" />
 
         {/* View icon on hover */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">
-          <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm">
-            <Eye className="h-6 w-6 text-white" />
+          <div className="p-4 rounded-full bg-white/20 backdrop-blur-sm shadow-lg">
+            <Eye className="h-7 w-7 text-white" />
           </div>
         </div>
 
         {/* Always-visible info at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
-          <h3 className="text-base font-semibold text-white line-clamp-1 drop-shadow-lg">
+        <div className="absolute bottom-0 left-0 right-0 p-5 z-20">
+          <h3 className="text-lg font-bold text-white line-clamp-2 drop-shadow-lg leading-tight">
             {photo.caption || 'Untitled'}
           </h3>
-          <div className="flex items-center gap-2 mt-1.5 text-sm text-white/80 drop-shadow-md">
-            <User className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="flex items-center gap-1 truncate">
+          <div className="flex items-center gap-2.5 mt-2 text-base text-white/90 drop-shadow-md">
+            <User className="h-4 w-4 flex-shrink-0" />
+            <span className="flex items-center gap-1.5 truncate font-medium">
               {photographerName}
               <VerifiedBadge
                 isAdmin={photo.users.role === 'ADMIN'}
@@ -234,6 +232,12 @@ function PhotoCard({ photo, onClick }: PhotoCardProps) {
               />
             </span>
           </div>
+          {photo.equipment && (
+            <div className="flex items-center gap-2.5 mt-1.5 text-sm text-white/70 drop-shadow-md">
+              <Telescope className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{photo.equipment}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
