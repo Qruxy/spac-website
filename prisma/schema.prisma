@@ -892,6 +892,7 @@ model OBSConfig {
   registrations      OBSRegistration[]
   documents          OBSDocument[]
   financials         OBSFinancial[]
+  sponsors           OBSSponsor[]
 
   @@map("obs_configs")
 }
@@ -962,6 +963,22 @@ model OBSFinancial {
   obsConfig   OBSConfig @relation(fields: [obsConfigId], references: [id], onDelete: Cascade)
 
   @@map("obs_financials")
+}
+
+model OBSSponsor {
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  obsConfigId  String?   @map("obs_config_id")
+  name         String
+  website      String?
+  logoUrl      String?   @map("logo_url")
+  sponsorLevel String?   @map("sponsor_level")
+  isActive     Boolean   @default(true) @map("is_active")
+  sortOrder    Int       @default(0) @map("sort_order")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  obsConfig    OBSConfig? @relation(fields: [obsConfigId], references: [id])
+
+  @@map("obs_sponsors")
 }
 
 enum OBSRegistrationType {

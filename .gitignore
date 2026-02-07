@@ -64,5 +64,8 @@ prisma/migrations/.migration_lock.toml
 logs/
 *.log
 
+# Scraped/downloaded data
+data/
+
 # OS files
 Thumbs.db

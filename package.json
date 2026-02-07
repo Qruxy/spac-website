@@ -11,7 +11,11 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:migrate-php": "npx tsx scripts/migrate-php-data.ts",
+    "scrape:old-site": "npx tsx scripts/scrape-old-site.ts",
+    "scrape:download": "npx tsx scripts/download-scraped-files.ts",
+    "import:newsletters": "npx tsx scripts/import-newsletters.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

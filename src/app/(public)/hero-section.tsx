@@ -111,7 +111,7 @@ export function HeroSection() {
 
         <div className="mb-4">
           <BlurText
-            text="St. Petersburg"
+            text="St. Pete"
             className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl bg-gradient-to-r from-blue-400 via-blue-300 to-blue-400 bg-clip-text text-transparent justify-center"
             delay={80}
             animateBy="characters"
