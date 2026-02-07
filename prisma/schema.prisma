@@ -249,6 +249,8 @@ model Offer {
   message         String?
   status          OfferStatus @default(PENDING)
   responseMessage String?     @map("response_message")
+  counterAmount   Decimal?    @map("counter_amount") @db.Decimal(10, 2)
+  expiresAt       DateTime?   @map("expires_at") @db.Timestamptz(3)
   createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   buyer           User        @relation("OfferBuyer", fields: [buyerId], references: [id], onDelete: Cascade)

@@ -115,7 +115,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     // Check if listing accepts offers
-    if (!listing.acceptsOffers) {
+    if (!listing.is_negotiable) {
       return NextResponse.json(
         { error: 'This listing does not accept offers' },
         { status: 400 }
@@ -161,7 +161,6 @@ export async function POST(request: Request, { params }: RouteParams) {
       data: {
         listingId: listing.id,
         buyerId: session.user.id,
-        sellerId: listing.sellerId,
         amount: parseFloat(amount),
         message: message || null,
         status: 'PENDING',

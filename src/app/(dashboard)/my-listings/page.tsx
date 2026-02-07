@@ -185,7 +185,7 @@ function ListingCard({
     id: string;
     slug: string;
     title: string;
-    askingPrice: { toNumber: () => number } | number;
+    price: { toNumber: () => number } | number;
     status: string;
     viewCount: number;
     createdAt: Date;
@@ -267,7 +267,7 @@ function ListingCard({
               </div>
               <h3 className="font-semibold text-foreground">{listing.title}</h3>
               <p className="text-xl font-bold text-primary mt-1">
-                ${(typeof listing.askingPrice === 'number' ? listing.askingPrice : listing.askingPrice.toNumber()).toLocaleString()}
+                ${Number(listing.price).toLocaleString()}
               </p>
             </div>
 

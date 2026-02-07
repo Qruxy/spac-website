@@ -83,14 +83,14 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const isMember = session?.user?.membershipStatus === 'ACTIVE';
   const registrationCount = event._count.registrations;
-  const spotsLeft = event.maxAttendees ? event.maxAttendees - registrationCount : null;
+  const spotsLeft = event.capacity ? event.capacity - registrationCount : null;
   const isFull = spotsLeft !== null && spotsLeft <= 0;
   const isOBS = event.type === 'OBS_SESSION';
 
   // Determine the price to show
   const displayPrice = isMember && event.memberPrice
     ? Number(event.memberPrice)
-    : event.nonMemberPrice ? Number(event.nonMemberPrice) : 0;
+    : event.guest_price ? Number(event.guest_price) : 0;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -268,7 +268,7 @@ export default async function EventPage({ params }: EventPageProps) {
             </div>
 
             {/* Capacity */}
-            {event.maxAttendees && (
+            {event.capacity && (
               <div className="flex items-center justify-between py-3 border-t border-border">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Users className="h-4 w-4" />
@@ -276,7 +276,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 </div>
                 <div className="text-right">
                   <p className="font-medium text-foreground">
-                    {registrationCount} / {event.maxAttendees}
+                    {registrationCount} / {event.capacity}
                   </p>
                   {spotsLeft !== null && spotsLeft > 0 && spotsLeft <= 10 && (
                     <p className="text-xs text-orange-400">
@@ -300,7 +300,7 @@ export default async function EventPage({ params }: EventPageProps) {
                       <p className="font-bold text-xl text-foreground">
                         {formatPrice(displayPrice)}
                       </p>
-                      {isMember && event.memberPrice && event.nonMemberPrice && Number(event.memberPrice) < Number(event.nonMemberPrice) && (
+                      {isMember && event.memberPrice && event.guest_price && Number(event.memberPrice) < Number(event.guest_price) && (
                         <p className="text-xs text-green-400">
                           Member discount applied!
                         </p>

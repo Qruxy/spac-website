@@ -31,16 +31,16 @@ export default async function MyOffersPage() {
 
   // Parallel queries for better performance
   const [incomingOffers, sentOffers] = await prisma.$transaction([
-    // Fetch offers where user is the seller (incoming)
+    // Fetch offers on user's listings (incoming)
     prisma.offer.findMany({
-      where: { sellerId: session!.user.id },
+      where: { listing: { sellerId: session!.user.id } },
       include: {
         listing: {
           select: {
             id: true,
             title: true,
             slug: true,
-            askingPrice: true,
+            price: true,
             images: {
               take: 1,
               select: { url: true, thumbnailUrl: true },
@@ -68,20 +68,20 @@ export default async function MyOffersPage() {
             id: true,
             title: true,
             slug: true,
-            askingPrice: true,
+            price: true,
+            seller: {
+              select: {
+                id: true,
+                name: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              },
+            },
             images: {
               take: 1,
               select: { url: true, thumbnailUrl: true },
             },
-          },
-        },
-        seller: {
-          select: {
-            id: true,
-            name: true,
-            firstName: true,
-            lastName: true,
-            avatarUrl: true,
           },
         },
       },
@@ -269,37 +269,33 @@ const statusConfig: Record<
   },
 };
 
+interface PersonInfo {
+  id: string;
+  name: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  avatarUrl: string | null;
+}
+
 interface OfferCardProps {
   offer: {
     id: string;
     amount: { toNumber(): number } | number;
-    counterAmount: { toNumber(): number } | number | null;
+    counterAmount?: { toNumber(): number } | number | null;
     status: string;
     message: string | null;
     responseMessage: string | null;
-    expiresAt: Date | null;
+    expiresAt?: Date | null;
     createdAt: Date;
     listing: {
       id: string;
       title: string;
       slug: string;
-      askingPrice: { toNumber(): number } | number;
+      price: { toNumber(): number } | number;
+      seller?: PersonInfo;
       images: { url: string; thumbnailUrl: string | null }[];
     };
-    buyer?: {
-      id: string;
-      name: string | null;
-      firstName: string | null;
-      lastName: string | null;
-      avatarUrl: string | null;
-    };
-    seller?: {
-      id: string;
-      name: string | null;
-      firstName: string | null;
-      lastName: string | null;
-      avatarUrl: string | null;
-    };
+    buyer?: PersonInfo;
   };
   type: 'incoming' | 'sent';
   userRole: 'buyer' | 'seller';
@@ -316,11 +312,11 @@ function OfferCard({ offer, type, userRole }: OfferCardProps) {
       : offer.counterAmount.toNumber()
     : null;
   const askingPrice =
-    typeof offer.listing.askingPrice === 'number'
-      ? offer.listing.askingPrice
-      : offer.listing.askingPrice.toNumber();
+    typeof offer.listing.price === 'number'
+      ? offer.listing.price
+      : offer.listing.price.toNumber();
 
-  const otherParty = type === 'incoming' ? offer.buyer : offer.seller;
+  const otherParty = type === 'incoming' ? offer.buyer : offer.listing.seller;
   const otherPartyName = otherParty?.name ||
     `${otherParty?.firstName} ${otherParty?.lastName}`.trim() ||
     'Anonymous';

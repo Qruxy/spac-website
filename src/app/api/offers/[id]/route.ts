@@ -53,7 +53,17 @@ export async function GET(request: Request, { params }: RouteParams) {
             id: true,
             title: true,
             slug: true,
-            askingPrice: true,
+            price: true,
+            sellerId: true,
+            seller: {
+              select: {
+                id: true,
+                name: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              },
+            },
             images: {
               where: { status: 'APPROVED' },
               take: 1,
@@ -62,15 +72,6 @@ export async function GET(request: Request, { params }: RouteParams) {
           },
         },
         buyer: {
-          select: {
-            id: true,
-            name: true,
-            firstName: true,
-            lastName: true,
-            avatarUrl: true,
-          },
-        },
-        seller: {
           select: {
             id: true,
             name: true,
@@ -91,7 +92,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     // Only buyer, seller, or admin can view
     const isBuyer = session.user.id === offer.buyerId;
-    const isSeller = session.user.id === offer.sellerId;
+    const isSeller = session.user.id === offer.listing.sellerId;
     const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'MODERATOR';
 
     if (!isBuyer && !isSeller && !isAdmin) {
@@ -140,7 +141,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     }
 
     const isBuyer = session.user.id === offer.buyerId;
-    const isSeller = session.user.id === offer.sellerId;
+    const isSeller = session.user.id === offer.listing.sellerId;
 
     if (!isBuyer && !isSeller) {
       return NextResponse.json(
@@ -291,7 +292,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     await prisma.auditLog.create({
       data: {
         actorId: session.user.id,
-        subjectId: isSeller ? offer.buyerId : offer.sellerId,
+        subjectId: isSeller ? offer.buyerId : offer.listing.sellerId,
         action: 'UPDATE',
         entityType: 'Offer',
         entityId: id,

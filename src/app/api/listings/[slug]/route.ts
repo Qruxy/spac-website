@@ -44,7 +44,7 @@ export async function GET(request: Request, { params }: RouteParams) {
             id: true,
             url: true,
             thumbnailUrl: true,
-            altText: true,
+            alt: true,
             caption: true,
             width: true,
             height: true,
@@ -158,8 +158,8 @@ export async function PUT(request: Request, { params }: RouteParams) {
     if (description !== undefined) updateData.description = description;
     if (category !== undefined) updateData.category = category;
     if (condition !== undefined) updateData.condition = condition;
-    if (askingPrice !== undefined) updateData.askingPrice = parseFloat(askingPrice);
-    if (acceptsOffers !== undefined) updateData.acceptsOffers = acceptsOffers;
+    if (askingPrice !== undefined) updateData.price = parseFloat(askingPrice);
+    if (acceptsOffers !== undefined) updateData.is_negotiable = acceptsOffers;
     if (minimumOffer !== undefined) updateData.minimumOffer = minimumOffer ? parseFloat(minimumOffer) : null;
     if (brand !== undefined) updateData.brand = brand || null;
     if (model !== undefined) updateData.model = model || null;
@@ -216,7 +216,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
         await prisma.media.updateMany({
           where: {
             id: { in: imageIds },
-            uploaderId: session.user.id,
+            uploaded_by_id: session.user.id,
           },
           data: { listingId: listing.id },
         });

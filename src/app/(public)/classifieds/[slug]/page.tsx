@@ -209,7 +209,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
               <span className="flex items-center gap-2">
                 <Check className="h-5 w-5" />
                 This item has been sold
-                {listing.soldPrice && ` for $${listing.soldPrice.toLocaleString()}`}
+                {listing.soldPrice && ` for $${Number(listing.soldPrice).toLocaleString()}`}
               </span>
             )}
             {listing.status === 'PENDING_APPROVAL' && (
