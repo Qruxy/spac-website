@@ -1,9 +1,9 @@
 /**
  * Dashboard Layout
  *
- * Authenticated member area with sidebar navigation.
+ * Authenticated member area with sidebar + top bar navigation.
  * Requires authentication - redirects to login if not authenticated.
- * Uses GlobalDock for global navigation (escape to public pages).
+ * Mobile bottom nav replaces the desktop sidebar on small screens.
  */
 
 import { redirect } from 'next/navigation';
@@ -21,8 +21,8 @@ import {
   QrCode,
   Telescope,
   Shield,
+  Home,
 } from 'lucide-react';
-import { GlobalDock } from '@/components/layout';
 import type { ReactNode } from 'react';
 
 const sidebarLinks = [
@@ -164,14 +164,37 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
           </div>
         </aside>
 
-        {/* Global Navigation Dock - provides escape to public pages */}
-        <GlobalDock />
-
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8 pb-24 md:pb-28">
+        <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
           {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation - visible only on small screens */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur-sm">
+        <div className="flex items-center justify-around h-16">
+          <Link href="/" className="flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground">
+            <Home className="h-5 w-5" />
+            <span className="text-[10px]">Home</span>
+          </Link>
+          <Link href="/dashboard" className="flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground">
+            <LayoutDashboard className="h-5 w-5" />
+            <span className="text-[10px]">Dashboard</span>
+          </Link>
+          <Link href="/my-listings" className="flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground">
+            <ShoppingBag className="h-5 w-5" />
+            <span className="text-[10px]">Listings</span>
+          </Link>
+          <Link href="/my-events" className="flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground">
+            <Calendar className="h-5 w-5" />
+            <span className="text-[10px]">Events</span>
+          </Link>
+          <Link href="/profile" className="flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground">
+            <User className="h-5 w-5" />
+            <span className="text-[10px]">Profile</span>
+          </Link>
+        </div>
+      </nav>
     </div>
   );
 }

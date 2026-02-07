@@ -8,7 +8,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Upload, X, ImageIcon } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
+import { ImageUploader } from './image-uploader';
 
 interface ListingFormData {
   title: string;
@@ -66,6 +67,7 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [existingImages, setExistingImages] = useState<ExistingImage[]>(initialData?.images || []);
 
   const [formData, setFormData] = useState<ListingFormData>({
@@ -93,21 +95,51 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
     }));
-  };
-
-  const handleRemoveImage = (imageId: string) => {
-    setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent, asDraft: boolean = false) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
     setIsSubmitting(true);
+
+    // Client-side validation
+    const errors: Record<string, string> = {};
+    if (!formData.title.trim() || formData.title.trim().length < 3) {
+      errors.title = 'Title must be at least 3 characters';
+    }
+    if (!formData.description.trim() || formData.description.trim().length < 10) {
+      errors.description = 'Description must be at least 10 characters';
+    }
+    if (!formData.category) {
+      errors.category = 'Please select a category';
+    }
+    if (!formData.condition) {
+      errors.condition = 'Please select a condition';
+    }
+    if (!formData.askingPrice || isNaN(parseFloat(formData.askingPrice)) || parseFloat(formData.askingPrice) <= 0) {
+      errors.askingPrice = 'Please enter a valid price';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError('Please fix the highlighted fields below');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const payload = {
-        title: formData.title,
-        description: formData.description,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
         category: formData.category,
         condition: formData.condition,
         askingPrice: parseFloat(formData.askingPrice),
@@ -142,6 +174,20 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
+        // Parse field-level errors from Zod validation
+        if (data.details && Array.isArray(data.details)) {
+          const serverErrors: Record<string, string> = {};
+          for (const detail of data.details) {
+            if (detail.field) {
+              serverErrors[detail.field] = detail.message;
+            }
+          }
+          if (Object.keys(serverErrors).length > 0) {
+            setFieldErrors(serverErrors);
+            setError('Please fix the highlighted fields below');
+            return;
+          }
+        }
         throw new Error(data.error || 'Failed to save listing');
       }
 
@@ -179,9 +225,10 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
               onChange={handleChange}
               placeholder="e.g., Celestron NexStar 8SE Telescope"
               required
-              maxLength={100}
-              className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              maxLength={200}
+              className={`w-full px-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary ${fieldErrors.title ? 'border-destructive' : 'border-border'}`}
             />
+            {fieldErrors.title && <p className="mt-1 text-xs text-destructive">{fieldErrors.title}</p>}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -195,7 +242,7 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
                 value={formData.category}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`w-full px-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary ${fieldErrors.category ? 'border-destructive' : 'border-border'}`}
               >
                 <option value="">Select category...</option>
                 {CATEGORIES.map((cat) => (
@@ -204,6 +251,7 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
                   </option>
                 ))}
               </select>
+              {fieldErrors.category && <p className="mt-1 text-xs text-destructive">{fieldErrors.category}</p>}
             </div>
 
             <div>
@@ -216,7 +264,7 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
                 value={formData.condition}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`w-full px-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary ${fieldErrors.condition ? 'border-destructive' : 'border-border'}`}
               >
                 <option value="">Select condition...</option>
                 {CONDITIONS.map((cond) => (
@@ -225,6 +273,7 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
                   </option>
                 ))}
               </select>
+              {fieldErrors.condition && <p className="mt-1 text-xs text-destructive">{fieldErrors.condition}</p>}
             </div>
           </div>
 
@@ -240,8 +289,9 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
               placeholder="Describe your item in detail. Include specs, history, any issues, and what's included..."
               required
               rows={6}
-              className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-y"
+              className={`w-full px-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-y ${fieldErrors.description ? 'border-destructive' : 'border-border'}`}
             />
+            {fieldErrors.description && <p className="mt-1 text-xs text-destructive">{fieldErrors.description}</p>}
             <p className="mt-1 text-xs text-muted-foreground">
               Be detailed - include specs, accessories, any issues, and reason for selling.
             </p>
@@ -343,9 +393,10 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
                 required
                 min={1}
                 step="0.01"
-                className="w-full pl-8 pr-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`w-full pl-8 pr-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary ${fieldErrors.askingPrice ? 'border-destructive' : 'border-border'}`}
               />
             </div>
+            {fieldErrors.askingPrice && <p className="mt-1 text-xs text-destructive">{fieldErrors.askingPrice}</p>}
           </div>
 
           <div className="flex items-center gap-3">
@@ -446,41 +497,12 @@ export function ListingForm({ mode, initialData }: ListingFormProps) {
       {/* Images */}
       <section className="rounded-xl border border-border bg-card p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4">Photos</h2>
-
-        {existingImages.length > 0 && (
-          <div className="mb-4">
-            <p className="text-sm text-muted-foreground mb-2">Current Photos</p>
-            <div className="flex flex-wrap gap-2">
-              {existingImages.map((image) => (
-                <div key={image.id} className="relative group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={image.thumbnailUrl || image.url}
-                    alt="Listing photo"
-                    className="w-20 h-20 object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(image.id)}
-                    className="absolute -top-2 -right-2 p-1 rounded-full bg-destructive text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-          <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-sm text-muted-foreground mb-2">
-            Photo upload coming soon
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Add up to 10 photos of your item
-          </p>
-        </div>
+        <ImageUploader
+          images={existingImages}
+          onImagesChange={setExistingImages}
+          maxImages={10}
+          folder="classifieds"
+        />
       </section>
 
       {/* Actions */}
