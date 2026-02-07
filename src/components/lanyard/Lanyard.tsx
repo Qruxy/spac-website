@@ -502,7 +502,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, memberName, memberTitle, memberImag
   };
 
   // Load the card model and lanyard texture
-  const { nodes, materials } = useGLTF('/lanyard/card.glb') as {
+  const { nodes, materials } = useGLTF('/lanyard/card.glb') as unknown as {
     nodes: { card: THREE.Mesh; clip?: THREE.Mesh; clamp?: THREE.Mesh };
     materials: { base: THREE.MeshStandardMaterial; metal?: THREE.MeshStandardMaterial };
   };
@@ -578,7 +578,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, memberName, memberTitle, memberImag
       curve.points[3].copy(fixed.current.translation());
 
       if (band.current) {
-        (band.current.geometry as MeshLineGeometry).setPoints(
+        (band.current.geometry as InstanceType<typeof MeshLineGeometry>).setPoints(
           curve.getPoints(32)
         );
       }

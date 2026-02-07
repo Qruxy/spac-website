@@ -18,23 +18,23 @@ interface BlurTextProps {
   direction?: 'top' | 'bottom';
   threshold?: number;
   rootMargin?: string;
-  animationFrom?: Record<string, unknown>;
-  animationTo?: Record<string, unknown>[];
+  animationFrom?: Record<string, string | number>;
+  animationTo?: Record<string, string | number>[];
   easing?: (t: number) => number;
   onAnimationComplete?: () => void;
   stepDuration?: number;
 }
 
 const buildKeyframes = (
-  from: Record<string, unknown>,
-  steps: Record<string, unknown>[]
+  from: Record<string, string | number>,
+  steps: Record<string, string | number>[]
 ) => {
   const keys = new Set([
     ...Object.keys(from),
     ...steps.flatMap((s) => Object.keys(s)),
   ]);
 
-  const keyframes: Record<string, unknown[]> = {};
+  const keyframes: Record<string, (string | number | undefined)[]> = {};
   keys.forEach((k) => {
     keyframes[k] = [from[k], ...steps.map((s) => s[k])];
   });
@@ -140,8 +140,8 @@ export function BlurText({
           <motion.span
             className="inline-block will-change-[transform,filter,opacity]"
             key={index}
-            initial={fromSnapshot}
-            animate={inView ? animateKeyframes : fromSnapshot}
+            initial={fromSnapshot as Record<string, string | number>}
+            animate={(inView ? animateKeyframes : fromSnapshot) as Record<string, string | number>}
             transition={spanTransition}
             onAnimationComplete={
               index === elements.length - 1 ? onAnimationComplete : undefined

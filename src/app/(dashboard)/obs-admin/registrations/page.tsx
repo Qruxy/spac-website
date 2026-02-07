@@ -71,7 +71,7 @@ export default async function OBSRegistrationsPage() {
           {registrations.length} registration{registrations.length !== 1 ? 's' : ''} for {activeOBS.eventName}
         </p>
 
-        <RegistrationsClient registrations={registrations} obsId={activeOBS.id} />
+        <RegistrationsClient registrations={JSON.parse(JSON.stringify(registrations))} obsId={activeOBS.id} />
       </div>
     </div>
   );

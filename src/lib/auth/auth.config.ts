@@ -177,7 +177,7 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       if (account?.provider === 'cognito') {
         // Sync Cognito user with local database
-        const existingUser = await prisma.user.findUnique({
+        const existingUser = await prisma.user.findFirst({
           where: { cognitoId: user.id },
         });
 

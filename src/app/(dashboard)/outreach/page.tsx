@@ -83,7 +83,7 @@ export default async function OutreachPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 py-8">
       <div className="container mx-auto px-4 max-w-6xl">
         <OutreachCommitteeClient
-          initialMembers={members}
+          initialMembers={JSON.parse(JSON.stringify(members))}
           canManage={canManage}
           currentUserId={session.user.id}
         />

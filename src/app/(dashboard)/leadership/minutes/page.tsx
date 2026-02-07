@@ -90,7 +90,7 @@ export default async function MinutesListPage() {
         </div>
 
         {/* Minutes List by Year */}
-        <MinutesListClient minutesByYear={minutesByYear} years={years} />
+        <MinutesListClient minutesByYear={JSON.parse(JSON.stringify(minutesByYear))} years={years} />
       </div>
     </div>
   );

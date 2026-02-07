@@ -74,7 +74,7 @@ export default async function MyPhotosPage() {
   try {
     photos = await prisma.media.findMany({
       where: {
-        uploaderId: session!.user.id,
+        uploaded_by_id: session!.user.id,
         type: 'IMAGE',
         category: { not: null }, // Only gallery photos
         listingId: null, // Exclude listing photos

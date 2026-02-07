@@ -76,8 +76,8 @@ export default async function OBSCheckInPage() {
           {checkedInCount} of {registrations.length} attendees checked in
         </p>
 
-        <CheckInClient 
-          registrations={registrations} 
+        <CheckInClient
+          registrations={JSON.parse(JSON.stringify(registrations))}
           obsId={activeOBS.id}
           checkedInById={session.user.id}
         />

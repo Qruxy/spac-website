@@ -95,7 +95,7 @@ function formatTime(dateString: string): string {
 export function EventCard({ event, featured = false }: { event: EventData; featured?: boolean }) {
   const typeStyle = eventTypeStyles[event.type] || eventTypeStyles.MEETING;
   const isFree = !event.memberPrice || event.memberPrice === 0;
-  const hasLimitedSpots = event.spotsAvailable !== null && event.spotsAvailable <= 10;
+  const hasLimitedSpots = event.spotsAvailable != null && event.spotsAvailable <= 10;
 
   return (
     <Link

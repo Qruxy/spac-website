@@ -200,7 +200,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
           where: { id },
           data: {
             status: 'ACCEPTED',
-            respondedAt: new Date(),
+            updatedAt: new Date(),
           },
         });
 
@@ -221,7 +221,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
             id: { not: id },
             status: { in: ['PENDING', 'COUNTERED'] },
           },
-          data: { status: 'REJECTED', respondedAt: new Date() },
+          data: { status: 'REJECTED' },
         });
         break;
 
@@ -238,7 +238,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
           where: { id },
           data: {
             status: 'REJECTED',
-            respondedAt: new Date(),
+            updatedAt: new Date(),
             responseMessage: message || null,
           },
         });
@@ -265,7 +265,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
           data: {
             status: 'COUNTERED',
             counterAmount: counterAmount, // Already a number from Zod validation
-            respondedAt: new Date(),
+            updatedAt: new Date(),
             responseMessage: message || null,
             expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days to respond
           },

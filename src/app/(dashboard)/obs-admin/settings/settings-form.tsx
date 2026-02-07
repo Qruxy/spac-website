@@ -146,7 +146,7 @@ export default function OBSSettingsForm({ configs: initialConfigs, currentYear }
     }
   };
 
-  const updateField = (field: keyof OBSConfig, value: string | number | boolean) => {
+  const updateField = (field: keyof OBSConfig, value: string | number | boolean | null) => {
     if (!selectedConfig) return;
     setSelectedConfig({ ...selectedConfig, [field]: value });
   };

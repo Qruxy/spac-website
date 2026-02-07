@@ -59,7 +59,7 @@ export default async function OBSSettingsPage() {
           <h1 className="text-3xl font-bold text-white">OBS Event Settings</h1>
         </div>
 
-        <OBSSettingsForm configs={configs} currentYear={currentYear} />
+        <OBSSettingsForm configs={JSON.parse(JSON.stringify(configs))} currentYear={currentYear} />
       </div>
     </div>
   );

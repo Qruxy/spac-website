@@ -250,9 +250,9 @@ function Band({
         </RigidBody>
       </group>
       <mesh ref={band}>
-        {/* @ts-expect-error meshline types */}
+        {/* @ts-ignore meshline types */}
         <meshLineGeometry />
-        {/* @ts-expect-error meshline types */}
+        {/* @ts-ignore meshline types */}
         <meshLineMaterial
           color={bandColor}
           depthTest={false}

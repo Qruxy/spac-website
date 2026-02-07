@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       // Payment failed - update registration status
       await prisma.oBSRegistration.update({
         where: { id: registrationId },
-        data: { paymentStatus: 'FAILED' },
+        data: { paymentStatus: 'PENDING' },
       });
 
       return NextResponse.redirect(`${baseUrl}/obs?error=payment_failed`);

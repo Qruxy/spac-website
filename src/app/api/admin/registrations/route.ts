@@ -106,7 +106,7 @@ export async function PUT(request: Request) {
         newValues: {
           bulkAction: true,
           count: ids.length,
-          changes: updateData,
+          changes: updateData as Record<string, string | number | boolean>,
         },
       },
     });

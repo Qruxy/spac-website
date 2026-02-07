@@ -906,7 +906,8 @@ const CustomMenu = () => null;
 // Custom Layout
 // ============================================
 
-const CustomLayout = (props: object) => (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomLayout = (props: any) => (
   <Layout
     {...props}
     appBar={CustomAppBar}
