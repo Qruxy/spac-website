@@ -71,6 +71,10 @@ model User {
   isPrimaryMember                   Boolean?       @default(false) @map("is_primary_member")
   applePassSerial                   String?        @map("apple_pass_serial")
   googlePassId                      String?        @map("google_pass_id")
+  isBanned                          Boolean        @default(false) @map("is_banned")
+  bannedFromClassifieds             Boolean        @default(false) @map("banned_from_classifieds")
+  bannedFromMedia                   Boolean        @default(false) @map("banned_from_media")
+  adminNotes                        String?        @map("admin_notes")
   accounts                          Account[]
   audit_logs                        AuditLog[]
   eventsCreated                     Event[]        @relation("EventCreator")

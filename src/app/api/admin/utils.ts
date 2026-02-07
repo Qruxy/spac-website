@@ -78,13 +78,28 @@ export function parseSortParams(searchParams: URLSearchParams): {
  */
 export function parseFilterParams(searchParams: URLSearchParams): Record<string, unknown> {
   const filterStr = searchParams.get('filter');
-  if (!filterStr) return {};
+  const idsStr = searchParams.get('ids');
 
-  try {
-    return JSON.parse(filterStr);
-  } catch {
-    return {};
+  let filters: Record<string, unknown> = {};
+
+  if (filterStr) {
+    try {
+      filters = JSON.parse(filterStr);
+    } catch {
+      // ignore malformed filter
+    }
   }
+
+  // Support getMany: data provider sends ids as separate query param
+  if (idsStr) {
+    try {
+      filters.ids = JSON.parse(idsStr);
+    } catch {
+      // ignore malformed ids
+    }
+  }
+
+  return filters;
 }
 
 /**

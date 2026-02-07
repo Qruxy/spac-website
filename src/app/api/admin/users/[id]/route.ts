@@ -55,7 +55,10 @@ export async function PUT(request: Request, { params }: RouteParams) {
     const body = await request.json();
 
     // Only allow updating certain fields
-    const { name, firstName, lastName, role, phone, emailVerified, isValidated } = body;
+    const {
+      name, firstName, lastName, role, phone, emailVerified, isValidated,
+      isBanned, bannedFromClassifieds, bannedFromMedia, adminNotes,
+    } = body;
 
     const user = await prisma.user.update({
       where: { id },
@@ -67,6 +70,10 @@ export async function PUT(request: Request, { params }: RouteParams) {
         ...(phone !== undefined && { phone }),
         ...(emailVerified !== undefined && { emailVerified: emailVerified ? new Date() : null }),
         ...(isValidated !== undefined && { isValidated }),
+        ...(isBanned !== undefined && { isBanned }),
+        ...(bannedFromClassifieds !== undefined && { bannedFromClassifieds }),
+        ...(bannedFromMedia !== undefined && { bannedFromMedia }),
+        ...(adminNotes !== undefined && { adminNotes }),
       },
     });
 

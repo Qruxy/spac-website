@@ -84,6 +84,12 @@ export async function POST(request: Request) {
       recurrenceEndDate,
     } = body;
 
+    // Parse dates safely: date-only strings (no T) default to noon UTC to avoid timezone shift
+    const safeDate = (val: string): Date => {
+      if (val && !val.includes('T')) return new Date(val + 'T12:00:00');
+      return new Date(val);
+    };
+
     if (!title || !type || !startDate) {
       return NextResponse.json(
         { error: 'Missing required fields: title, type, startDate' },
@@ -113,8 +119,8 @@ export async function POST(request: Request) {
       description: description || '',
       type,
       status: status || 'PUBLISHED', // Default to PUBLISHED so events show immediately
-      startDate: new Date(startDate),
-      endDate: endDate ? new Date(endDate) : new Date(startDate),
+      startDate: safeDate(startDate),
+      endDate: endDate ? safeDate(endDate) : safeDate(startDate),
       locationName: locationName || 'TBD',
       locationAddress: locationAddress || null,
       capacity: capacity ? Number(capacity) : null,

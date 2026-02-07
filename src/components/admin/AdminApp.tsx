@@ -359,6 +359,22 @@ const StatCard = ({
   </Card>
 );
 
+interface ActivityEntry {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  user: string;
+  createdAt: string;
+}
+
+interface TopEvent {
+  id: string;
+  title: string;
+  startDate: string;
+  registrations: number;
+}
+
 interface DashboardStats {
   totalUsers: number;
   upcomingEvents: number;
@@ -370,6 +386,11 @@ interface DashboardStats {
   newUsersThisMonth: number;
   confirmedRegistrations: number;
   membershipsByType: Record<string, number>;
+  analytics?: {
+    recentActivity: ActivityEntry[];
+    topEvents: TopEvent[];
+    registrationsByStatus: Record<string, number>;
+  };
 }
 
 const Dashboard = () => {
@@ -380,7 +401,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('/api/admin/stats');
+        const response = await fetch('/api/admin/stats?detailed=true');
         if (response.ok) {
           const data = await response.json();
           setStats(data);
@@ -512,6 +533,7 @@ const Dashboard = () => {
                 { label: 'Manage Memberships', icon: <MembershipIcon />, path: '/memberships' },
                 { label: 'Review Media', icon: <MediaIcon />, path: '/media' },
                 { label: 'View Registrations', icon: <RegistrationIcon />, path: '/registrations' },
+                { label: 'Manage Board Members', icon: <BoardIcon />, path: '/board-members' },
               ].map((action) => (
                 <Chip
                   key={action.path}
@@ -562,6 +584,93 @@ const Dashboard = () => {
                     <Chip label={stats.confirmedRegistrations} color="info" size="small" />
                   </Box>
                 </>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+
+      {/* Recent Activity & Top Events */}
+      <Box sx={{ mt: 4, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
+        <Card>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ mb: 3 }}>
+              Recent Activity
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {stats?.analytics?.recentActivity?.length ? (
+                stats.analytics.recentActivity.map((entry) => (
+                  <Box
+                    key={entry.id}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      p: 1.5,
+                      borderRadius: 1,
+                      background: 'rgba(129, 140, 248, 0.03)',
+                      border: '1px solid rgba(129, 140, 248, 0.08)',
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {entry.user} {entry.action.toLowerCase()}d {entry.entityType}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(entry.createdAt).toLocaleDateString()} {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={entry.action}
+                      size="small"
+                      color={entry.action === 'CREATE' ? 'success' : entry.action === 'DELETE' ? 'error' : 'default'}
+                      variant="outlined"
+                    />
+                  </Box>
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary">No recent activity</Typography>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ mb: 3 }}>
+              Top Upcoming Events
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {stats?.analytics?.topEvents?.length ? (
+                stats.analytics.topEvents.map((event) => (
+                  <Box
+                    key={event.id}
+                    onClick={() => redirect(`/events/${event.id}`)}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      p: 2,
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      background: 'rgba(129, 140, 248, 0.03)',
+                      border: '1px solid rgba(129, 140, 248, 0.08)',
+                      '&:hover': { background: 'rgba(129, 140, 248, 0.1)' },
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {event.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(event.startDate).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                    <Chip label={`${event.registrations} reg`} size="small" color="primary" variant="outlined" />
+                  </Box>
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary">No upcoming events</Typography>
               )}
             </Box>
           </CardContent>
@@ -954,6 +1063,16 @@ const UserList = () => (
           )
         }
       />
+      <FunctionField
+        label="Banned"
+        render={(record: { isBanned?: boolean; bannedFromClassifieds?: boolean; bannedFromMedia?: boolean }) => {
+          if (record.isBanned) return <Chip label="BANNED" color="error" size="small" />;
+          const bans = [];
+          if (record.bannedFromClassifieds) bans.push('Classifieds');
+          if (record.bannedFromMedia) bans.push('Media');
+          return bans.length > 0 ? <Chip label={bans.join(', ')} color="warning" size="small" variant="outlined" /> : null;
+        }}
+      />
       <DateField source="createdAt" label="Joined" />
     </Datagrid>
   </List>
@@ -996,6 +1115,16 @@ const UserEdit = () => (
             A shield badge will appear next to their name in the gallery and classifieds.
           </Typography>
         </Box>
+      </FormSection>
+      <FormSection title="Restrictions">
+        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, width: '100%' }}>
+          <BooleanInput source="isBanned" label="Ban User" helperText="Completely ban from site" />
+          <BooleanInput source="bannedFromClassifieds" label="Ban from Classifieds" helperText="Cannot post listings" />
+          <BooleanInput source="bannedFromMedia" label="Ban from Media" helperText="Cannot upload photos" />
+        </Box>
+      </FormSection>
+      <FormSection title="Admin Notes">
+        <TextInput source="adminNotes" label="Internal Notes" multiline rows={4} fullWidth helperText="Only visible to admins" />
       </FormSection>
     </SimpleForm>
   </Edit>
@@ -1068,15 +1197,14 @@ const EventList = () => (
   </List>
 );
 
-// Sticky toolbars positioned above the GlobalDock (fixed bottom nav ~80px)
 const CreateEventToolbar = () => (
-  <Toolbar sx={{ position: 'sticky', bottom: '80px', zIndex: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
+  <Toolbar sx={{ position: 'sticky', bottom: 0, zIndex: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
     <SaveButton label="Create Event" alwaysEnable />
   </Toolbar>
 );
 
 const EditEventToolbar = () => (
-  <Toolbar sx={{ position: 'sticky', bottom: '80px', zIndex: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
+  <Toolbar sx={{ position: 'sticky', bottom: 0, zIndex: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
     <SaveButton label="Save Changes" alwaysEnable />
   </Toolbar>
 );
@@ -1272,8 +1400,8 @@ const EventCreate = () => {
               fullWidth
               helperText="Published events show on the website immediately"
             />
-            <DateInput source="startDate" required fullWidth />
-            <DateInput source="endDate" fullWidth />
+            <DateTimeInput source="startDate" required fullWidth />
+            <DateTimeInput source="endDate" fullWidth />
             <TextInput source="locationName" label="Location Name" fullWidth />
             <TextInput source="locationAddress" label="Address" fullWidth />
             <NumberInput source="capacity" label="Max Capacity" fullWidth helperText="Leave empty for unlimited" />
@@ -1404,7 +1532,7 @@ const MembershipList = () => (
         render={(record: { status?: string }) => <StatusChip status={record.status || 'PENDING'} />}
       />
       <DateField source="startDate" label="Start Date" />
-      <DateField source="paypalCurrentPeriodEnd" label="Expires" emptyText="Never" />
+      <DateField source="endDate" label="Expires" emptyText="Never" />
       <BooleanField source="obsEligible" label="OBS" />
     </Datagrid>
   </List>

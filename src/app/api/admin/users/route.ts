@@ -44,6 +44,10 @@ export async function GET(request: Request) {
           phone: true,
           emailVerified: true,
           isValidated: true,
+          isBanned: true,
+          bannedFromClassifieds: true,
+          bannedFromMedia: true,
+          adminNotes: true,
           createdAt: true,
           updatedAt: true,
           membership: {
