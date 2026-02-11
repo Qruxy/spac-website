@@ -280,85 +280,12 @@ export function Header() {
                 className="md:hidden absolute left-0 right-0 top-16 bg-background/95 backdrop-blur-lg border-b border-border shadow-xl z-50 max-h-[calc(100vh-4rem)] overflow-y-auto"
               >
                 <div className="container mx-auto px-4 py-4">
-                  {/* Primary Navigation */}
-                  <div className="space-y-1">
-                    <Link
-                      href="/"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium min-h-[48px] transition-colors',
-                        pathname === '/'
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-foreground hover:bg-muted active:bg-muted/80'
-                      )}
-                    >
-                      <span className="text-lg">🏠</span>
-                      Home
-                    </Link>
-                    {navigation.map((item, index) => (
-                      <motion.div
-                        key={item.name}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <Link
-                          href={item.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={cn(
-                            'flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium min-h-[48px] transition-colors',
-                            pathname.startsWith(item.href)
-                              ? 'bg-primary/10 text-primary'
-                              : 'text-foreground hover:bg-muted active:bg-muted/80'
-                          )}
-                        >
-                          <item.icon className="h-5 w-5" />
-                          {item.name}
-                        </Link>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  {/* Additional Links */}
-                  <motion.div 
+                  {/* Auth Section — First for easy access */}
+                  <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="mt-4 pt-4 border-t border-border/50 space-y-1"
-                  >
-                    <p className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      More
-                    </p>
-                    {moreLinks.map((link, index) => (
-                      <motion.div
-                        key={link.name}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.25 + index * 0.05 }}
-                      >
-                        <Link
-                          href={link.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={cn(
-                            'flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium min-h-[48px] transition-colors',
-                            pathname.startsWith(link.href)
-                              ? 'bg-primary/10 text-primary'
-                              : 'text-foreground hover:bg-muted active:bg-muted/80'
-                          )}
-                        >
-                          <link.icon className="h-5 w-5" />
-                          {link.name}
-                        </Link>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-
-                  {/* Auth Section */}
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className="mt-4 pt-4 border-t border-border space-y-2"
+                    transition={{ delay: 0 }}
+                    className="pb-4 mb-4 border-b border-border space-y-2"
                   >
                     {isAuthenticated ? (
                       <>
@@ -397,6 +324,79 @@ export function Header() {
                         </Link>
                       </>
                     )}
+                  </motion.div>
+
+                  {/* Primary Navigation */}
+                  <div className="space-y-1">
+                    <Link
+                      href="/"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium min-h-[48px] transition-colors',
+                        pathname === '/'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-foreground hover:bg-muted active:bg-muted/80'
+                      )}
+                    >
+                      <span className="text-lg">🏠</span>
+                      Home
+                    </Link>
+                    {navigation.map((item, index) => (
+                      <motion.div
+                        key={item.name}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 + index * 0.05 }}
+                      >
+                        <Link
+                          href={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={cn(
+                            'flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium min-h-[48px] transition-colors',
+                            pathname.startsWith(item.href)
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-foreground hover:bg-muted active:bg-muted/80'
+                          )}
+                        >
+                          <item.icon className="h-5 w-5" />
+                          {item.name}
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Additional Links */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="mt-4 pt-4 border-t border-border/50 space-y-1"
+                  >
+                    <p className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      More
+                    </p>
+                    {moreLinks.map((link, index) => (
+                      <motion.div
+                        key={link.name}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.35 + index * 0.05 }}
+                      >
+                        <Link
+                          href={link.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={cn(
+                            'flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium min-h-[48px] transition-colors',
+                            pathname.startsWith(link.href)
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-foreground hover:bg-muted active:bg-muted/80'
+                          )}
+                        >
+                          <link.icon className="h-5 w-5" />
+                          {link.name}
+                        </Link>
+                      </motion.div>
+                    ))}
                   </motion.div>
                 </div>
               </motion.div>

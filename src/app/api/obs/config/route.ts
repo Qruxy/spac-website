@@ -62,6 +62,11 @@ export async function POST(request: NextRequest) {
       campingPrice,
       mealPrice,
       capacity,
+      description,
+      scheduleData,
+      whatToBring,
+      locationInfo,
+      statsData,
     } = body;
 
     // Check if year already exists
@@ -90,6 +95,11 @@ export async function POST(request: NextRequest) {
         mealPrice: parseFloat(mealPrice) || 0,
         capacity: capacity || 200,
         isActive: false,
+        description: description || null,
+        scheduleData: scheduleData || null,
+        whatToBring: whatToBring || null,
+        locationInfo: locationInfo || null,
+        statsData: statsData || null,
       },
       include: {
         _count: { select: { registrations: true } },

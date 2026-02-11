@@ -173,10 +173,17 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
       {/* Mobile Bottom Navigation - visible only on small screens */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur-sm">
         <div className="flex items-center justify-around h-16">
-          <Link href="/" className="flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground">
-            <Home className="h-5 w-5" />
-            <span className="text-[10px]">Home</span>
-          </Link>
+          {(user.role === 'ADMIN' || user.role === 'MODERATOR') ? (
+            <Link href="/admin" className="flex flex-col items-center gap-0.5 px-2 py-1 text-primary">
+              <Shield className="h-5 w-5" />
+              <span className="text-[10px]">Admin</span>
+            </Link>
+          ) : (
+            <Link href="/" className="flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground">
+              <Home className="h-5 w-5" />
+              <span className="text-[10px]">Home</span>
+            </Link>
+          )}
           <Link href="/dashboard" className="flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground">
             <LayoutDashboard className="h-5 w-5" />
             <span className="text-[10px]">Dashboard</span>

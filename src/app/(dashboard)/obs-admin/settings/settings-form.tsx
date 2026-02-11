@@ -2,17 +2,53 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Plus, 
-  Save, 
-  Trash2, 
-  Calendar, 
+import Link from 'next/link';
+import {
+  Plus,
+  Save,
+  Trash2,
+  Calendar,
   DollarSign,
   CheckCircle,
   XCircle,
   AlertCircle,
-  X
+  X,
+  FileText,
+  Clock,
+  BarChart3,
+  Backpack,
+  MapPin,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink
 } from 'lucide-react';
+
+interface ScheduleEvent {
+  time: string;
+  title: string;
+  icon: string;
+}
+
+interface ScheduleDay {
+  label: string;
+  events: ScheduleEvent[];
+}
+
+interface StatItem {
+  value: number;
+  suffix: string;
+  label: string;
+}
+
+interface WhatToBringCategory {
+  category: string;
+  items: string[];
+}
+
+interface LocationInfoData {
+  byCar: string;
+  camping: string;
+}
 
 interface OBSConfig {
   id: string;
@@ -32,7 +68,23 @@ interface OBSConfig {
   capacity: number;
   isActive: boolean;
   _count: { registrations: number };
+  description?: string | null;
+  scheduleData?: ScheduleDay[] | null;
+  whatToBring?: WhatToBringCategory[] | null;
+  locationInfo?: LocationInfoData | null;
+  statsData?: StatItem[] | null;
 }
+
+const ICON_OPTIONS = [
+  { value: 'Users', label: 'People' },
+  { value: 'Star', label: 'Star' },
+  { value: 'Utensils', label: 'Food' },
+  { value: 'Telescope', label: 'Telescope' },
+  { value: 'Moon', label: 'Moon' },
+  { value: 'Camera', label: 'Camera' },
+  { value: 'Music', label: 'Music' },
+  { value: 'Coffee', label: 'Coffee' },
+];
 
 interface Props {
   configs: OBSConfig[];
@@ -146,7 +198,7 @@ export default function OBSSettingsForm({ configs: initialConfigs, currentYear }
     }
   };
 
-  const updateField = (field: keyof OBSConfig, value: string | number | boolean | null) => {
+  const updateField = (field: keyof OBSConfig, value: unknown) => {
     if (!selectedConfig) return;
     setSelectedConfig({ ...selectedConfig, [field]: value });
   };
@@ -385,6 +437,12 @@ export default function OBSSettingsForm({ configs: initialConfigs, currentYear }
             </div>
           </div>
 
+          {/* Page Content CMS */}
+          <PageContentEditor
+            config={selectedConfig}
+            updateField={updateField}
+          />
+
           {/* Actions */}
           <div className="flex items-center justify-between">
             <div>
@@ -417,6 +475,505 @@ export default function OBSSettingsForm({ configs: initialConfigs, currentYear }
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/* ───────────────── Page Content Editor ───────────────── */
+
+interface PageContentEditorProps {
+  config: OBSConfig;
+  updateField: (field: keyof OBSConfig, value: unknown) => void;
+}
+
+function PageContentEditor({ config, updateField }: PageContentEditorProps) {
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  const toggle = (section: string) =>
+    setExpandedSection(expandedSection === section ? null : section);
+
+  return (
+    <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+          <FileText className="w-5 h-5 text-amber-400" />
+          Page Content
+        </h2>
+        {config.id && (
+          <Link
+            href="/obs"
+            target="_blank"
+            className="flex items-center gap-1 text-sm text-amber-400 hover:text-amber-300"
+          >
+            Preview Page
+            <ExternalLink className="w-3 h-3" />
+          </Link>
+        )}
+      </div>
+      <p className="text-sm text-slate-400 mb-6">
+        Customize the public OBS page content. Leave fields empty to use defaults.
+      </p>
+
+      {/* About / Description */}
+      <CollapsibleSection
+        title="About Section"
+        icon={<FileText className="w-4 h-4 text-amber-400" />}
+        isOpen={expandedSection === 'about'}
+        onToggle={() => toggle('about')}
+      >
+        <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
+        <textarea
+          rows={4}
+          value={config.description || ''}
+          onChange={(e) => updateField('description', e.target.value || null)}
+          placeholder="The Orange Blossom Special (OBS) is SPAC's premier annual star party..."
+          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder:text-slate-500 focus:border-amber-500 outline-none resize-y"
+        />
+      </CollapsibleSection>
+
+      {/* Schedule */}
+      <CollapsibleSection
+        title="Event Schedule"
+        icon={<Clock className="w-4 h-4 text-amber-400" />}
+        isOpen={expandedSection === 'schedule'}
+        onToggle={() => toggle('schedule')}
+      >
+        <ScheduleEditor
+          schedule={config.scheduleData || null}
+          onChange={(data) => updateField('scheduleData', data)}
+        />
+      </CollapsibleSection>
+
+      {/* Stats */}
+      <CollapsibleSection
+        title="Stats / Numbers"
+        icon={<BarChart3 className="w-4 h-4 text-amber-400" />}
+        isOpen={expandedSection === 'stats'}
+        onToggle={() => toggle('stats')}
+      >
+        <StatsEditor
+          stats={config.statsData || null}
+          onChange={(data) => updateField('statsData', data)}
+        />
+      </CollapsibleSection>
+
+      {/* What to Bring */}
+      <CollapsibleSection
+        title="What to Bring"
+        icon={<Backpack className="w-4 h-4 text-amber-400" />}
+        isOpen={expandedSection === 'bring'}
+        onToggle={() => toggle('bring')}
+      >
+        <WhatToBringEditor
+          categories={config.whatToBring || null}
+          onChange={(data) => updateField('whatToBring', data)}
+        />
+      </CollapsibleSection>
+
+      {/* Location Info */}
+      <CollapsibleSection
+        title="Location Details"
+        icon={<MapPin className="w-4 h-4 text-amber-400" />}
+        isOpen={expandedSection === 'location'}
+        onToggle={() => toggle('location')}
+      >
+        <LocationEditor
+          info={config.locationInfo || null}
+          onChange={(data) => updateField('locationInfo', data)}
+        />
+      </CollapsibleSection>
+    </div>
+  );
+}
+
+/* ─── Collapsible Section ─── */
+
+function CollapsibleSection({
+  title,
+  icon,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-t border-slate-700/50 first:border-t-0">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-center justify-between w-full py-3 text-left"
+      >
+        <span className="flex items-center gap-2 text-sm font-medium text-slate-200">
+          {icon}
+          {title}
+        </span>
+        {isOpen ? (
+          <ChevronUp className="w-4 h-4 text-slate-400" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-slate-400" />
+        )}
+      </button>
+      {isOpen && <div className="pb-4">{children}</div>}
+    </div>
+  );
+}
+
+/* ─── Schedule Editor ─── */
+
+function ScheduleEditor({
+  schedule,
+  onChange,
+}: {
+  schedule: ScheduleDay[] | null;
+  onChange: (data: ScheduleDay[] | null) => void;
+}) {
+  const days = schedule || [];
+
+  const addDay = () => {
+    onChange([...days, { label: `Day ${days.length + 1}`, events: [] }]);
+  };
+
+  const removeDay = (idx: number) => {
+    const updated = days.filter((_, i) => i !== idx);
+    onChange(updated.length > 0 ? updated : null);
+  };
+
+  const updateDay = (idx: number, field: string, value: string) => {
+    const updated = [...days];
+    updated[idx] = { ...updated[idx], [field]: value };
+    onChange(updated);
+  };
+
+  const addEvent = (dayIdx: number) => {
+    const updated = [...days];
+    updated[dayIdx] = {
+      ...updated[dayIdx],
+      events: [...updated[dayIdx].events, { time: '12:00 PM', title: '', icon: 'Star' }],
+    };
+    onChange(updated);
+  };
+
+  const removeEvent = (dayIdx: number, evIdx: number) => {
+    const updated = [...days];
+    updated[dayIdx] = {
+      ...updated[dayIdx],
+      events: updated[dayIdx].events.filter((_, i) => i !== evIdx),
+    };
+    onChange(updated);
+  };
+
+  const updateEvent = (dayIdx: number, evIdx: number, field: string, value: string) => {
+    const updated = [...days];
+    const events = [...updated[dayIdx].events];
+    events[evIdx] = { ...events[evIdx], [field]: value };
+    updated[dayIdx] = { ...updated[dayIdx], events };
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-4">
+      {days.map((day, dayIdx) => (
+        <div key={dayIdx} className="bg-slate-700/50 rounded-lg p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <input
+              type="text"
+              value={day.label}
+              onChange={(e) => updateDay(dayIdx, 'label', e.target.value)}
+              className="flex-1 px-3 py-1.5 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:border-amber-500 outline-none"
+              placeholder="Day 1"
+            />
+            <button
+              type="button"
+              onClick={() => removeDay(dayIdx)}
+              className="text-red-400 hover:text-red-300 p-1"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="space-y-2">
+            {day.events.map((event, evIdx) => (
+              <div key={evIdx} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={event.time}
+                  onChange={(e) => updateEvent(dayIdx, evIdx, 'time', e.target.value)}
+                  className="w-24 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:border-amber-500 outline-none"
+                  placeholder="3:00 PM"
+                />
+                <input
+                  type="text"
+                  value={event.title}
+                  onChange={(e) => updateEvent(dayIdx, evIdx, 'title', e.target.value)}
+                  className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:border-amber-500 outline-none"
+                  placeholder="Event title"
+                />
+                <select
+                  value={event.icon}
+                  onChange={(e) => updateEvent(dayIdx, evIdx, 'icon', e.target.value)}
+                  className="w-28 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:border-amber-500 outline-none"
+                >
+                  {ICON_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => removeEvent(dayIdx, evIdx)}
+                  className="text-red-400 hover:text-red-300 p-1"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => addEvent(dayIdx)}
+            className="mt-2 text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+          >
+            <Plus className="w-3 h-3" /> Add Event
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addDay}
+        className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1"
+      >
+        <Plus className="w-4 h-4" /> Add Day
+      </button>
+    </div>
+  );
+}
+
+/* ─── Stats Editor ─── */
+
+function StatsEditor({
+  stats,
+  onChange,
+}: {
+  stats: StatItem[] | null;
+  onChange: (data: StatItem[] | null) => void;
+}) {
+  const items = stats || [];
+
+  const addStat = () => {
+    onChange([...items, { value: 0, suffix: '', label: '' }]);
+  };
+
+  const removeStat = (idx: number) => {
+    const updated = items.filter((_, i) => i !== idx);
+    onChange(updated.length > 0 ? updated : null);
+  };
+
+  const updateStat = (idx: number, field: keyof StatItem, value: string | number) => {
+    const updated = [...items];
+    updated[idx] = { ...updated[idx], [field]: value };
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-3">
+      {items.map((stat, idx) => (
+        <div key={idx} className="flex items-center gap-2">
+          <input
+            type="number"
+            value={stat.value}
+            onChange={(e) => updateStat(idx, 'value', parseInt(e.target.value) || 0)}
+            className="w-20 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm focus:border-amber-500 outline-none"
+            placeholder="25"
+          />
+          <input
+            type="text"
+            value={stat.suffix}
+            onChange={(e) => updateStat(idx, 'suffix', e.target.value)}
+            className="w-16 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm focus:border-amber-500 outline-none"
+            placeholder="+"
+          />
+          <input
+            type="text"
+            value={stat.label}
+            onChange={(e) => updateStat(idx, 'label', e.target.value)}
+            className="flex-1 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm focus:border-amber-500 outline-none"
+            placeholder="Years Running"
+          />
+          <button
+            type="button"
+            onClick={() => removeStat(idx)}
+            className="text-red-400 hover:text-red-300 p-1"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      ))}
+      {items.length < 6 && (
+        <button
+          type="button"
+          onClick={addStat}
+          className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1"
+        >
+          <Plus className="w-4 h-4" /> Add Stat
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─── What to Bring Editor ─── */
+
+function WhatToBringEditor({
+  categories,
+  onChange,
+}: {
+  categories: WhatToBringCategory[] | null;
+  onChange: (data: WhatToBringCategory[] | null) => void;
+}) {
+  const cats = categories || [];
+
+  const addCategory = () => {
+    onChange([...cats, { category: '', items: [''] }]);
+  };
+
+  const removeCategory = (idx: number) => {
+    const updated = cats.filter((_, i) => i !== idx);
+    onChange(updated.length > 0 ? updated : null);
+  };
+
+  const updateCategoryName = (idx: number, name: string) => {
+    const updated = [...cats];
+    updated[idx] = { ...updated[idx], category: name };
+    onChange(updated);
+  };
+
+  const addItem = (catIdx: number) => {
+    const updated = [...cats];
+    updated[catIdx] = { ...updated[catIdx], items: [...updated[catIdx].items, ''] };
+    onChange(updated);
+  };
+
+  const removeItem = (catIdx: number, itemIdx: number) => {
+    const updated = [...cats];
+    updated[catIdx] = {
+      ...updated[catIdx],
+      items: updated[catIdx].items.filter((_, i) => i !== itemIdx),
+    };
+    onChange(updated);
+  };
+
+  const updateItem = (catIdx: number, itemIdx: number, value: string) => {
+    const updated = [...cats];
+    const items = [...updated[catIdx].items];
+    items[itemIdx] = value;
+    updated[catIdx] = { ...updated[catIdx], items };
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-4">
+      {cats.map((cat, catIdx) => (
+        <div key={catIdx} className="bg-slate-700/50 rounded-lg p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <input
+              type="text"
+              value={cat.category}
+              onChange={(e) => updateCategoryName(catIdx, e.target.value)}
+              className="flex-1 px-3 py-1.5 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:border-amber-500 outline-none"
+              placeholder="Category name (e.g. Essential)"
+            />
+            <button
+              type="button"
+              onClick={() => removeCategory(catIdx)}
+              className="text-red-400 hover:text-red-300 p-1"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="space-y-2">
+            {cat.items.map((item, itemIdx) => (
+              <div key={itemIdx} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) => updateItem(catIdx, itemIdx, e.target.value)}
+                  className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:border-amber-500 outline-none"
+                  placeholder="Item name"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeItem(catIdx, itemIdx)}
+                  className="text-red-400 hover:text-red-300 p-1"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => addItem(catIdx)}
+            className="mt-2 text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+          >
+            <Plus className="w-3 h-3" /> Add Item
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addCategory}
+        className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1"
+      >
+        <Plus className="w-4 h-4" /> Add Category
+      </button>
+    </div>
+  );
+}
+
+/* ─── Location Editor ─── */
+
+function LocationEditor({
+  info,
+  onChange,
+}: {
+  info: LocationInfoData | null;
+  onChange: (data: LocationInfoData | null) => void;
+}) {
+  const data = info || { byCar: '', camping: '' };
+
+  const update = (field: keyof LocationInfoData, value: string) => {
+    const updated = { ...data, [field]: value };
+    const isEmpty = !updated.byCar && !updated.camping;
+    onChange(isEmpty ? null : updated);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-slate-300 mb-2">By Car</label>
+        <textarea
+          rows={3}
+          value={data.byCar}
+          onChange={(e) => update('byCar', e.target.value)}
+          placeholder="Located approximately 1 hour north of Tampa..."
+          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder:text-slate-500 focus:border-amber-500 outline-none resize-y"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-300 mb-2">Camping</label>
+        <textarea
+          rows={3}
+          value={data.camping}
+          onChange={(e) => update('camping', e.target.value)}
+          placeholder="Both tent and RV camping available..."
+          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder:text-slate-500 focus:border-amber-500 outline-none resize-y"
+        />
+      </div>
     </div>
   );
 }

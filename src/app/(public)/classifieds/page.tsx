@@ -9,6 +9,7 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import nextDynamic from 'next/dynamic';
 
 export const dynamic = 'force-dynamic';
@@ -296,11 +297,21 @@ export default async function ClassifiedsPage({
                     className="group"
                   >
                     <div className="rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg">
-                      {/* Image Placeholder */}
+                      {/* Listing Image */}
                       <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-                          <ShoppingBag className="h-12 w-12 text-slate-700" />
-                        </div>
+                        {listing.images?.[0] ? (
+                          <Image
+                            src={listing.images[0].thumbnailUrl || listing.images[0].url}
+                            alt={listing.title}
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+                            <ShoppingBag className="h-12 w-12 text-slate-700" />
+                          </div>
+                        )}
                       </div>
 
                       {/* Info */}

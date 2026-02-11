@@ -894,6 +894,11 @@ model OBSConfig {
   mealPrice          Decimal  @default(0) @map("meal_price") @db.Decimal(10, 2)
   capacity           Int      @default(200)
   isActive           Boolean  @default(false) @map("is_active")
+  description        String?  @db.Text
+  scheduleData       Json?    @map("schedule_data")
+  whatToBring        Json?    @map("what_to_bring")
+  locationInfo       Json?    @map("location_info")
+  statsData          Json?    @map("stats_data")
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   registrations      OBSRegistration[]

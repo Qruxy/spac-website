@@ -145,7 +145,7 @@ export function GalleryClient({ photos }: GalleryClientProps) {
           scaleOnHover={true}
           hoverScale={0.98}
           blurToFocus={true}
-          gap={24}
+          gap={16}
         />
       ) : (
         <div className="text-center py-12">
@@ -182,7 +182,7 @@ function PhotoCard({ photo, onClick }: PhotoCardProps) {
 
   return (
     <div onClick={onClick} className="w-full h-full cursor-pointer group">
-      <div className="relative w-full h-full rounded-xl overflow-hidden bg-slate-900 border border-white/10 group-hover:border-primary/50 transition-all duration-300 shadow-lg shadow-black/20">
+      <div className="relative w-full h-full overflow-hidden bg-slate-900 group-hover:ring-2 group-hover:ring-primary/50 transition-all duration-300">
         {photo.url ? (
           <Image
             src={photo.thumbnailUrl || photo.url}

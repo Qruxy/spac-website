@@ -73,6 +73,27 @@ async function checkUserMembership(userId: string | undefined) {
   };
 }
 
+function formatDateRange(start: Date, end: Date): string {
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const sameMonth = sameYear && start.getMonth() === end.getMonth();
+
+  if (sameMonth) {
+    // "February 14–16, 2025"
+    const month = start.toLocaleDateString('en-US', { month: 'long' });
+    return `${month} ${start.getDate()}\u2013${end.getDate()}, ${end.getFullYear()}`;
+  }
+  if (sameYear) {
+    // "February 14 – March 2, 2025"
+    const startStr = start.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    const endStr = end.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    return `${startStr} \u2013 ${endStr}, ${end.getFullYear()}`;
+  }
+  // "December 30, 2025 – January 2, 2026"
+  const startStr = start.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const endStr = end.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  return `${startStr} \u2013 ${endStr}`;
+}
+
 export default async function OBSPage() {
   const session = await getSession();
   const activeOBS = await getActiveOBS();
@@ -159,7 +180,7 @@ export default async function OBSPage() {
             <div className="flex flex-wrap items-center justify-center gap-6 mt-8 text-slate-300">
               <span className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-amber-400" />
-                {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} \u2013 {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                {formatDateRange(startDate, endDate)}
               </span>
               <span className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-amber-400" />
@@ -204,6 +225,11 @@ export default async function OBSPage() {
         location={activeOBS.location}
         startDate={startDate}
         endDate={endDate}
+        description={activeOBS.description}
+        scheduleData={activeOBS.scheduleData as Record<string, unknown>[] | null}
+        whatToBring={activeOBS.whatToBring as Record<string, unknown>[] | null}
+        locationInfo={activeOBS.locationInfo as Record<string, string> | null}
+        statsData={activeOBS.statsData as Record<string, unknown>[] | null}
       />
 
       {/* Registration Form */}

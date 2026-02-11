@@ -28,9 +28,31 @@ interface OBSInfoProps {
   location: string;
   startDate: Date;
   endDate: Date;
+  description?: string | null;
+  scheduleData?: Record<string, unknown>[] | null;
+  whatToBring?: Record<string, unknown>[] | null;
+  locationInfo?: Record<string, string> | null;
+  statsData?: Record<string, unknown>[] | null;
 }
 
-export function OBSAboutSection() {
+// Icon name to component mapping for CMS schedule data
+const iconMap: Record<string, typeof Star> = {
+  Users,
+  Star,
+  Utensils,
+  Telescope,
+  Moon,
+  Calendar,
+  Car,
+  Tent,
+  CheckCircle,
+};
+
+export function OBSAboutSection({ description }: { description?: string | null }) {
+  const customParagraphs = description
+    ? description.split('\n').filter((p) => p.trim())
+    : null;
+
   return (
     <section className="py-16 px-4">
       <div className="max-w-4xl mx-auto">
@@ -40,21 +62,31 @@ export function OBSAboutSection() {
             <span className="text-amber-400">Orange Blossom Special?</span>
           </h2>
         </FadeIn>
-        
+
         <FadeIn delay={0.1}>
           <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-8">
-            <p className="text-lg text-slate-300 leading-relaxed mb-6">
-              The <strong className="text-amber-400">Orange Blossom Special (OBS)</strong> is 
-              SPAC&apos;s premier annual star party, bringing together astronomers from across 
-              Florida for a multi-day celestial celebration. Named after Florida&apos;s famous 
-              orange blossoms, this event offers some of the darkest skies in the region.
-            </p>
-            <p className="text-lg text-slate-300 leading-relaxed">
-              Whether you&apos;re a seasoned astrophotographer or just getting started with 
-              your first telescope, OBS offers something for everyone — expert speakers, 
-              equipment swap meets, guided observing sessions, and the camaraderie of 
-              fellow stargazers under pristine night skies.
-            </p>
+            {customParagraphs ? (
+              customParagraphs.map((text, i) => (
+                <p key={i} className={`text-lg text-slate-300 leading-relaxed ${i < customParagraphs.length - 1 ? 'mb-6' : ''}`}>
+                  {text}
+                </p>
+              ))
+            ) : (
+              <>
+                <p className="text-lg text-slate-300 leading-relaxed mb-6">
+                  The <strong className="text-amber-400">Orange Blossom Special (OBS)</strong> is
+                  SPAC&apos;s premier annual star party, bringing together astronomers from across
+                  Florida for a multi-day celestial celebration. Named after Florida&apos;s famous
+                  orange blossoms, this event offers some of the darkest skies in the region.
+                </p>
+                <p className="text-lg text-slate-300 leading-relaxed">
+                  Whether you&apos;re a seasoned astrophotographer or just getting started with
+                  your first telescope, OBS offers something for everyone &mdash; expert speakers,
+                  equipment swap meets, guided observing sessions, and the camaraderie of
+                  fellow stargazers under pristine night skies.
+                </p>
+              </>
+            )}
           </div>
         </FadeIn>
       </div>
@@ -62,13 +94,15 @@ export function OBSAboutSection() {
   );
 }
 
-export function OBSStatsSection() {
-  const stats = [
+export function OBSStatsSection({ statsData }: { statsData?: Record<string, unknown>[] | null }) {
+  const defaultStats = [
     { value: 25, suffix: '+', label: 'Years Running' },
     { value: 200, suffix: '+', label: 'Attendees' },
     { value: 3, suffix: '', label: 'Days of Observing' },
     { value: 21, suffix: '', label: 'Mag Sky Darkness' },
   ];
+
+  const stats = (statsData as { value: number; suffix: string; label: string }[] | null) || defaultStats;
 
   return (
     <section className="py-12 px-4 bg-slate-900/50">
@@ -91,42 +125,61 @@ export function OBSStatsSection() {
   );
 }
 
-export function OBSScheduleSection({ startDate, endDate }: { startDate: Date; endDate: Date }) {
-  const formatDate = (date: Date) => 
+interface ScheduleProps {
+  startDate: Date;
+  endDate: Date;
+  scheduleData?: Record<string, unknown>[] | null;
+}
+
+export function OBSScheduleSection({ startDate, endDate, scheduleData }: ScheduleProps) {
+  const formatDate = (date: Date) =>
     date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 
-  const schedule = [
-    {
-      day: 'Day 1',
-      date: formatDate(startDate),
-      events: [
-        { time: '12:00 PM', title: 'Registration Opens', icon: Users },
-        { time: '3:00 PM', title: 'Welcome & Orientation', icon: Star },
-        { time: '5:00 PM', title: 'Dinner', icon: Utensils },
-        { time: '7:00 PM', title: 'Opening Night Observing', icon: Telescope },
-      ],
-    },
-    {
-      day: 'Day 2',
-      date: formatDate(new Date(startDate.getTime() + 86400000)),
-      events: [
-        { time: '8:00 AM', title: 'Breakfast', icon: Utensils },
-        { time: '10:00 AM', title: 'Guest Speakers', icon: Users },
-        { time: '2:00 PM', title: 'Equipment Swap Meet', icon: Telescope },
-        { time: '5:00 PM', title: 'Dinner', icon: Utensils },
-        { time: '7:00 PM', title: 'Prime Observing Session', icon: Moon },
-      ],
-    },
-    {
-      day: 'Day 3',
-      date: formatDate(endDate),
-      events: [
-        { time: '8:00 AM', title: 'Breakfast', icon: Utensils },
-        { time: '10:00 AM', title: 'Astrophotography Showcase', icon: Star },
-        { time: '12:00 PM', title: 'Closing Remarks', icon: Users },
-      ],
-    },
-  ];
+  // Build schedule from CMS data or fall back to hardcoded defaults
+  const schedule = scheduleData
+    ? (scheduleData as { label: string; events: { time: string; title: string; icon: string }[] }[]).map(
+        (day, idx) => ({
+          day: day.label,
+          date: formatDate(new Date(startDate.getTime() + idx * 86400000)),
+          events: day.events.map((ev) => ({
+            time: ev.time,
+            title: ev.title,
+            icon: iconMap[ev.icon] || Star,
+          })),
+        })
+      )
+    : [
+        {
+          day: 'Day 1',
+          date: formatDate(startDate),
+          events: [
+            { time: '12:00 PM', title: 'Registration Opens', icon: Users },
+            { time: '3:00 PM', title: 'Welcome & Orientation', icon: Star },
+            { time: '5:00 PM', title: 'Dinner', icon: Utensils },
+            { time: '7:00 PM', title: 'Opening Night Observing', icon: Telescope },
+          ],
+        },
+        {
+          day: 'Day 2',
+          date: formatDate(new Date(startDate.getTime() + 86400000)),
+          events: [
+            { time: '8:00 AM', title: 'Breakfast', icon: Utensils },
+            { time: '10:00 AM', title: 'Guest Speakers', icon: Users },
+            { time: '2:00 PM', title: 'Equipment Swap Meet', icon: Telescope },
+            { time: '5:00 PM', title: 'Dinner', icon: Utensils },
+            { time: '7:00 PM', title: 'Prime Observing Session', icon: Moon },
+          ],
+        },
+        {
+          day: 'Day 3',
+          date: formatDate(endDate),
+          events: [
+            { time: '8:00 AM', title: 'Breakfast', icon: Utensils },
+            { time: '10:00 AM', title: 'Astrophotography Showcase', icon: Star },
+            { time: '12:00 PM', title: 'Closing Remarks', icon: Users },
+          ],
+        },
+      ];
 
   return (
     <section className="py-16 px-4">
@@ -175,7 +228,13 @@ export function OBSScheduleSection({ startDate, endDate }: { startDate: Date; en
   );
 }
 
-export function OBSLocationSection({ location }: { location: string }) {
+export function OBSLocationSection({ location, locationInfo }: { location: string; locationInfo?: Record<string, string> | null }) {
+  const byCarDefault = 'Located approximately 1 hour north of Tampa. GPS coordinates and detailed directions will be emailed after registration.';
+  const campingDefault = 'Both tent and RV camping available. Primitive camping with some electrical hookups. Restroom facilities on-site.';
+
+  const byCar = locationInfo?.byCar || byCarDefault;
+  const camping = locationInfo?.camping || campingDefault;
+
   return (
     <section className="py-16 px-4 bg-slate-900/50">
       <div className="max-w-5xl mx-auto">
@@ -196,20 +255,14 @@ export function OBSLocationSection({ location }: { location: string }) {
                   <Car className="w-5 h-5 text-amber-400 mt-0.5" />
                   <div>
                     <p className="text-slate-300 font-medium">By Car</p>
-                    <p className="text-sm text-slate-400">
-                      Located approximately 1 hour north of Tampa. GPS coordinates 
-                      and detailed directions will be emailed after registration.
-                    </p>
+                    <p className="text-sm text-slate-400">{byCar}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Tent className="w-5 h-5 text-amber-400 mt-0.5" />
                   <div>
                     <p className="text-slate-300 font-medium">Camping</p>
-                    <p className="text-sm text-slate-400">
-                      Both tent and RV camping available. Primitive camping with 
-                      some electrical hookups. Restroom facilities on-site.
-                    </p>
+                    <p className="text-sm text-slate-400">{camping}</p>
                   </div>
                 </div>
               </div>
@@ -233,12 +286,14 @@ export function OBSLocationSection({ location }: { location: string }) {
   );
 }
 
-export function OBSWhatToBringSection() {
-  const items = [
+export function OBSWhatToBringSection({ whatToBring }: { whatToBring?: Record<string, unknown>[] | null }) {
+  const defaultItems = [
     { category: 'Essential', items: ['Telescope/Binoculars', 'Red flashlight', 'Warm clothing (layers!)', 'Camping gear if staying overnight'] },
     { category: 'Recommended', items: ['Star charts/Planisphere', 'Extra batteries', 'Laptop/tablet for imaging', 'Folding chair/lounger'] },
     { category: 'Nice to Have', items: ['Camera for astrophotography', 'Eyepiece collection', 'Power station/battery', 'Snacks & beverages'] },
   ];
+
+  const items = (whatToBring as { category: string; items: string[] }[] | null) || defaultItems;
 
   return (
     <section className="py-16 px-4">
@@ -275,14 +330,23 @@ export function OBSWhatToBringSection() {
   );
 }
 
-export function OBSInfoSections({ location, startDate, endDate }: OBSInfoProps) {
+export function OBSInfoSections({
+  location,
+  startDate,
+  endDate,
+  description,
+  scheduleData,
+  whatToBring,
+  locationInfo,
+  statsData,
+}: OBSInfoProps) {
   return (
     <>
-      <OBSAboutSection />
-      <OBSStatsSection />
-      <OBSScheduleSection startDate={startDate} endDate={endDate} />
-      <OBSLocationSection location={location} />
-      <OBSWhatToBringSection />
+      <OBSAboutSection description={description} />
+      <OBSStatsSection statsData={statsData} />
+      <OBSScheduleSection startDate={startDate} endDate={endDate} scheduleData={scheduleData} />
+      <OBSLocationSection location={location} locationInfo={locationInfo} />
+      <OBSWhatToBringSection whatToBring={whatToBring} />
     </>
   );
 }

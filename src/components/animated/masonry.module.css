@@ -10,6 +10,8 @@
   top: 0;
   left: 0;
   display: flex;
+  overflow: hidden;
+  border-radius: 12px;
 }
 
 /* Ensure direct children fill the wrapper */

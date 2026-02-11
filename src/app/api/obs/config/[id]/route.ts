@@ -41,6 +41,11 @@ export async function PUT(
       campingPrice,
       mealPrice,
       capacity,
+      description,
+      scheduleData,
+      whatToBring,
+      locationInfo,
+      statsData,
     } = body;
 
     const config = await prisma.oBSConfig.update({
@@ -59,6 +64,11 @@ export async function PUT(
         campingPrice: campingPrice !== undefined ? parseFloat(campingPrice) : undefined,
         mealPrice: mealPrice !== undefined ? parseFloat(mealPrice) : undefined,
         capacity: capacity !== undefined ? capacity : undefined,
+        description: description !== undefined ? (description || null) : undefined,
+        scheduleData: scheduleData !== undefined ? (scheduleData || null) : undefined,
+        whatToBring: whatToBring !== undefined ? (whatToBring || null) : undefined,
+        locationInfo: locationInfo !== undefined ? (locationInfo || null) : undefined,
+        statsData: statsData !== undefined ? (statsData || null) : undefined,
       },
       include: {
         _count: { select: { registrations: true } },
