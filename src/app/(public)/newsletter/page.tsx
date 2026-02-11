@@ -1,7 +1,7 @@
 /**
  * Newsletter Archive Page
  *
- * Public page for browsing the "Celestial Observer" newsletter archive.
+ * Public page for browsing "The Eyepiece" newsletter archive.
  * Server Component that fetches initial data, with client component for interactivity.
  */
 
@@ -26,9 +26,9 @@ const CountUp = nextDynamic(
 );
 
 export const metadata: Metadata = {
-  title: 'Celestial Observer Newsletter Archive | SPAC',
+  title: 'The Eyepiece Newsletter Archive | SPAC',
   description:
-    'Browse the complete archive of the Celestial Observer, the official newsletter of the St. Petersburg Astronomy Club.',
+    'Browse the complete archive of The Eyepiece, the official newsletter of the St. Petersburg Astronomy Club.',
 };
 
 export const revalidate = 300;
@@ -116,7 +116,7 @@ export default async function NewsletterPage() {
                   className="text-5xl md:text-7xl lg:text-8xl font-bold"
                   animationSpeed={8}
                 >
-                  Celestial Observer
+                  Eyepiece
                 </GradientText>
               </h1>
               <p className="mt-8 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -137,9 +137,9 @@ export default async function NewsletterPage() {
                       <div className="h-8 w-px bg-border" />
                       <div className="text-center">
                         <p className="text-3xl font-bold text-foreground tabular-nums">
-                          {years[years.length - 1]}\u2013{years[0]}
+                          {years.length === 1 ? years[0] : `${years[years.length - 1]}\u2013${years[0]}`}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-1">Archive Span</p>
+                        <p className="text-sm text-muted-foreground mt-1">Years Covered</p>
                       </div>
                     </>
                   )}
@@ -171,7 +171,7 @@ export default async function NewsletterPage() {
                 Never miss an issue
               </h2>
               <p className="text-lg text-muted-foreground mb-10">
-                Join SPAC to receive the Celestial Observer directly in your inbox each month,
+                Join SPAC to receive The Eyepiece directly in your inbox each month,
                 plus get access to member-exclusive content and events.
               </p>
               <Link

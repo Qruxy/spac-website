@@ -565,6 +565,7 @@ const Dashboard = () => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {[
                 { label: 'Create New Event', icon: <EventsIcon />, path: '/events/create' },
+                { label: 'OBS Event Settings', icon: <StarIcon />, path: '/obs-admin/settings', external: true },
                 { label: 'View All Members', icon: <UsersIcon />, path: '/users' },
                 { label: 'Manage Memberships', icon: <MembershipIcon />, path: '/memberships' },
                 { label: 'Review Media', icon: <MediaIcon />, path: '/media' },
@@ -574,14 +575,24 @@ const Dashboard = () => {
                 <Chip
                   key={action.path}
                   label={action.label}
-                  onClick={() => redirect(action.path)}
+                  onClick={() => {
+                    if ('external' in action && action.external) {
+                      window.location.href = action.path;
+                    } else {
+                      redirect(action.path);
+                    }
+                  }}
                   sx={{
                     justifyContent: 'flex-start',
                     py: 3,
                     px: 1,
                     fontSize: '0.95rem',
-                    background: 'rgba(129, 140, 248, 0.04)',
-                    border: '1px solid rgba(129, 140, 248, 0.12)',
+                    background: 'external' in action && action.external
+                      ? 'rgba(245, 158, 11, 0.06)'
+                      : 'rgba(129, 140, 248, 0.04)',
+                    border: 'external' in action && action.external
+                      ? '1px solid rgba(245, 158, 11, 0.2)'
+                      : '1px solid rgba(129, 140, 248, 0.12)',
                     transition: 'all 0.2s ease',
                     '&:hover': {
                       background: 'rgba(129, 140, 248, 0.12)',
@@ -831,6 +842,23 @@ const CustomAppBar = () => {
 
       {/* Main Site Links */}
       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexShrink: 0 }}>
+        <Button
+          size="small"
+          href="/obs-admin/settings"
+          startIcon={<StarIcon />}
+          sx={{
+            color: '#fbbf24',
+            fontSize: '0.75rem',
+            minWidth: 'auto',
+            whiteSpace: 'nowrap',
+            px: 1,
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            borderRadius: 2,
+            '&:hover': { background: 'rgba(245, 158, 11, 0.15)', borderColor: 'rgba(245, 158, 11, 0.5)' },
+          }}
+        >
+          OBS
+        </Button>
         <Button
           size="small"
           href="/"

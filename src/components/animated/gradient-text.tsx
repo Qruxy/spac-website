@@ -110,19 +110,19 @@ export function GradientText({
   };
 
   return (
-    <motion.div
-      className={`relative mx-auto flex max-w-fit flex-row items-center justify-center overflow-hidden cursor-pointer ${
+    <motion.span
+      className={`relative inline-flex max-w-fit flex-row items-center justify-center overflow-hidden cursor-pointer ${
         showBorder ? 'rounded-[1.25rem] py-1 px-2' : ''
       } ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {showBorder && (
-        <motion.div
+        <motion.span
           className="absolute inset-0 z-0 pointer-events-none rounded-[1.25rem]"
           style={{ ...gradientStyle, backgroundPosition }}
         >
-          <div
+          <span
             className="absolute bg-slate-900 rounded-[1.25rem] z-[-1]"
             style={{
               width: 'calc(100% - 2px)',
@@ -132,10 +132,10 @@ export function GradientText({
               transform: 'translate(-50%, -50%)'
             }}
           />
-        </motion.div>
+        </motion.span>
       )}
-      <motion.div
-        className="inline-block relative z-2 text-transparent bg-clip-text"
+      <motion.span
+        className="inline relative z-2 text-transparent bg-clip-text"
         style={{
           ...gradientStyle,
           backgroundPosition,
@@ -143,8 +143,8 @@ export function GradientText({
         }}
       >
         {children}
-      </motion.div>
-    </motion.div>
+      </motion.span>
+    </motion.span>
   );
 }
 

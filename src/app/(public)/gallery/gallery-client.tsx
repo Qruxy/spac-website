@@ -181,8 +181,8 @@ function PhotoCard({ photo, onClick }: PhotoCardProps) {
   const categoryLabel = categories.find(c => c.id === photo.category)?.label || 'Photo';
 
   return (
-    <div onClick={onClick} className="w-full h-full cursor-pointer group">
-      <div className="relative w-full h-full overflow-hidden bg-slate-900 group-hover:ring-2 group-hover:ring-primary/50 transition-all duration-300">
+    <div onClick={onClick} className="absolute inset-0 cursor-pointer group">
+      <div className="absolute inset-0 overflow-hidden bg-slate-900 group-hover:ring-2 group-hover:ring-primary/50 transition-all duration-300">
         {photo.url ? (
           <Image
             src={photo.thumbnailUrl || photo.url}
