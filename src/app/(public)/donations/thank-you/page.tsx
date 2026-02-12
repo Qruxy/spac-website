@@ -12,7 +12,7 @@ import { Heart, ArrowRight, Star, Mail } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Thank You for Your Donation',
-  description: 'Thank you for supporting the St. Pete Astronomy Club!',
+  description: 'Thank you for supporting the St. Petersburg Astronomy Club!',
 };
 
 interface PageProps {

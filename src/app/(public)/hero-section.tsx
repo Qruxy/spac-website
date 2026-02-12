@@ -70,18 +70,18 @@ export function HeroSection() {
           <div
             className="relative inline-flex items-center justify-center"
             style={{
-              width: 300,
-              height: 300,
+              width: 380,
+              height: 380,
               // @ts-expect-error CSS custom properties
-              '--radius': 150,
-              '--font-size': '14px',
+              '--radius': 190,
+              '--font-size': '13px',
             }}
           >
             {/* Center Logo */}
             <motion.div
               className="relative z-10 rounded-full overflow-hidden"
               whileHover={{ scale: 1.05 }}
-              style={{ width: 150, height: 150 }}
+              style={{ width: 200, height: 200 }}
             >
               {/* Glow effect */}
               <div className="absolute -inset-4 bg-primary/30 rounded-full blur-2xl" />
@@ -90,9 +90,9 @@ export function HeroSection() {
               <Image
                 src={spacLogo}
                 alt="St. Petersburg Astronomy Club"
-                width={150}
-                height={150}
-                className="relative z-10 rounded-full object-contain bg-white p-2"
+                width={200}
+                height={200}
+                className="relative z-10 rounded-full object-contain"
                 priority
               />
             </motion.div>
@@ -100,7 +100,7 @@ export function HeroSection() {
             {/* Spinning Text Ring - z-20 to appear above logo */}
             <div className="absolute inset-0 z-20" style={{ color: '#60a5fa' }}>
               <CircularText
-                text="★ ST. PETE ASTRONOMY CLUB · SINCE 1927 · "
+                text="ST. PETERSBURG ASTRONOMY CLUB ★ SINCE 1927 ★ "
                 spinDuration={20}
                 onHover="speedUp"
                 className="font-bold"
@@ -111,7 +111,7 @@ export function HeroSection() {
 
         <div className="mb-4">
           <BlurText
-            text="St. Pete"
+            text="St. Petersburg"
             className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl text-blue-400 justify-center"
             delay={80}
             animateBy="characters"

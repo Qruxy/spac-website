@@ -56,7 +56,7 @@ export function AboutHeroTitle() {
         className="text-4xl font-bold"
         animationSpeed={6}
       >
-        St. Pete Astronomy Club
+        St. Petersburg Astronomy Club
       </GradientText>
     </h1>
   );

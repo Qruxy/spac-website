@@ -42,15 +42,15 @@ export default async function BillingPage() {
   ]);
 
   const isActive = membership?.status === 'ACTIVE';
-  const currentTier = membership?.type || 'FREE';
+  const currentTier = membership?.type || 'NONE';
   const currentProduct =
     membershipProducts[currentTier as keyof typeof membershipProducts];
 
-  const tierIcons = {
-    FREE: Star,
+  const tierIcons: Record<string, typeof Star> = {
     INDIVIDUAL: Star,
     FAMILY: Users,
     STUDENT: GraduationCap,
+    LIFETIME: Star,
   };
   const TierIcon = tierIcons[currentTier as keyof typeof tierIcons] || Star;
 
@@ -153,7 +153,7 @@ export default async function BillingPage() {
       </div>
 
       {/* Upgrade Options (for free/expired members) */}
-      {(!membership || !isActive || currentTier === 'FREE') && (
+      {(!membership || !isActive) && (
         <div className="rounded-xl border border-border bg-card mb-8">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">

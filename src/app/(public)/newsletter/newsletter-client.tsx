@@ -19,14 +19,16 @@ import {
   ExternalLink,
   Loader2,
   ChevronDown,
+  Lock,
 } from 'lucide-react';
+import Link from 'next/link';
 import SpotlightCard from '@/components/SpotlightCard';
 
 interface Newsletter {
   id: string;
   title: string;
   description: string | null;
-  fileUrl: string;
+  fileUrl: string | null;
   filename: string;
   mimeType: string;
   size: number;
@@ -328,23 +330,35 @@ function NewsletterCard({ newsletter, formatSize, getMonthColor }: NewsletterCar
 
           {/* Hover overlay */}
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-            <a
-              href={newsletter.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-              aria-label="View PDF"
-            >
-              <ExternalLink className="h-5 w-5 text-white" />
-            </a>
-            <a
-              href={newsletter.fileUrl}
-              download={newsletter.filename}
-              className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-              aria-label="Download PDF"
-            >
-              <Download className="h-5 w-5 text-white" />
-            </a>
+            {newsletter.fileUrl ? (
+              <>
+                <a
+                  href={newsletter.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                  aria-label="View PDF"
+                >
+                  <ExternalLink className="h-5 w-5 text-white" />
+                </a>
+                <a
+                  href={newsletter.fileUrl}
+                  download={newsletter.filename}
+                  className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                  aria-label="Download PDF"
+                >
+                  <Download className="h-5 w-5 text-white" />
+                </a>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="flex flex-col items-center gap-2 text-white"
+              >
+                <Lock className="h-6 w-6" />
+                <span className="text-sm font-medium">Members Only</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -406,23 +420,35 @@ function NewsletterListItem({ newsletter, formatSize }: NewsletterListItemProps)
 
       {/* Actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <a
-          href={newsletter.fileUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-          aria-label="View PDF"
-        >
-          <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-        </a>
-        <a
-          href={newsletter.fileUrl}
-          download={newsletter.filename}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-          aria-label="Download PDF"
-        >
-          <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-        </a>
+        {newsletter.fileUrl ? (
+          <>
+            <a
+              href={newsletter.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              aria-label="View PDF"
+            >
+              <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            </a>
+            <a
+              href={newsletter.fileUrl}
+              download={newsletter.filename}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              aria-label="Download PDF"
+            >
+              <Download className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            </a>
+          </>
+        ) : (
+          <Link
+            href="/login"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+          >
+            <Lock className="h-3 w-3" />
+            Sign in
+          </Link>
+        )}
       </div>
     </div>
   );

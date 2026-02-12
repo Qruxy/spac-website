@@ -20,7 +20,7 @@ export default function TermsOfServicePage() {
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-4">Agreement to Terms</h2>
             <p className="text-muted-foreground">
-              By accessing or using the St. Pete Astronomy Club website and services, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, you may not access our services.
+              By accessing or using the St. Petersburg Astronomy Club website and services, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, you may not access our services.
             </p>
           </section>
 

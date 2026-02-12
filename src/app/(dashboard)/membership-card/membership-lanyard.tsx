@@ -93,7 +93,7 @@ export function MembershipLanyard({
                   <span className="text-xl font-bold text-white">SPAC</span>
                 </div>
                 <p className="text-sm text-white/60">
-                  St. Pete Astronomy Club
+                  St. Petersburg Astronomy Club
                 </p>
               </div>
 

@@ -8,19 +8,9 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth';
-import { Rocket, ArrowRight, Star, Users, GraduationCap, Crown } from 'lucide-react';
+import { Rocket, ArrowRight, Star, Users, GraduationCap } from 'lucide-react';
 
 const membershipOptions = [
-  {
-    name: 'Free Member',
-    slug: 'free',
-    price: '$0',
-    period: 'forever',
-    description: 'Basic access to public events and community',
-    icon: Star,
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-500/10',
-  },
   {
     name: 'Individual',
     slug: 'individual',
@@ -84,7 +74,7 @@ export default async function WelcomePage() {
         {membershipOptions.map((option) => (
           <Link
             key={option.slug}
-            href={option.slug === 'free' ? '/dashboard' : `/checkout?plan=${option.slug}`}
+            href={`/checkout?plan=${option.slug}`}
             className={`relative block rounded-lg border p-4 transition-all hover:border-primary hover:shadow-md ${
               option.recommended
                 ? 'border-primary bg-primary/5'

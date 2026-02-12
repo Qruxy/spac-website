@@ -47,13 +47,13 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
   }
 
   const isActive = user.membership?.status === 'ACTIVE';
-  const membershipType = user.membership?.type || 'FREE';
+  const membershipType = user.membership?.type || 'NONE';
 
-  const tierIcons = {
+  const tierIcons: Record<string, typeof Star> = {
     INDIVIDUAL: Star,
     FAMILY: Users,
     STUDENT: GraduationCap,
-    FREE: Star,
+    LIFETIME: Star,
   };
   const TierIcon = tierIcons[membershipType as keyof typeof tierIcons] || Star;
 
@@ -144,7 +144,7 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
             <span className="text-2xl">🔭</span>
             <div>
               <p className="font-bold">SPAC</p>
-              <p className="text-xs">St. Pete Astronomy Club</p>
+              <p className="text-xs">St. Petersburg Astronomy Club</p>
             </div>
           </div>
         </div>

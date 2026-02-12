@@ -29,13 +29,13 @@ export default async function MembershipCardPage() {
     ? new Date(membership.startDate)
     : new Date();
 
-  const tierIcons = {
+  const tierIcons: Record<string, typeof Star> = {
     INDIVIDUAL: Star,
     FAMILY: Users,
     STUDENT: GraduationCap,
-    FREE: Star,
+    LIFETIME: Star,
   };
-  const membershipType = membership?.type || 'FREE';
+  const membershipType = membership?.type || 'NONE';
   const TierIcon = tierIcons[membershipType as keyof typeof tierIcons] || Star;
 
   // QR code verification URL

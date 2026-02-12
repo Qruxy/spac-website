@@ -6,7 +6,6 @@
  * Enhanced footer with newsletter signup, quick links, and social media.
  */
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -15,13 +14,9 @@ import {
   Mail,
   MapPin,
   ExternalLink,
-  Send,
-  Loader2,
-  Check,
   Youtube,
   Twitter,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 const footerLinks = {
   club: [
@@ -72,93 +67,6 @@ const socialLinks = [
     icon: Mail,
   },
 ];
-
-function NewsletterForm() {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-
-    setStatus('loading');
-    
-    try {
-      const res = await fetch('/api/newsletters/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      if (res.ok) {
-        setStatus('success');
-        setMessage('Thanks for subscribing!');
-        setEmail('');
-        setTimeout(() => setStatus('idle'), 3000);
-      } else {
-        const data = await res.json();
-        setStatus('error');
-        setMessage(data.error || 'Something went wrong');
-        setTimeout(() => setStatus('idle'), 3000);
-      }
-    } catch {
-      setStatus('error');
-      setMessage('Failed to subscribe');
-      setTimeout(() => setStatus('idle'), 3000);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="mt-4">
-      <p className="text-sm text-muted-foreground mb-3">
-        Stay updated with the latest astronomy events and news.
-      </p>
-      <div className="flex gap-2">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@email.com"
-          className="flex-1 min-w-0 rounded-lg border border-border bg-background/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-          disabled={status === 'loading' || status === 'success'}
-        />
-        <motion.button
-          type="submit"
-          disabled={status === 'loading' || status === 'success'}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={cn(
-            'rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2',
-            status === 'success'
-              ? 'bg-green-600 text-white'
-              : 'bg-primary text-primary-foreground hover:bg-primary/90'
-          )}
-        >
-          {status === 'loading' ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : status === 'success' ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-        </motion.button>
-      </div>
-      {message && (
-        <motion.p
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            'mt-2 text-xs',
-            status === 'success' ? 'text-green-500' : 'text-red-500'
-          )}
-        >
-          {message}
-        </motion.p>
-      )}
-    </form>
-  );
-}
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -274,51 +182,40 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Newsletter Section */}
+        {/* Affiliations */}
         <div className="mt-10 pt-8 border-t border-border">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Mail className="h-5 w-5 text-primary" />
-                Subscribe to Our Newsletter
-              </h3>
-              <NewsletterForm />
-            </div>
-
-            {/* Affiliations */}
-            <div className="text-center md:text-right">
-              <p className="text-xs text-muted-foreground">
-                Proud member of the{' '}
-                <a
-                  href="https://www.astrosociety.org"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  Astronomical Society of the Pacific
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Supporter of the{' '}
-                <a
-                  href="https://www.darksky.org"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  International Dark-Sky Association
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </p>
-            </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">
+              Proud member of the{' '}
+              <a
+                href="https://www.astrosociety.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline inline-flex items-center gap-1"
+              >
+                Astronomical Society of the Pacific
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Supporter of the{' '}
+              <a
+                href="https://www.darksky.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline inline-flex items-center gap-1"
+              >
+                International Dark-Sky Association
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </p>
           </div>
         </div>
 
         {/* Copyright */}
         <div className="mt-8 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted-foreground">
-            © {currentYear} St. Pete Astronomy Club, Inc. All rights reserved.
+            © {currentYear} St. Petersburg Astronomy Club, Inc. All rights reserved.
             <br />
             <span className="text-xs opacity-70">501(c)(3) Non-Profit Organization</span>
           </p>

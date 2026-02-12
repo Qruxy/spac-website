@@ -94,7 +94,7 @@ export async function POST(request: Request) {
         amount,
         description: tier
           ? `${tier.charAt(0) + tier.slice(1).toLowerCase()} Donation to SPAC`
-          : 'Donation to St. Pete Astronomy Club',
+          : 'Donation to St. Petersburg Astronomy Club',
         returnUrl: `${baseUrl}/api/donations/capture?success=true`,
         cancelUrl: `${baseUrl}/donations?canceled=true`,
         metadata,

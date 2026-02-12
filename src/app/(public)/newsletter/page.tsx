@@ -10,6 +10,7 @@ import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
 import { NewsletterClient } from './newsletter-client';
 
 const GradientText = nextDynamic(
@@ -37,6 +38,9 @@ const ITEMS_PER_PAGE = 12;
 
 async function getNewsletters() {
   try {
+    const session = await getSession();
+    const isAuthenticated = !!session?.user;
+
     const [newsletters, total, yearsResult] = await prisma.$transaction([
       prisma.clubDocument.findMany({
         where: { category: 'NEWSLETTER', isPublic: true },
@@ -74,7 +78,7 @@ async function getNewsletters() {
       id: newsletter.id,
       title: newsletter.title,
       description: newsletter.description,
-      fileUrl: newsletter.fileUrl,
+      fileUrl: isAuthenticated ? newsletter.fileUrl : null,
       filename: newsletter.filename,
       mimeType: newsletter.mimeType,
       size: newsletter.size,

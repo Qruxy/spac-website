@@ -84,7 +84,7 @@ export async function generateAppleWalletPass(
       passTypeIdentifier: PASS_TYPE_IDENTIFIER,
       teamIdentifier: TEAM_IDENTIFIER,
       serialNumber: memberData.memberId,
-      organizationName: 'St. Pete Astronomy Club',
+      organizationName: 'St. Petersburg Astronomy Club',
       description: 'SPAC Membership Card',
       logoText: 'SPAC',
       foregroundColor: 'rgb(255, 255, 255)',

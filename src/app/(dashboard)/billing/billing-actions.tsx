@@ -189,7 +189,7 @@ export function BillingActions({
         </>
       )}
 
-      {(!isActive || currentTier === 'FREE') && (
+      {!isActive && (
         <div className="flex gap-2">
           {currentTier !== 'INDIVIDUAL' && (
             <button

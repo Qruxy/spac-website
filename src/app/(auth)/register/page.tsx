@@ -19,15 +19,6 @@ import {
 
 const membershipTiers = [
   {
-    id: 'FREE',
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'Perfect for curious beginners',
-    icon: Star,
-    popular: false,
-  },
-  {
     id: 'INDIVIDUAL',
     name: 'Individual',
     price: '$40',
@@ -107,10 +98,10 @@ export default function RegisterPage() {
         return;
       }
 
-      // 3. Redirect — claimed accounts go straight to dashboard (they already have membership)
+      // 3. Redirect — claimed accounts go to dashboard, new accounts go to checkout
       if (registerData.claimed) {
         router.push('/dashboard');
-      } else if (selectedTier && selectedTier !== 'FREE') {
+      } else if (selectedTier) {
         router.push(`/checkout?plan=${selectedTier.toLowerCase()}`);
       } else {
         router.push('/dashboard');
@@ -319,9 +310,7 @@ export default function RegisterPage() {
           ) : (
             <>
               <UserPlus className="h-5 w-5" />
-              {selectedTier && selectedTier !== 'FREE'
-                ? 'Create Account & Continue to Payment'
-                : 'Create Free Account'}
+              Create Account & Continue to Payment
             </>
           )}
         </button>

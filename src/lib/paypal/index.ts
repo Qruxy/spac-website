@@ -90,7 +90,7 @@ export async function createPayPalOrder({
         custom_id: metadata ? JSON.stringify(metadata) : undefined,
       }],
       application_context: {
-        brand_name: 'St. Pete Astronomy Club',
+        brand_name: 'St. Petersburg Astronomy Club',
         landing_page: 'BILLING',
         user_action: 'PAY_NOW',
         return_url: returnUrl,
@@ -184,7 +184,7 @@ export async function createPayPalSubscription({
       } : undefined,
       custom_id: metadata ? JSON.stringify(metadata) : undefined,
       application_context: {
-        brand_name: 'St. Pete Astronomy Club',
+        brand_name: 'St. Petersburg Astronomy Club',
         locale: 'en-US',
         user_action: 'SUBSCRIBE_NOW',
         payment_method: {

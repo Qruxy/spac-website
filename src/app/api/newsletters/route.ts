@@ -7,6 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -81,12 +82,16 @@ export async function GET(request: Request) {
       .map((r) => r.year)
       .filter((y): y is number => y !== null);
 
+    // Only include file URLs for authenticated members
+    const session = await getSession();
+    const isAuthenticated = !!session?.user;
+
     // Transform newsletters
     const transformedNewsletters = newsletters.map((newsletter) => ({
       id: newsletter.id,
       title: newsletter.title,
       description: newsletter.description,
-      fileUrl: newsletter.fileUrl,
+      fileUrl: isAuthenticated ? newsletter.fileUrl : null,
       filename: newsletter.filename,
       mimeType: newsletter.mimeType,
       size: newsletter.size,

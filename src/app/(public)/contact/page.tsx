@@ -9,7 +9,7 @@ import { Mail, MapPin, Calendar, Facebook, ExternalLink } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Contact Us',
-  description: 'Get in touch with the St. Pete Astronomy Club. Find our meeting locations, email contacts, and social media.',
+  description: 'Get in touch with the St. Petersburg Astronomy Club. Find our meeting locations, email contacts, and social media.',
 };
 
 const contacts = [

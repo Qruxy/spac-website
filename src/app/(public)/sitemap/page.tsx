@@ -10,7 +10,7 @@ import { Home, Users, Calendar, Image, ShoppingBag, Mail, FileText, Telescope, S
 
 export const metadata: Metadata = {
   title: 'Sitemap',
-  description: 'Complete sitemap of the St. Pete Astronomy Club website.',
+  description: 'Complete sitemap of the St. Petersburg Astronomy Club website.',
 };
 
 const siteStructure = [

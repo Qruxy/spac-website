@@ -1,7 +1,7 @@
 /**
  * Donations Page
  *
- * Support the St. Pete Astronomy Club through tax-deductible donations.
+ * Support the St. Petersburg Astronomy Club through tax-deductible donations.
  * Clean, Apple-inspired design with emotional appeal.
  */
 
@@ -23,7 +23,7 @@ const FadeIn = nextDynamic(
 export const metadata: Metadata = {
   title: 'Support Us | Donate',
   description:
-    'Support the St. Pete Astronomy Club with a tax-deductible donation. Your contribution helps fund public outreach, telescope maintenance, and our mirror lab.',
+    'Support the St. Petersburg Astronomy Club with a tax-deductible donation. Your contribution helps fund public outreach, telescope maintenance, and our mirror lab.',
 };
 
 const donationTiers = [

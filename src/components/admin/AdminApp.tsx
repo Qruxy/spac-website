@@ -1765,7 +1765,6 @@ const MembershipEdit = () => (
           <SelectInput
             source="type"
             choices={[
-              { id: 'FREE', name: 'Free' },
               { id: 'INDIVIDUAL', name: 'Individual' },
               { id: 'FAMILY', name: 'Family' },
               { id: 'STUDENT', name: 'Student' },

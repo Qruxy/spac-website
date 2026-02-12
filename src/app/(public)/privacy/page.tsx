@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-4">Introduction</h2>
             <p className="text-muted-foreground">
-              The St. Pete Astronomy Club, Inc. (&quot;SPAC,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or become a member.
+              The St. Petersburg Astronomy Club, Inc. (&quot;SPAC,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or become a member.
             </p>
           </section>
 

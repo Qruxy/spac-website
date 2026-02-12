@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ user, claimed: true }, { status: 200 });
     }
 
-    // New user — create account with FREE membership
+    // New user — create account (no membership until payment)
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
@@ -91,13 +91,6 @@ export async function POST(request: Request) {
         name: `${firstName.trim()} ${lastName.trim()}`,
         passwordHash,
         role: 'MEMBER',
-        membership: {
-          create: {
-            type: 'FREE',
-            status: 'ACTIVE',
-            startDate: new Date(),
-          },
-        },
       },
       select: {
         id: true,

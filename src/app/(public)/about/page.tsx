@@ -18,7 +18,7 @@ import {
 export const metadata: Metadata = {
   title: 'About Us',
   description:
-    'Learn about the St. Pete Astronomy Club, Tampa Bay\'s oldest astronomy organization founded in 1927.',
+    'Learn about the St. Petersburg Astronomy Club, Tampa Bay\'s oldest astronomy organization founded in 1927.',
 };
 
 // ISR with 1-hour revalidation - board members rarely change
@@ -92,7 +92,7 @@ export default async function AboutPage() {
                 Making Astronomy Accessible to All
               </h2>
               <p className="text-muted-foreground mb-4">
-                The St. Pete Astronomy Club is dedicated to promoting astronomy
+                The St. Petersburg Astronomy Club is dedicated to promoting astronomy
                 education, providing observing opportunities, and fostering a
                 community of amateur astronomers in the Tampa Bay area.
               </p>

@@ -15,27 +15,13 @@ export const metadata: Metadata = {
 
 const membershipTiers = [
   {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'Perfect for curious beginners exploring astronomy',
-    icon: Star,
-    features: [
-      'Attend public observing sessions',
-      'Attend monthly meetings',
-      'Access online community forums',
-      'Receive monthly newsletter',
-    ],
-    popular: false,
-  },
-  {
     name: 'Individual',
     price: '$40',
     period: '/year',
     description: 'Full club benefits for one person',
     icon: Star,
     features: [
-      'All free member benefits',
+      'Monthly meetings & newsletter',
       'OBS star party access',
       'Borrow club equipment',
       'Vote on club matters',

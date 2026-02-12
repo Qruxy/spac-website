@@ -31,7 +31,7 @@ const exo2 = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: 'St. Pete Astronomy Club | SPAC',
+    default: 'St. Petersburg Astronomy Club | SPAC',
     template: '%s | SPAC',
   },
   description:
@@ -46,26 +46,26 @@ export const metadata: Metadata = {
     'SPAC',
     'Orange Blossom Special',
   ],
-  authors: [{ name: 'St. Pete Astronomy Club' }],
+  authors: [{ name: 'St. Petersburg Astronomy Club' }],
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: 'https://stpeteastronomyclub.org',
-    siteName: 'St. Pete Astronomy Club',
-    title: 'St. Pete Astronomy Club | SPAC',
+    siteName: 'St. Petersburg Astronomy Club',
+    title: 'St. Petersburg Astronomy Club | SPAC',
     description: "Tampa Bay's Home for Family Astronomy",
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'St. Pete Astronomy Club',
+        alt: 'St. Petersburg Astronomy Club',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'St. Pete Astronomy Club | SPAC',
+    title: 'St. Petersburg Astronomy Club | SPAC',
     description: "Tampa Bay's Home for Family Astronomy",
   },
   robots: {
@@ -85,7 +85,7 @@ export const metadata: Metadata = {
 const organizationJsonLd = `{
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "St. Pete Astronomy Club",
+  "name": "St. Petersburg Astronomy Club",
   "alternateName": "SPAC",
   "url": "https://stpeteastronomyclub.org",
   "logo": "https://stpeteastronomyclub.org/logo.png",

@@ -290,7 +290,7 @@ function CardContent({ memberName, memberTitle, memberImage }: CardContentProps)
           anchorX="center"
           anchorY="middle"
         >
-          St. Pete Astronomy Club
+          St. Petersburg Astronomy Club
         </Text>
 
         {/* Decorative line */}
