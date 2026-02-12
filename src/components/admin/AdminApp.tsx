@@ -426,7 +426,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('/api/admin/stats?detailed=true');
+        const response = await fetch('/api/admin/stats?detailed=true', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           setStats(data);
@@ -1267,7 +1267,23 @@ const UserEdit = () => (
         <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, width: '100%' }}>
           <TextInput source="firstName" label="First Name" fullWidth />
           <TextInput source="lastName" label="Last Name" fullWidth />
-          <TextInput source="email" disabled fullWidth />
+          <FunctionField
+            label="Email"
+            render={(record: { email?: string; isCompanion?: boolean }) => {
+              const email = record.email || '';
+              const display = email.replace(/\+companion(@)/, '$1');
+              return (
+                <Box>
+                  <Typography variant="body2" sx={{ color: 'text.primary' }}>{display}</Typography>
+                  {record.isCompanion && (
+                    <Typography variant="caption" sx={{ color: 'warning.main' }}>
+                      Family companion account (synthetic email from migration)
+                    </Typography>
+                  )}
+                </Box>
+              );
+            }}
+          />
           <TextInput source="phone" fullWidth />
         </Box>
       </FormSection>
@@ -1317,7 +1333,14 @@ const UserShow = () => (
     <SimpleShowLayout>
       <TextField source="firstName" label="First Name" />
       <TextField source="lastName" label="Last Name" />
-      <TextField source="email" />
+      <FunctionField
+        label="Email"
+        render={(record: { email?: string; isCompanion?: boolean }) => {
+          const email = record.email || '';
+          const display = email.replace(/\+companion(@)/, '$1');
+          return record.isCompanion ? `${display} (companion)` : display;
+        }}
+      />
       <TextField source="role" />
       <FunctionField
         label="Membership"
