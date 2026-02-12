@@ -22,8 +22,12 @@ import {
   Telescope,
   Shield,
   Home,
+  Mail,
+  MessageSquare,
+  Bell,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import NotificationBell from '@/components/notifications/notification-bell';
 
 const sidebarLinks = [
   {
@@ -57,6 +61,16 @@ const sidebarLinks = [
     icon: Image,
   },
   {
+    name: 'Messages',
+    href: '/messages',
+    icon: MessageSquare,
+  },
+  {
+    name: 'Notifications',
+    href: '/notifications',
+    icon: Bell,
+  },
+  {
     name: 'Billing',
     href: '/billing',
     icon: CreditCard,
@@ -73,6 +87,11 @@ const adminLinks = [
     name: 'Admin Panel',
     href: '/admin',
     icon: Shield,
+  },
+  {
+    name: 'Communications',
+    href: '/communications',
+    icon: Mail,
   },
 ];
 
@@ -108,6 +127,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
                 {user.membershipType?.toLowerCase() || 'Free'} Member
               </p>
             </div>
+            <NotificationBell />
             <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
               {user.name?.[0]?.toUpperCase() || 'U'}
             </div>

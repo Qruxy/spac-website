@@ -33,7 +33,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import spacLogo from '../../../public/images/spac-logo.png';
+import spacLogo from '../../../public/images/spac-logo-hires.png';
 
 // Primary navigation - shown in header
 const navigation = [

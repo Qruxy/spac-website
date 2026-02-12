@@ -19,7 +19,7 @@ import { CircularText } from '@/components/animated/circular-text';
 import { BlurText } from '@/components/animated/blur-text';
 import { ShinyText } from '@/components/animated/shiny-text';
 import '@/components/animated/circular-text.css';
-import spacLogo from '../../../public/images/spac-logo.png';
+import spacLogo from '../../../public/images/spac-logo-hires.png';
 
 // Dynamic import Galaxy to avoid SSR issues with WebGL
 const Galaxy = dynamic(

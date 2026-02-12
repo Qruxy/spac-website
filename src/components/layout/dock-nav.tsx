@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import Dock, { type DockItemData } from '@/components/Dock';
 import { cn } from '@/lib/utils';
-import spacLogo from '../../../public/images/spac-logo.png';
+import spacLogo from '../../../public/images/spac-logo-hires.png';
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },

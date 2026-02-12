@@ -7,8 +7,10 @@
 
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import nextDynamic from 'next/dynamic';
 import { ArrowRight, Calendar, MapPin, Clock } from 'lucide-react';
+import obsLogo from '../../../../public/images/obs-logo.png';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
@@ -163,6 +165,16 @@ export default async function OBSPage() {
 
         <div className="relative z-10 text-center px-4 py-16 max-w-4xl mx-auto">
           <FadeIn>
+            <div className="mb-6 flex justify-center">
+              <Image
+                src={obsLogo}
+                alt="Orange Blossom Special"
+                width={180}
+                height={180}
+                className="rounded-full drop-shadow-2xl"
+                priority
+              />
+            </div>
             <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white tracking-tight">
               <GradientText
                 colors={['#fbbf24', '#fb923c', '#fbbf24']}

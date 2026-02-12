@@ -12,7 +12,7 @@ import Image from 'next/image';
 import { motion } from 'motion/react';
 import { CircularText } from './circular-text';
 import './circular-text.css';
-import spacLogo from '../../../public/images/spac-logo.png';
+import spacLogo from '../../../public/images/spac-logo-hires.png';
 
 interface LogoBadgeProps {
   text?: string;
