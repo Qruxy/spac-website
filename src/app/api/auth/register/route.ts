@@ -2,7 +2,8 @@ export const dynamic = 'force-dynamic';
 /**
  * User Registration API
  *
- * Creates a new user account with hashed password and optional FREE membership.
+ * Creates a new account OR claims an existing migrated account.
+ * Migrated users (no passwordHash) can claim by verifying first+last name.
  */
 
 import { NextResponse } from 'next/server';
@@ -39,22 +40,49 @@ export async function POST(request: Request) {
       );
     }
 
+    const passwordHash = await bcrypt.hash(password, 12);
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'An account with this email already exists' },
-        { status: 409 }
-      );
+      // If user already has a password, they're fully registered
+      if (existingUser.passwordHash) {
+        return NextResponse.json(
+          { error: 'An account with this email already exists. Please sign in instead.' },
+          { status: 409 }
+        );
+      }
+
+      // Migrated user without password — verify identity by name match
+      const firstMatch = existingUser.firstName.toLowerCase().trim() === firstName.toLowerCase().trim();
+      const lastMatch = existingUser.lastName.toLowerCase().trim() === lastName.toLowerCase().trim();
+
+      if (!firstMatch || !lastMatch) {
+        return NextResponse.json(
+          { error: 'The name you entered does not match our records for this email. Please use the name associated with your SPAC membership.' },
+          { status: 403 }
+        );
+      }
+
+      // Name matches — set their password (claim the account)
+      const user = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { passwordHash },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+        },
+      });
+
+      return NextResponse.json({ user, claimed: true }, { status: 200 });
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 12);
-
-    // Create user with FREE membership
+    // New user — create account with FREE membership
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
@@ -79,7 +107,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ user }, { status: 201 });
+    return NextResponse.json({ user, claimed: false }, { status: 201 });
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(

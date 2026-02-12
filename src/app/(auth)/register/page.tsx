@@ -79,16 +79,17 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      // 1. Create account
+      // 1. Create account (or claim existing migrated account)
       const registerRes = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName, lastName, email, password }),
       });
 
+      const registerData = await registerRes.json();
+
       if (!registerRes.ok) {
-        const data = await registerRes.json();
-        setError(data.error || 'Registration failed');
+        setError(registerData.error || 'Registration failed');
         setIsLoading(false);
         return;
       }
@@ -106,8 +107,10 @@ export default function RegisterPage() {
         return;
       }
 
-      // 3. Redirect based on tier
-      if (selectedTier && selectedTier !== 'FREE') {
+      // 3. Redirect — claimed accounts go straight to dashboard (they already have membership)
+      if (registerData.claimed) {
+        router.push('/dashboard');
+      } else if (selectedTier && selectedTier !== 'FREE') {
         router.push(`/checkout?plan=${selectedTier.toLowerCase()}`);
       } else {
         router.push('/dashboard');
@@ -160,8 +163,19 @@ export default function RegisterPage() {
           ))}
         </div>
 
-        <div className="mt-6 text-center text-sm">
-          <span className="text-muted-foreground">Already a member? </span>
+        {/* Existing member notice */}
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 mb-4">
+          <p className="text-sm text-foreground font-medium mb-1">
+            Already a SPAC member?
+          </p>
+          <p className="text-xs text-muted-foreground">
+            If you&apos;re an existing member, select any tier above to set up your
+            login password. Your existing membership will be preserved.
+          </p>
+        </div>
+
+        <div className="text-center text-sm">
+          <span className="text-muted-foreground">Have an account already? </span>
           <Link href="/login" className="text-primary hover:underline font-medium">
             Sign in
           </Link>
