@@ -21,19 +21,29 @@ export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    const user = await prisma.user.findUnique({
+    const rawUser = await prisma.user.findUnique({
       where: { id },
       include: {
         membership: true,
       },
     });
 
-    if (!user) {
+    if (!rawUser) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
+
+    // Flatten membership data for the admin UI
+    const { membership, ...rest } = rawUser;
+    const user = {
+      ...rest,
+      membershipStatus: membership?.status || null,
+      membershipType: membership?.type || null,
+      membershipEndDate: membership?.endDate || null,
+      isCompanion: rest.email.includes('+companion@'),
+    };
 
     return NextResponse.json(user);
   } catch (error) {

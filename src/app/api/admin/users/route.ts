@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
     const where = buildWhereClause(filters, ['name', 'email', 'firstName', 'lastName']);
 
-    const [data, total] = await Promise.all([
+    const [rawData, total] = await Promise.all([
       prisma.user.findMany({
         where,
         skip,
@@ -61,6 +61,15 @@ export async function GET(request: Request) {
       }),
       prisma.user.count({ where }),
     ]);
+
+    // Flatten membership data so the admin UI can access it directly
+    const data = rawData.map(({ membership, ...user }) => ({
+      ...user,
+      membershipStatus: membership?.status || null,
+      membershipType: membership?.type || null,
+      membershipEndDate: membership?.endDate || null,
+      isCompanion: user.email.includes('+companion@'),
+    }));
 
     return NextResponse.json({ data, total });
   } catch (error) {

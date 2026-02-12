@@ -1199,9 +1199,13 @@ const UserList = () => (
     <Datagrid rowClick="edit" bulkActionButtons={false}>
       <FunctionField
         label="Member"
-        render={(record: { firstName?: string; lastName?: string; email?: string; isValidated?: boolean }) => (
+        render={(record: { firstName?: string; lastName?: string; email?: string; isValidated?: boolean; isCompanion?: boolean }) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 14 }}>
+            <Avatar sx={{
+              width: 36, height: 36,
+              bgcolor: record.isCompanion ? 'secondary.main' : 'primary.main',
+              fontSize: 14,
+            }}>
               {record.firstName?.[0] || record.email?.[0] || '?'}
             </Avatar>
             <Box>
@@ -1210,9 +1214,14 @@ const UserList = () => (
                 {record.isValidated && (
                   <Chip label="Verified" size="small" color="info" sx={{ ml: 0.5, height: 18, fontSize: '0.65rem' }} />
                 )}
+                {record.isCompanion && (
+                  <Chip label="Family Companion" size="small" color="warning" variant="outlined" sx={{ ml: 0.5, height: 18, fontSize: '0.65rem' }} />
+                )}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {record.email}
+                {record.isCompanion
+                  ? record.email?.replace('+companion', '') + ' (companion)'
+                  : record.email}
               </Typography>
             </Box>
           </Box>
@@ -1224,15 +1233,17 @@ const UserList = () => (
         render={(record: { role?: string }) => <RoleChip role={record.role || 'MEMBER'} />}
       />
       <FunctionField
-        source="membershipStatus"
-        label="Status"
-        render={(record: { membershipStatus?: string }) =>
-          record.membershipStatus ? (
-            <StatusChip status={record.membershipStatus} />
-          ) : (
-            <Chip label="No Membership" size="small" variant="outlined" />
-          )
-        }
+        source="membershipType"
+        label="Membership"
+        render={(record: { membershipType?: string; membershipStatus?: string }) => {
+          if (!record.membershipType) return <Chip label="None" size="small" variant="outlined" />;
+          return (
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+              <Chip label={record.membershipType} size="small" color="primary" variant="outlined" />
+              <StatusChip status={record.membershipStatus || 'PENDING'} />
+            </Box>
+          );
+        }}
       />
       <FunctionField
         label="Banned"
@@ -1308,7 +1319,14 @@ const UserShow = () => (
       <TextField source="lastName" label="Last Name" />
       <TextField source="email" />
       <TextField source="role" />
-      <TextField source="membershipStatus" />
+      <FunctionField
+        label="Membership"
+        render={(record: { membershipType?: string; membershipStatus?: string }) =>
+          record.membershipType
+            ? `${record.membershipType} (${record.membershipStatus})`
+            : 'No Membership'
+        }
+      />
       <DateField source="createdAt" label="Joined" />
       <DateField source="updatedAt" label="Last Updated" />
     </SimpleShowLayout>
