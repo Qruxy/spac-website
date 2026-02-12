@@ -1,40 +1,54 @@
 /**
  * Email Service
  *
- * Sends emails via SMTP (nodemailer). Defaults to console logging
- * when SMTP is not configured. Switch to SES/Route53 when DNS is ready.
+ * Sends emails via Amazon SES (AWS native). Falls back to SMTP via nodemailer
+ * if SES credentials are unavailable but SMTP is configured.
+ *
+ * Priority: SES > SMTP > Error
  *
  * Environment variables:
- *   SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS
- *   EMAIL_FROM - sender address (default: noreply@stpeteastronomyclub.org)
+ *   SES: SES_REGION (default: us-east-1), S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY
+ *   SMTP: SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS
+ *   EMAIL_FROM - sender address (must be SES-verified)
  */
 
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import nodemailer from 'nodemailer';
+import type { Transporter } from 'nodemailer';
 import { prisma } from '@/lib/db';
 
-const EMAIL_FROM = process.env.EMAIL_FROM || 'SPAC <noreply@stpeteastronomyclub.org>';
+const SES_REGION = process.env.SES_REGION || process.env.S3_REGION || 'us-east-1';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'SPAC <noreply@stpeteastro.org>';
 
-const SMTP_CONFIGURED = !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+// Resolve credentials — Amplify reserves AWS_* prefix, so we use S3_* fallbacks
+const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
 
-function createTransport() {
-  if (SMTP_CONFIGURED) {
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587', 10),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER!,
-        pass: process.env.SMTP_PASS!,
-      },
-    });
-  }
+type EmailProvider = 'ses' | 'smtp' | 'none';
 
-  // No SMTP configured — emails will be rejected with a clear error
-  console.warn('[EMAIL] SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS env vars.');
-  return null;
+let sesClient: SESClient | null = null;
+let smtpTransporter: Transporter | null = null;
+let activeProvider: EmailProvider = 'none';
+
+if (accessKeyId && secretAccessKey) {
+  sesClient = new SESClient({
+    region: SES_REGION,
+    credentials: { accessKeyId, secretAccessKey },
+  });
+  activeProvider = 'ses';
+  console.log(`[EMAIL] Using Amazon SES (${SES_REGION})`);
+} else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  smtpTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+  activeProvider = 'smtp';
+  console.log('[EMAIL] Using SMTP transport');
+} else {
+  console.warn('[EMAIL] No email provider configured. Set AWS credentials for SES or SMTP_* vars.');
 }
-
-const transporter = createTransport();
 
 /** Replace {{variable}} placeholders in a template string */
 export function renderTemplate(
@@ -84,30 +98,75 @@ function wrapInLayout(bodyHtml: string, preheader?: string): string {
 </html>`;
 }
 
+/** Strip HTML tags for plain text fallback */
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&bull;/g, '•')
+    .replace(/&rsquo;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/** Send a single email via SES */
+async function sendViaSES(to: string, subject: string, html: string, text?: string): Promise<void> {
+  if (!sesClient) throw new Error('SES client not initialized');
+
+  // Parse "Name <email>" format for From
+  const fromMatch = EMAIL_FROM.match(/^(.+?)\s*<(.+?)>$/);
+  const sourceEmail = fromMatch ? EMAIL_FROM : `<${EMAIL_FROM}>`;
+
+  const command = new SendEmailCommand({
+    Source: sourceEmail,
+    Destination: { ToAddresses: [to] },
+    Message: {
+      Subject: { Data: subject, Charset: 'UTF-8' },
+      Body: {
+        Html: { Data: html, Charset: 'UTF-8' },
+        Text: { Data: text || htmlToPlainText(html), Charset: 'UTF-8' },
+      },
+    },
+  });
+
+  await sesClient.send(command);
+}
+
+/** Send a single email via SMTP */
+async function sendViaSMTP(to: string, subject: string, html: string, text?: string): Promise<void> {
+  if (!smtpTransporter) throw new Error('SMTP transporter not initialized');
+
+  await smtpTransporter.sendMail({
+    from: EMAIL_FROM,
+    to,
+    subject,
+    html,
+    text: text || htmlToPlainText(html),
+  });
+}
+
 export interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
-  /** Plain text fallback */
   text?: string;
-  /** Wrap in SPAC branded layout (default true) */
   useLayout?: boolean;
-  /** Preheader text for email clients */
   preheader?: string;
-  /** Optional template ID for logging */
   templateId?: string;
-  /** Optional recipient user ID for logging */
   recipientUserId?: string;
-  /** Arbitrary metadata for the email log */
   metadata?: Record<string, unknown>;
 }
 
 export async function sendEmail(opts: SendEmailOptions): Promise<{ success: boolean; logId?: string; error?: string }> {
   const html = opts.useLayout === false ? opts.html : wrapInLayout(opts.html, opts.preheader);
 
-  // If SMTP is not configured, fail immediately with a clear error
-  if (!transporter) {
-    const errorMsg = 'SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS environment variables on Amplify.';
+  if (activeProvider === 'none') {
+    const errorMsg = 'No email provider configured. Set AWS credentials for SES or SMTP_* environment variables.';
     console.error('[EMAIL]', errorMsg);
 
     const log = await prisma.emailLog.create({
@@ -126,7 +185,6 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
     return { success: false, logId: log.id, error: errorMsg };
   }
 
-  // Create email log record
   const log = await prisma.emailLog.create({
     data: {
       templateId: opts.templateId || null,
@@ -140,13 +198,11 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
   });
 
   try {
-    await transporter.sendMail({
-      from: EMAIL_FROM,
-      to: opts.to,
-      subject: opts.subject,
-      html,
-      text: opts.text,
-    });
+    if (activeProvider === 'ses') {
+      await sendViaSES(opts.to, opts.subject, html, opts.text);
+    } else {
+      await sendViaSMTP(opts.to, opts.subject, html, opts.text);
+    }
 
     await prisma.emailLog.update({
       where: { id: log.id },
@@ -156,7 +212,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
     return { success: true, logId: log.id };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[EMAIL] Send failed:', message);
+    console.error(`[EMAIL] ${activeProvider.toUpperCase()} send failed:`, message);
 
     await prisma.emailLog.update({
       where: { id: log.id },
@@ -170,13 +226,11 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
 export interface BulkSendOptions {
   recipients: Array<{ email: string; userId?: string; variables?: Record<string, string> }>;
   subject: string;
-  /** HTML body with optional {{variable}} placeholders */
   html: string;
   templateId?: string;
   metadata?: Record<string, unknown>;
 }
 
-/** Send emails to multiple recipients with per-recipient variable substitution */
 export async function sendBulkEmail(opts: BulkSendOptions): Promise<{ sent: number; failed: number; logIds: string[] }> {
   let sent = 0;
   let failed = 0;
@@ -204,8 +258,8 @@ export async function sendBulkEmail(opts: BulkSendOptions): Promise<{ sent: numb
     else failed++;
     if (result.logId) logIds.push(result.logId);
 
-    // Rate limiting: 100ms between sends to avoid overwhelming SMTP
-    await new Promise((r) => setTimeout(r, 100));
+    // SES rate limit: 1 email/sec in sandbox, higher in production
+    await new Promise((r) => setTimeout(r, activeProvider === 'ses' ? 1100 : 100));
   }
 
   return { sent, failed, logIds };
