@@ -87,11 +87,13 @@ const adminLinks = [
     name: 'Admin Panel',
     href: '/admin',
     icon: Shield,
+    adminOnly: false,
   },
   {
     name: 'Communications',
     href: '/communications',
     icon: Mail,
+    adminOnly: true,
   },
 ];
 
@@ -158,7 +160,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
                     Admin
                   </span>
                 </div>
-                {adminLinks.map((link) => (
+                {adminLinks.filter((link) => !link.adminOnly || user.role === 'ADMIN').map((link) => (
                   <Link
                     key={link.name}
                     href={link.href}

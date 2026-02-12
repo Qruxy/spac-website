@@ -97,6 +97,8 @@ model User {
   notifications                     Notification[]
   emailTemplatesCreated             EmailTemplate[]
   emailLogsReceived                 EmailLog[]
+  groupMemberships                  MemberGroupMembership[]
+  groupsCreated                     MemberGroup[]
 
   @@index([cognitoId])
   @@index([stripeCustomerId])
@@ -1267,4 +1269,30 @@ enum EmailStatus {
   SENT
   FAILED
   BOUNCED
+}
+
+model MemberGroup {
+  id          String                  @id @default(cuid())
+  name        String                  @unique
+  description String?
+  createdById String                  @map("created_by_id")
+  createdAt   DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime                @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  createdBy   User                    @relation(fields: [createdById], references: [id])
+  members     MemberGroupMembership[]
+
+  @@map("member_groups")
+}
+
+model MemberGroupMembership {
+  groupId  String   @map("group_id")
+  userId   String   @map("user_id")
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz(3)
+
+  group MemberGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@map("member_group_memberships")
 }

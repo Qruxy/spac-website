@@ -18,7 +18,7 @@ interface RouteParams {
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
     const session = await getSession();
-    if (!session?.user || !['ADMIN', 'MODERATOR'].includes(session.user.role)) {
+    if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -45,7 +45,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const session = await getSession();
-    if (!session?.user || !['ADMIN', 'MODERATOR'].includes(session.user.role)) {
+    if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

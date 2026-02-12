@@ -27,6 +27,11 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  FolderPlus,
+  UserPlus,
+  UserMinus,
+  Search,
+  AtSign,
 } from 'lucide-react';
 
 // Types
@@ -67,10 +72,35 @@ interface RecipientFilter {
   roles?: Role[];
   membershipTypes?: MembershipType[];
   membershipStatuses?: MembershipStatus[];
+  groupIds?: string[];
+}
+
+interface MemberGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  createdAt: string;
+  createdBy: { firstName: string; lastName: string };
+  _count: { members: number };
+}
+
+interface GroupDetail extends MemberGroup {
+  members: {
+    userId: string;
+    user: { id: string; firstName: string; lastName: string; email: string; role: string };
+  }[];
+}
+
+interface UserSearchResult {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
 }
 
 export default function CommunicationsPage() {
-  const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history'>('compose');
+  const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history' | 'groups'>('compose');
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -127,6 +157,19 @@ export default function CommunicationsPage() {
               <span className="font-medium">Sent History</span>
             </div>
           </button>
+          <button
+            onClick={() => setActiveTab('groups')}
+            className={`pb-3 border-b-2 transition-colors ${
+              activeTab === 'groups'
+                ? 'border-indigo-500 text-white'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              <span className="font-medium">Groups</span>
+            </div>
+          </button>
         </nav>
       </div>
 
@@ -134,6 +177,7 @@ export default function CommunicationsPage() {
       {activeTab === 'compose' && <ComposeTab />}
       {activeTab === 'templates' && <TemplatesTab />}
       {activeTab === 'history' && <HistoryTab />}
+      {activeTab === 'groups' && <GroupsTab />}
     </div>
   );
 }
@@ -141,26 +185,23 @@ export default function CommunicationsPage() {
 // ========== TAB 1: COMPOSE EMAIL ==========
 function ComposeTab() {
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [groups, setGroups] = useState<MemberGroup[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [recipientFilter, setRecipientFilter] = useState<RecipientFilter>({});
+  const [manualEmails, setManualEmails] = useState<string[]>([]);
+  const [manualEmailInput, setManualEmailInput] = useState('');
   const [sendNotification, setSendNotification] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [recipientCount, setRecipientCount] = useState(0);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Load templates on mount
   useEffect(() => {
     loadTemplates();
+    loadGroups();
   }, []);
-
-  // Calculate recipient count when filter changes
-  useEffect(() => {
-    calculateRecipientCount();
-  }, [recipientFilter]);
 
   const loadTemplates = async () => {
     try {
@@ -174,23 +215,23 @@ function ComposeTab() {
     }
   };
 
-  const calculateRecipientCount = async () => {
+  const loadGroups = async () => {
     try {
-      // For now, use a mock count. In production, you'd call an API endpoint
-      // that returns the count based on the filter
-      let count = 0;
-      if (recipientFilter.all) {
-        count = 150; // Mock total members
-      } else {
-        count = (recipientFilter.roles?.length || 0) * 20 +
-                (recipientFilter.membershipTypes?.length || 0) * 15 +
-                (recipientFilter.membershipStatuses?.length || 0) * 10;
+      const res = await fetch('/api/admin/groups');
+      if (res.ok) {
+        setGroups(await res.json());
       }
-      setRecipientCount(Math.min(count, 150));
     } catch (error) {
-      console.error('Failed to calculate recipient count:', error);
+      console.error('Failed to load groups:', error);
     }
   };
+
+  const hasRecipients = recipientFilter.all ||
+    (recipientFilter.roles?.length || 0) > 0 ||
+    (recipientFilter.membershipTypes?.length || 0) > 0 ||
+    (recipientFilter.membershipStatuses?.length || 0) > 0 ||
+    (recipientFilter.groupIds?.length || 0) > 0 ||
+    manualEmails.length > 0;
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
@@ -212,23 +253,29 @@ function ComposeTab() {
           subject,
           html: bodyHtml,
           templateId: selectedTemplate || undefined,
-          recipientFilter,
+          recipientFilter: recipientFilter.all || recipientFilter.roles?.length || recipientFilter.membershipTypes?.length || recipientFilter.membershipStatuses?.length || recipientFilter.groupIds?.length
+            ? recipientFilter
+            : undefined,
+          manualEmails: manualEmails.length > 0 ? manualEmails : undefined,
           sendNotification,
         }),
       });
 
       if (res.ok) {
-        setToast({ type: 'success', message: 'Email sent successfully!' });
+        const result = await res.json();
+        setToast({ type: 'success', message: `Email sent to ${result.totalRecipients} recipients!` });
         setSubject('');
         setBodyHtml('');
         setSelectedTemplate('');
         setRecipientFilter({});
+        setManualEmails([]);
+        setManualEmailInput('');
         setSendNotification(false);
       } else {
         const error = await res.json();
         setToast({ type: 'error', message: error.error || 'Failed to send email' });
       }
-    } catch (error) {
+    } catch {
       setToast({ type: 'error', message: 'Network error occurred' });
     } finally {
       setLoading(false);
@@ -238,34 +285,46 @@ function ComposeTab() {
 
   const toggleRole = (role: Role) => {
     const roles = recipientFilter.roles || [];
-    const newRoles = roles.includes(role)
-      ? roles.filter((r) => r !== role)
-      : [...roles, role];
+    const newRoles = roles.includes(role) ? roles.filter((r) => r !== role) : [...roles, role];
     setRecipientFilter({ ...recipientFilter, roles: newRoles, all: false });
   };
 
   const toggleMembershipType = (type: MembershipType) => {
     const types = recipientFilter.membershipTypes || [];
-    const newTypes = types.includes(type)
-      ? types.filter((t) => t !== type)
-      : [...types, type];
+    const newTypes = types.includes(type) ? types.filter((t) => t !== type) : [...types, type];
     setRecipientFilter({ ...recipientFilter, membershipTypes: newTypes, all: false });
   };
 
   const toggleMembershipStatus = (status: MembershipStatus) => {
     const statuses = recipientFilter.membershipStatuses || [];
-    const newStatuses = statuses.includes(status)
-      ? statuses.filter((s) => s !== status)
-      : [...statuses, status];
+    const newStatuses = statuses.includes(status) ? statuses.filter((s) => s !== status) : [...statuses, status];
     setRecipientFilter({ ...recipientFilter, membershipStatuses: newStatuses, all: false });
+  };
+
+  const toggleGroup = (groupId: string) => {
+    const gids = recipientFilter.groupIds || [];
+    const newGids = gids.includes(groupId) ? gids.filter((g) => g !== groupId) : [...gids, groupId];
+    setRecipientFilter({ ...recipientFilter, groupIds: newGids, all: false });
   };
 
   const toggleAll = () => {
     if (recipientFilter.all) {
       setRecipientFilter({});
     } else {
-      setRecipientFilter({ all: true, roles: [], membershipTypes: [], membershipStatuses: [] });
+      setRecipientFilter({ all: true, roles: [], membershipTypes: [], membershipStatuses: [], groupIds: [] });
     }
+  };
+
+  const addManualEmail = () => {
+    const email = manualEmailInput.trim().toLowerCase();
+    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !manualEmails.includes(email)) {
+      setManualEmails([...manualEmails, email]);
+      setManualEmailInput('');
+    }
+  };
+
+  const removeManualEmail = (email: string) => {
+    setManualEmails(manualEmails.filter((e) => e !== email));
   };
 
   return (
@@ -294,7 +353,6 @@ function ComposeTab() {
         <div className="flex items-center gap-2 mb-4">
           <Users className="h-5 w-5 text-indigo-400" />
           <h3 className="text-lg font-semibold text-white">Recipients</h3>
-          <span className="ml-auto text-sm text-slate-400">{recipientCount} members selected</span>
         </div>
 
         {/* All Members Toggle */}
@@ -351,7 +409,7 @@ function ComposeTab() {
         </div>
 
         {/* Membership Status Filters */}
-        <div>
+        <div className="mb-4">
           <label className="block text-sm font-medium text-slate-300 mb-2">By Membership Status</label>
           <div className="flex flex-wrap gap-2">
             {(['ACTIVE', 'EXPIRED'] as MembershipStatus[]).map((status) => (
@@ -369,6 +427,65 @@ function ComposeTab() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Group Filters */}
+        {groups.length > 0 && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-300 mb-2">By Group</label>
+            <div className="flex flex-wrap gap-2">
+              {groups.map((group) => (
+                <button
+                  key={group.id}
+                  onClick={() => toggleGroup(group.id)}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    recipientFilter.groupIds?.includes(group.id)
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-900/50 text-slate-300 border border-white/10 hover:border-indigo-500'
+                  }`}
+                  disabled={recipientFilter.all}
+                >
+                  {group.name} ({group._count.members})
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Manual Email Entry */}
+        <div className="pt-4 border-t border-white/10">
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            <AtSign className="h-4 w-4 inline mr-1" />
+            Manual Email Addresses
+          </label>
+          <div className="flex gap-2 mb-2">
+            <input
+              type="email"
+              value={manualEmailInput}
+              onChange={(e) => setManualEmailInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addManualEmail(); } }}
+              placeholder="Enter an email address..."
+              className="flex-1 px-4 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+            />
+            <button
+              onClick={addManualEmail}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+            >
+              Add
+            </button>
+          </div>
+          {manualEmails.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {manualEmails.map((email) => (
+                <span key={email} className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-600/20 text-indigo-300 rounded-full text-sm">
+                  {email}
+                  <button onClick={() => removeManualEmail(email)} className="hover:text-white">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -443,7 +560,7 @@ function ComposeTab() {
         </button>
         <button
           onClick={() => setShowConfirm(true)}
-          disabled={!subject || !bodyHtml || recipientCount === 0 || loading}
+          disabled={!subject || !bodyHtml || !hasRecipients || loading}
           className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
@@ -488,21 +605,25 @@ function ComposeTab() {
                 onClick={handleSendEmail}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
               >
-                Send to {recipientCount} members
+                Confirm & Send
               </button>
             </>
           }
         >
           <div className="space-y-3">
-            <p className="text-white">
-              You are about to send this email to <strong>{recipientCount} members</strong>.
-            </p>
-            <div className="bg-slate-900/50 p-3 rounded-lg">
-              <p className="text-sm text-slate-300">
-                <strong>Subject:</strong> {subject}
-              </p>
+            <p className="text-white">Are you sure you want to send this email?</p>
+            <div className="bg-slate-900/50 p-3 rounded-lg space-y-2">
+              <p className="text-sm text-slate-300"><strong>Subject:</strong> {subject}</p>
+              {recipientFilter.all && <p className="text-sm text-slate-300">To: All members</p>}
+              {recipientFilter.roles?.length ? <p className="text-sm text-slate-300">Roles: {recipientFilter.roles.join(', ')}</p> : null}
+              {recipientFilter.groupIds?.length ? (
+                <p className="text-sm text-slate-300">
+                  Groups: {recipientFilter.groupIds.map((gid) => groups.find((g) => g.id === gid)?.name || gid).join(', ')}
+                </p>
+              ) : null}
+              {manualEmails.length > 0 && <p className="text-sm text-slate-300">Manual emails: {manualEmails.join(', ')}</p>}
               {sendNotification && (
-                <p className="text-sm text-slate-300 mt-2">
+                <p className="text-sm text-slate-300">
                   <AlertCircle className="h-4 w-4 inline mr-1" />
                   An in-app notification will also be sent.
                 </p>
@@ -1051,6 +1172,429 @@ function HistoryTab() {
             </button>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ========== TAB 4: GROUPS MANAGEMENT ==========
+function GroupsTab() {
+  const [groups, setGroups] = useState<MemberGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<GroupDetail | null>(null);
+  const [showAddMembers, setShowAddMembers] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Create form state
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupDescription, setNewGroupDescription] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  // Edit state
+  const [editingGroup, setEditingGroup] = useState<MemberGroup | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+
+  // Add members state
+  const [memberSearch, setMemberSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => { loadGroups(); }, []);
+
+  const loadGroups = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/groups');
+      if (res.ok) setGroups(await res.json());
+    } catch (error) {
+      console.error('Failed to load groups:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadGroupDetail = async (groupId: string) => {
+    try {
+      const res = await fetch(`/api/admin/groups/${groupId}`);
+      if (res.ok) setSelectedGroup(await res.json());
+    } catch (error) {
+      console.error('Failed to load group detail:', error);
+    }
+  };
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGroupName.trim()) return;
+    setCreating(true);
+    try {
+      const res = await fetch('/api/admin/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newGroupName.trim(), description: newGroupDescription.trim() || undefined }),
+      });
+      if (res.ok) {
+        setToast({ type: 'success', message: 'Group created successfully' });
+        setNewGroupName('');
+        setNewGroupDescription('');
+        setShowCreateForm(false);
+        loadGroups();
+      } else {
+        const data = await res.json();
+        setToast({ type: 'error', message: data.error || 'Failed to create group' });
+      }
+    } catch {
+      setToast({ type: 'error', message: 'Network error' });
+    } finally {
+      setCreating(false);
+      setTimeout(() => setToast(null), 5000);
+    }
+  };
+
+  const handleUpdateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGroup) return;
+    try {
+      const res = await fetch(`/api/admin/groups/${editingGroup.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName.trim(), description: editDescription.trim() || undefined }),
+      });
+      if (res.ok) {
+        setToast({ type: 'success', message: 'Group updated' });
+        setEditingGroup(null);
+        loadGroups();
+        if (selectedGroup?.id === editingGroup.id) loadGroupDetail(editingGroup.id);
+      } else {
+        const data = await res.json();
+        setToast({ type: 'error', message: data.error || 'Failed to update group' });
+      }
+    } catch {
+      setToast({ type: 'error', message: 'Network error' });
+    } finally {
+      setTimeout(() => setToast(null), 5000);
+    }
+  };
+
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!confirm('Delete this group? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/admin/groups/${groupId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setToast({ type: 'success', message: 'Group deleted' });
+        if (selectedGroup?.id === groupId) setSelectedGroup(null);
+        loadGroups();
+      } else {
+        setToast({ type: 'error', message: 'Failed to delete group' });
+      }
+    } catch {
+      setToast({ type: 'error', message: 'Network error' });
+    } finally {
+      setTimeout(() => setToast(null), 5000);
+    }
+  };
+
+  const searchMembers = async (query: string) => {
+    setMemberSearch(query);
+    if (query.length < 2) { setSearchResults([]); return; }
+    setSearching(true);
+    try {
+      const res = await fetch(`/api/messages/user-search?q=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Filter out users already in the group
+        const existingIds = new Set(selectedGroup?.members.map((m) => m.userId) || []);
+        setSearchResults((data.users || []).filter((u: UserSearchResult) => !existingIds.has(u.id)));
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleAddMember = async (userId: string) => {
+    if (!selectedGroup) return;
+    try {
+      const res = await fetch(`/api/admin/groups/${selectedGroup.id}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: [userId] }),
+      });
+      if (res.ok) {
+        loadGroupDetail(selectedGroup.id);
+        loadGroups();
+        setSearchResults(searchResults.filter((u) => u.id !== userId));
+      }
+    } catch (error) {
+      console.error('Add member error:', error);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!selectedGroup) return;
+    try {
+      const res = await fetch(`/api/admin/groups/${selectedGroup.id}/members`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      if (res.ok) {
+        loadGroupDetail(selectedGroup.id);
+        loadGroups();
+      }
+    } catch (error) {
+      console.error('Remove member error:', error);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
+          {toast.type === 'success' ? <CheckCircle2 className="h-5 w-5 text-white" /> : <XCircle className="h-5 w-5 text-white" />}
+          <span className="text-white">{toast.message}</span>
+          <button onClick={() => setToast(null)}><X className="h-4 w-4 text-white" /></button>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-white">Member Groups</h2>
+        <button
+          onClick={() => setShowCreateForm(true)}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+        >
+          <FolderPlus className="h-5 w-5" />
+          Create Group
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Groups List */}
+        <div className="lg:col-span-1 space-y-3">
+          {loading ? (
+            <div className="p-8 text-center text-slate-400">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+              Loading groups...
+            </div>
+          ) : groups.length === 0 ? (
+            <div className="bg-slate-800/50 border border-white/10 rounded-xl p-8 text-center text-slate-400">
+              No groups yet. Create one to get started.
+            </div>
+          ) : (
+            groups.map((group) => (
+              <button
+                key={group.id}
+                onClick={() => loadGroupDetail(group.id)}
+                className={`w-full text-left p-4 rounded-xl border transition-colors ${
+                  selectedGroup?.id === group.id
+                    ? 'bg-indigo-600/20 border-indigo-500'
+                    : 'bg-slate-800/50 border-white/10 hover:border-indigo-500/50'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-white">{group.name}</h3>
+                  <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full">
+                    {group._count.members} members
+                  </span>
+                </div>
+                {group.description && (
+                  <p className="text-sm text-slate-400 mt-1 line-clamp-2">{group.description}</p>
+                )}
+              </button>
+            ))
+          )}
+        </div>
+
+        {/* Group Detail Panel */}
+        <div className="lg:col-span-2">
+          {selectedGroup ? (
+            <div className="bg-slate-800/50 border border-white/10 rounded-xl">
+              {/* Group Header */}
+              <div className="p-6 border-b border-white/10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">{selectedGroup.name}</h3>
+                    {selectedGroup.description && (
+                      <p className="text-sm text-slate-400 mt-1">{selectedGroup.description}</p>
+                    )}
+                    <p className="text-xs text-slate-500 mt-2">
+                      Created by {selectedGroup.createdBy.firstName} {selectedGroup.createdBy.lastName} on{' '}
+                      {new Date(selectedGroup.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setEditingGroup(selectedGroup); setEditName(selectedGroup.name); setEditDescription(selectedGroup.description || ''); }}
+                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4 text-indigo-400" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteGroup(selectedGroup.id)}
+                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-400" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Add Members Button */}
+                <button
+                  onClick={() => { setShowAddMembers(!showAddMembers); setMemberSearch(''); setSearchResults([]); }}
+                  className="mt-4 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded-lg transition-colors flex items-center gap-2 text-sm"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add Members
+                </button>
+
+                {/* Add Members Search */}
+                {showAddMembers && (
+                  <div className="mt-3 space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={memberSearch}
+                        onChange={(e) => searchMembers(e.target.value)}
+                        placeholder="Search members by name or email..."
+                        className="w-full pl-10 pr-4 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none text-sm"
+                      />
+                    </div>
+                    {searching && <p className="text-xs text-slate-400">Searching...</p>}
+                    {searchResults.length > 0 && (
+                      <div className="max-h-48 overflow-y-auto space-y-1">
+                        {searchResults.map((user) => (
+                          <div key={user.id} className="flex items-center justify-between p-2 bg-slate-900/50 rounded-lg">
+                            <div>
+                              <span className="text-sm text-white">{user.firstName} {user.lastName}</span>
+                              <span className="text-xs text-slate-400 ml-2">{user.email}</span>
+                            </div>
+                            <button
+                              onClick={() => handleAddMember(user.id)}
+                              className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs transition-colors"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Members List */}
+              <div className="p-6">
+                <h4 className="text-sm font-medium text-slate-300 mb-3">
+                  Members ({selectedGroup.members.length})
+                </h4>
+                {selectedGroup.members.length === 0 ? (
+                  <p className="text-sm text-slate-400">No members yet. Use the button above to add members.</p>
+                ) : (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {selectedGroup.members.map((m) => (
+                      <div key={m.userId} className="flex items-center justify-between p-3 bg-slate-900/30 rounded-lg">
+                        <div>
+                          <span className="text-sm text-white">{m.user.firstName} {m.user.lastName}</span>
+                          <span className="text-xs text-slate-400 ml-2">{m.user.email}</span>
+                          <span className="text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded ml-2">{m.user.role}</span>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveMember(m.userId)}
+                          className="p-1.5 hover:bg-slate-700 rounded transition-colors"
+                          title="Remove from group"
+                        >
+                          <UserMinus className="h-4 w-4 text-red-400" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-800/50 border border-white/10 rounded-xl p-12 text-center text-slate-400">
+              <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>Select a group to view and manage its members</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Create Group Modal */}
+      {showCreateForm && (
+        <Modal onClose={() => setShowCreateForm(false)} title="Create Group" actions={
+          <>
+            <button onClick={() => setShowCreateForm(false)} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">Cancel</button>
+            <button onClick={handleCreateGroup} disabled={creating || !newGroupName.trim()} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors disabled:opacity-50">
+              {creating ? 'Creating...' : 'Create Group'}
+            </button>
+          </>
+        }>
+          <form onSubmit={handleCreateGroup} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Group Name *</label>
+              <input
+                type="text"
+                required
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                placeholder="e.g., Board Members, Volunteers, OBS Committee"
+                className="w-full px-4 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
+              <textarea
+                value={newGroupDescription}
+                onChange={(e) => setNewGroupDescription(e.target.value)}
+                placeholder="Optional description for this group..."
+                rows={3}
+                className="w-full px-4 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Group Modal */}
+      {editingGroup && (
+        <Modal onClose={() => setEditingGroup(null)} title="Edit Group" actions={
+          <>
+            <button onClick={() => setEditingGroup(null)} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">Cancel</button>
+            <button onClick={handleUpdateGroup} disabled={!editName.trim()} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors disabled:opacity-50">
+              Save Changes
+            </button>
+          </>
+        }>
+          <form onSubmit={handleUpdateGroup} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Group Name *</label>
+              <input
+                type="text"
+                required
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full px-4 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

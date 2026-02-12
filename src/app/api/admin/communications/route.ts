@@ -15,7 +15,7 @@ import { notifyAdminAnnouncement } from '@/lib/notifications';
 export async function GET(request: Request) {
   try {
     const session = await getSession();
-    if (!session?.user || !['ADMIN', 'MODERATOR'].includes(session.user.role)) {
+    if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -57,12 +57,12 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await getSession();
-    if (!session?.user || !['ADMIN', 'MODERATOR'].includes(session.user.role)) {
+    if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const body = await request.json();
-    const { subject, html, templateId, recipientFilter, sendNotification } = body as {
+    const { subject, html, templateId, recipientFilter, sendNotification, manualEmails } = body as {
       subject: string;
       html: string;
       templateId?: string;
@@ -70,49 +70,90 @@ export async function POST(request: Request) {
         roles?: string[];
         membershipTypes?: string[];
         membershipStatuses?: string[];
+        groupIds?: string[];
         all?: boolean;
       };
       sendNotification?: boolean;
+      manualEmails?: string[];
     };
 
     if (!subject || !html) {
       return NextResponse.json({ error: 'Subject and HTML body are required' }, { status: 400 });
     }
 
-    // Build recipient query
-    const userWhere: Record<string, unknown> = {};
+    // Collect recipients from filters
+    type Recipient = { id?: string; email: string; firstName: string; lastName: string; name: string | null };
+    const allRecipients: Recipient[] = [];
+    const seenEmails = new Set<string>();
 
-    if (recipientFilter && !recipientFilter.all) {
-      if (recipientFilter.roles?.length) {
-        userWhere.role = { in: recipientFilter.roles };
-      }
-      if (recipientFilter.membershipTypes?.length || recipientFilter.membershipStatuses?.length) {
-        const membershipFilter: Record<string, unknown> = {};
-        if (recipientFilter.membershipTypes?.length) {
-          membershipFilter.type = { in: recipientFilter.membershipTypes };
+    // Manual email addresses
+    if (manualEmails?.length) {
+      for (const email of manualEmails) {
+        const trimmed = email.trim().toLowerCase();
+        if (trimmed && !seenEmails.has(trimmed)) {
+          seenEmails.add(trimmed);
+          allRecipients.push({ email: trimmed, firstName: '', lastName: '', name: trimmed });
         }
-        if (recipientFilter.membershipStatuses?.length) {
-          membershipFilter.status = { in: recipientFilter.membershipStatuses };
-        }
-        userWhere.membership = membershipFilter;
       }
     }
 
-    // Fetch recipients
-    const recipients = await prisma.user.findMany({
-      where: userWhere,
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        name: true,
-      },
-    });
+    // Group members
+    if (recipientFilter?.groupIds?.length) {
+      const groupMembers = await prisma.memberGroupMembership.findMany({
+        where: { groupId: { in: recipientFilter.groupIds } },
+        include: {
+          user: { select: { id: true, email: true, firstName: true, lastName: true, name: true } },
+        },
+      });
+      for (const gm of groupMembers) {
+        if (!seenEmails.has(gm.user.email.toLowerCase())) {
+          seenEmails.add(gm.user.email.toLowerCase());
+          allRecipients.push(gm.user);
+        }
+      }
+    }
 
-    if (recipients.length === 0) {
+    // Role/membership filters or all
+    const hasRoleOrMembershipFilter = recipientFilter &&
+      (recipientFilter.all || recipientFilter.roles?.length || recipientFilter.membershipTypes?.length || recipientFilter.membershipStatuses?.length);
+
+    if (hasRoleOrMembershipFilter) {
+      const userWhere: Record<string, unknown> = {};
+
+      if (!recipientFilter!.all) {
+        if (recipientFilter!.roles?.length) {
+          userWhere.role = { in: recipientFilter!.roles };
+        }
+        if (recipientFilter!.membershipTypes?.length || recipientFilter!.membershipStatuses?.length) {
+          const membershipFilter: Record<string, unknown> = {};
+          if (recipientFilter!.membershipTypes?.length) {
+            membershipFilter.type = { in: recipientFilter!.membershipTypes };
+          }
+          if (recipientFilter!.membershipStatuses?.length) {
+            membershipFilter.status = { in: recipientFilter!.membershipStatuses };
+          }
+          userWhere.membership = membershipFilter;
+        }
+      }
+
+      const users = await prisma.user.findMany({
+        where: userWhere,
+        select: { id: true, email: true, firstName: true, lastName: true, name: true },
+      });
+
+      for (const u of users) {
+        if (!seenEmails.has(u.email.toLowerCase())) {
+          seenEmails.add(u.email.toLowerCase());
+          allRecipients.push(u);
+        }
+      }
+    }
+
+    if (allRecipients.length === 0) {
       return NextResponse.json({ error: 'No recipients match the filter' }, { status: 400 });
     }
+
+    const recipients = allRecipients;
 
     // If using a template, fetch it
     let finalHtml = html;
@@ -146,7 +187,7 @@ export async function POST(request: Request) {
     // Also create in-app notifications if requested
     if (sendNotification) {
       await notifyAdminAnnouncement(
-        recipients.map((r) => r.id),
+        recipients.map((r) => r.id).filter((id): id is string => !!id),
         finalSubject,
         finalHtml.replace(/<[^>]+>/g, '').slice(0, 200),
       );
