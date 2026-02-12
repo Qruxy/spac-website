@@ -14,8 +14,10 @@ import { prisma } from '@/lib/db';
 
 const EMAIL_FROM = process.env.EMAIL_FROM || 'SPAC <noreply@stpeteastronomyclub.org>';
 
+const SMTP_CONFIGURED = !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+
 function createTransport() {
-  if (process.env.SMTP_HOST) {
+  if (SMTP_CONFIGURED) {
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587', 10),
@@ -27,8 +29,9 @@ function createTransport() {
     });
   }
 
-  // No SMTP configured — use JSON transport (logs to console)
-  return nodemailer.createTransport({ jsonTransport: true });
+  // No SMTP configured — emails will be rejected with a clear error
+  console.warn('[EMAIL] SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS env vars.');
+  return null;
 }
 
 const transporter = createTransport();
@@ -102,6 +105,27 @@ export interface SendEmailOptions {
 export async function sendEmail(opts: SendEmailOptions): Promise<{ success: boolean; logId?: string; error?: string }> {
   const html = opts.useLayout === false ? opts.html : wrapInLayout(opts.html, opts.preheader);
 
+  // If SMTP is not configured, fail immediately with a clear error
+  if (!transporter) {
+    const errorMsg = 'SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS environment variables on Amplify.';
+    console.error('[EMAIL]', errorMsg);
+
+    const log = await prisma.emailLog.create({
+      data: {
+        templateId: opts.templateId || null,
+        recipientEmail: opts.to,
+        recipientUserId: opts.recipientUserId || null,
+        subject: opts.subject,
+        body: html,
+        status: 'FAILED',
+        errorMessage: errorMsg,
+        metadata: opts.metadata ? JSON.parse(JSON.stringify(opts.metadata)) : undefined,
+      },
+    });
+
+    return { success: false, logId: log.id, error: errorMsg };
+  }
+
   // Create email log record
   const log = await prisma.emailLog.create({
     data: {
@@ -116,22 +140,13 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
   });
 
   try {
-    const result = await transporter.sendMail({
+    await transporter.sendMail({
       from: EMAIL_FROM,
       to: opts.to,
       subject: opts.subject,
       html,
       text: opts.text,
     });
-
-    // If using jsonTransport (no SMTP), log the output
-    if (!process.env.SMTP_HOST) {
-      console.log('[EMAIL] Would send:', JSON.stringify({
-        to: opts.to,
-        subject: opts.subject,
-        messageId: result.messageId,
-      }));
-    }
 
     await prisma.emailLog.update({
       where: { id: log.id },

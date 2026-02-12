@@ -79,6 +79,7 @@ import {
   Cancel as RejectIcon,
   OpenInNew as ExternalLinkIcon,
   Language as WebIcon,
+  Email as EmailIcon,
 } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
@@ -842,6 +843,23 @@ const CustomAppBar = () => {
 
       {/* Main Site Links */}
       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexShrink: 0 }}>
+        <Button
+          size="small"
+          href="/admin/communications"
+          startIcon={<EmailIcon />}
+          sx={{
+            color: '#818cf8',
+            fontSize: '0.75rem',
+            minWidth: 'auto',
+            whiteSpace: 'nowrap',
+            px: 1,
+            border: '1px solid rgba(129, 140, 248, 0.3)',
+            borderRadius: 2,
+            '&:hover': { background: 'rgba(129, 140, 248, 0.15)', borderColor: 'rgba(129, 140, 248, 0.5)' },
+          }}
+        >
+          Email
+        </Button>
         <Button
           size="small"
           href="/obs-admin/settings"

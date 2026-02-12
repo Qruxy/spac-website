@@ -93,6 +93,12 @@ const nextConfig = {
       S3_REGION: process.env.S3_REGION,
       S3_BUCKET: process.env.S3_BUCKET,
       CLOUDFRONT_DOMAIN: process.env.CLOUDFRONT_DOMAIN,
+      SMTP_HOST: process.env.SMTP_HOST,
+      SMTP_PORT: process.env.SMTP_PORT,
+      SMTP_SECURE: process.env.SMTP_SECURE,
+      SMTP_USER: process.env.SMTP_USER,
+      SMTP_PASS: process.env.SMTP_PASS,
+      EMAIL_FROM: process.env.EMAIL_FROM,
     },
   }),
   // GitHub Pages static export settings

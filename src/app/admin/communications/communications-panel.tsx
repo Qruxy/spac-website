@@ -1,12 +1,13 @@
 'use client';
 
 /**
- * Communications Page - Admin Dashboard
+ * Communications Panel - Admin Dashboard
  *
- * Provides email and notification management for admins/moderators:
+ * Provides email and notification management for admins:
  * - Tab 1: Compose and send bulk emails with recipient filtering
  * - Tab 2: Manage email templates (CRUD operations)
  * - Tab 3: View sent email history with status tracking
+ * - Tab 4: Create and manage member groups
  */
 
 import { useState, useEffect } from 'react';
@@ -32,6 +33,7 @@ import {
   UserMinus,
   Search,
   AtSign,
+  ArrowLeft,
 } from 'lucide-react';
 
 // Types
@@ -99,13 +101,20 @@ interface UserSearchResult {
   role: string;
 }
 
-export default function CommunicationsPage() {
+export function CommunicationsPanel() {
   const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history' | 'groups'>('compose');
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
+        <a
+          href="/admin"
+          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          title="Back to Admin"
+        >
+          <ArrowLeft className="h-5 w-5 text-slate-400" />
+        </a>
         <div className="p-3 bg-indigo-600/20 rounded-lg">
           <Mail className="h-8 w-8 text-indigo-400" />
         </div>
