@@ -66,6 +66,7 @@ model User {
   createdAt                         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt                         DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   cognitoId                         String?        @map("cognito_id")
+  passwordHash                      String?        @map("password_hash")
   name                              String?
   avatarUrl                         String?        @map("avatar_url")
   isPrimaryMember                   Boolean?       @default(false) @map("is_primary_member")

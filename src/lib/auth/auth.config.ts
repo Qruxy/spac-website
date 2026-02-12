@@ -8,6 +8,7 @@
 import type { NextAuthOptions } from 'next-auth';
 import CognitoProvider from 'next-auth/providers/cognito';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db/prisma';
 import { rateLimit, getRateLimitKey, RATE_LIMITS } from '@/lib/rate-limit';
 
@@ -143,19 +144,31 @@ export const authOptions: NextAuthOptions = {
           };
         }
 
+        // Password-based login for registered users
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email.toLowerCase() },
+          include: { membership: true },
+        });
+
+        if (user?.passwordHash) {
+          const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+          if (!isValid) return null;
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: `${user.firstName} ${user.lastName}`,
+            role: user.role,
+            qrUuid: user.qrUuid,
+            membershipType: user.membership?.type || null,
+            membershipStatus: user.membership?.status || null,
+            stripeCustomerId: user.stripeCustomerId,
+          };
+        }
+
         // Development only: allow existing DB users to login by email
         // (no password check - only for local development)
-        if (process.env.NODE_ENV === 'development') {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email.toLowerCase() },
-            include: { membership: true },
-          });
-
-          if (!user) {
-            console.warn(`Dev login attempted for non-existent user: ${credentials.email}`);
-            return null;
-          }
-
+        if (process.env.NODE_ENV === 'development' && user) {
           return {
             id: user.id,
             email: user.email,

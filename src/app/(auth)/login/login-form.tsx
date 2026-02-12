@@ -3,15 +3,15 @@
 /**
  * Login Form Component
  *
- * Contains the actual login form logic with useSearchParams.
- * Separated from page.tsx to allow proper Suspense wrapping.
+ * Email/password login form.
+ * Separated from page.tsx for Suspense wrapping of useSearchParams.
  */
 
 import { useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { LogIn, Loader2, AlertCircle } from 'lucide-react';
+import { LogIn, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export function LoginForm() {
   const router = useRouter();
@@ -19,6 +19,7 @@ export function LoginForm() {
   const { status } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -31,13 +32,7 @@ export function LoginForm() {
     return null;
   }
 
-  const handleCognitoLogin = async () => {
-    setIsLoading(true);
-    setError('');
-    await signIn('cognito', { callbackUrl });
-  };
-
-  const handleCredentialsLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -49,7 +44,11 @@ export function LoginForm() {
     });
 
     if (result?.error) {
-      setError('Invalid email or password');
+      setError(
+        result.error === 'Too many login attempts. Please try again later.'
+          ? result.error
+          : 'Invalid email or password'
+      );
       setIsLoading(false);
     } else {
       router.push(callbackUrl);
@@ -70,84 +69,74 @@ export function LoginForm() {
         <div className="mb-6 flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-destructive text-sm">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           <span>
-            {error || (urlError === 'OAuthSignin' ? 'Could not connect to authentication service' : 'Authentication failed')}
+            {error || 'Authentication failed. Please try again.'}
           </span>
         </div>
       )}
 
-      {/* Cognito Login Button */}
-      <button
-        onClick={handleCognitoLogin}
-        disabled={isLoading}
-        className="w-full flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          <LogIn className="h-5 w-5" />
-        )}
-        Sign in with SPAC Account
-      </button>
-
-      {/* Development Credentials Form */}
-      <>
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or sign in with credentials
-            </span>
-          </div>
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div>
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-foreground mb-1"
+          >
+            Email
+          </label>
+          <input
+            id="email"
+            type="text"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            required
+            autoComplete="email"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
 
-        <form onSubmit={handleCredentialsLogin} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-foreground mb-1"
-            >
-              Username / Email
-            </label>
-            <input
-              id="email"
-              type="text"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="demo"
-              required
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-foreground mb-1"
-            >
-              Password
-            </label>
+        <div>
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-foreground mb-1"
+          >
+            Password
+          </label>
+          <div className="relative">
             <input
               id="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter password"
               required
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              autoComplete="current-password"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50"
-          >
-            Sign In
-          </button>
-        </form>
-      </>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              <LogIn className="h-5 w-5" />
+              Sign In
+            </>
+          )}
+        </button>
+      </form>
 
       {/* Sign Up Link */}
       <div className="mt-6 text-center text-sm">
