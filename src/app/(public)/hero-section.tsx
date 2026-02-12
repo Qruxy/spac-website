@@ -70,10 +70,10 @@ export function HeroSection() {
           <div
             className="relative inline-flex items-center justify-center"
             style={{
-              width: 380,
-              height: 380,
+              width: 440,
+              height: 440,
               // @ts-expect-error CSS custom properties
-              '--radius': 190,
+              '--radius': 220,
               '--font-size': '13px',
             }}
           >
@@ -81,7 +81,7 @@ export function HeroSection() {
             <motion.div
               className="relative z-10 rounded-full overflow-hidden"
               whileHover={{ scale: 1.05 }}
-              style={{ width: 200, height: 200 }}
+              style={{ width: 240, height: 240 }}
             >
               {/* Glow effect */}
               <div className="absolute -inset-4 bg-primary/30 rounded-full blur-2xl" />
@@ -90,8 +90,8 @@ export function HeroSection() {
               <Image
                 src={spacLogo}
                 alt="St. Petersburg Astronomy Club"
-                width={200}
-                height={200}
+                width={240}
+                height={240}
                 className="relative z-10 rounded-full object-contain"
                 priority
               />

@@ -4,8 +4,8 @@
  * Positions text characters in a circular arrangement
  * around a center point using absolute positioning and rotation.
  *
- * For 380x380 container: center at 190px, orbit radius 170px
- * Characters start at top: 20px (190 - 170), rotate around center
+ * For 440x440 container: center at 220px, orbit radius 200px
+ * Characters start at top: 20px (220 - 200), rotate around center
  */
 
 .circular-text {
@@ -25,12 +25,12 @@
 .circular-text__char {
   position: absolute;
   left: 50%;
-  top: 20px; /* 190 - 170 = 20px from top edge */
+  top: 20px; /* 220 - 200 = 20px from top edge */
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   transform: translateX(-50%) rotate(var(--char-rotate, 0deg));
-  transform-origin: center 170px; /* Rotate around point 170px below = container center (190px) */
+  transform-origin: center 200px; /* Rotate around point 200px below = container center (220px) */
   color: inherit;
   white-space: nowrap;
 }

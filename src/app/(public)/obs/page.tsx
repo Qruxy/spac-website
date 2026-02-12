@@ -169,9 +169,9 @@ export default async function OBSPage() {
               <Image
                 src={obsLogo}
                 alt="Orange Blossom Special"
-                width={180}
-                height={180}
-                className="rounded-full drop-shadow-2xl"
+                width={220}
+                height={220}
+                className="drop-shadow-2xl"
                 priority
               />
             </div>
