@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
  */
 
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma, NOT_COMPANION } from '@/lib/db';
 import { requireAdmin } from '../utils';
 
 // GET /api/admin/stats - Get dashboard statistics
@@ -37,8 +37,8 @@ export async function GET(request: Request) {
       confirmedRegistrations,
       membershipsByType,
     ] = await Promise.all([
-      // Total users count
-      prisma.user.count(),
+      // Total users count (excludes companion accounts)
+      prisma.user.count({ where: NOT_COMPANION }),
 
       // Upcoming events (next 30 days)
       prisma.event.count({
@@ -88,9 +88,10 @@ export async function GET(request: Request) {
         },
       }),
 
-      // New users this month
+      // New users this month (excludes companion accounts)
       prisma.user.count({
         where: {
+          ...NOT_COMPANION,
           createdAt: {
             gte: thirtyDaysAgo,
           },

@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
  */
 
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma, NOT_COMPANION } from '@/lib/db';
 import {
   requireAdmin,
   parsePaginationParams,
@@ -26,7 +26,8 @@ export async function GET(request: Request) {
     const { field, order } = parseSortParams(searchParams);
     const filters = parseFilterParams(searchParams);
 
-    const where = buildWhereClause(filters, ['name', 'email', 'firstName', 'lastName']);
+    const baseWhere = buildWhereClause(filters, ['name', 'email', 'firstName', 'lastName']);
+    const where = { AND: [NOT_COMPANION, baseWhere] };
 
     const [rawData, total] = await Promise.all([
       prisma.user.findMany({

@@ -116,9 +116,7 @@ export default function AdminMembersPage() {
       const res = await fetch(`/api/admin/users?${params}`);
       if (!res.ok) throw new Error('Failed to fetch users');
       const data = await res.json();
-      const allUsers = data.data || [];
-      const filtered = allUsers.filter((u: User) => !u.email.includes('+companion@'));
-      setUsers(filtered);
+      setUsers(data.data || []);
       setTotalCount(data.total || 0);
       setTotalPages(Math.ceil((data.total || 0) / perPage) || 1);
     } catch (error) {

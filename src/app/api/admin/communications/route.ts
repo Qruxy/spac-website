@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma, NOT_COMPANION } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { sendBulkEmail, renderTemplate } from '@/lib/email';
 import { notifyAdminAnnouncement } from '@/lib/notifications';
@@ -106,6 +106,7 @@ export async function POST(request: Request) {
         },
       });
       for (const gm of groupMembers) {
+        if (gm.user.email.includes('+companion@')) continue;
         if (!seenEmails.has(gm.user.email.toLowerCase())) {
           seenEmails.add(gm.user.email.toLowerCase());
           allRecipients.push(gm.user);
@@ -137,7 +138,7 @@ export async function POST(request: Request) {
       }
 
       const users = await prisma.user.findMany({
-        where: userWhere,
+        where: { ...NOT_COMPANION, ...userWhere },
         select: { id: true, email: true, firstName: true, lastName: true, name: true },
       });
 
