@@ -1,15 +1,16 @@
 export const dynamic = 'force-dynamic';
 /**
  * OBS Check-In API
- * 
- * POST - Check in a registration
- * DELETE - Undo check-in
+ *
+ * POST - Check in a registration (and award badges)
+ * DELETE - Undo check-in (and revoke unqualified badges)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth.config';
 import { prisma } from '@/lib/db/prisma';
+import { awardBadgesForCheckIn, revokeBadgesIfUnqualified } from '@/lib/badges';
 
 export async function POST(
   request: NextRequest,
@@ -38,7 +39,15 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(registration);
+    // Award badges if the registration is linked to a user account
+    let newBadges: string[] = [];
+    if (registration.userId) {
+      newBadges = await awardBadgesForCheckIn(registration.userId, null, {
+        isOBSEvent: true,
+      });
+    }
+
+    return NextResponse.json({ ...registration, newBadges });
   } catch (error) {
     console.error('Check-in failed:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -61,6 +70,12 @@ export async function DELETE(
 
     const { id } = await params;
 
+    // Fetch registration before updating to get userId
+    const existing = await prisma.oBSRegistration.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+
     const registration = await prisma.oBSRegistration.update({
       where: { id },
       data: {
@@ -70,7 +85,13 @@ export async function DELETE(
       },
     });
 
-    return NextResponse.json(registration);
+    // Revoke badges the user no longer qualifies for
+    let revokedBadges: string[] = [];
+    if (existing?.userId) {
+      revokedBadges = await revokeBadgesIfUnqualified(existing.userId);
+    }
+
+    return NextResponse.json({ ...registration, revokedBadges });
   } catch (error) {
     console.error('Undo check-in failed:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

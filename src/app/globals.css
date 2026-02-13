@@ -70,6 +70,12 @@
   }
 }
 
+/* Fix native select dropdown contrast in dark theme */
+select option {
+  background-color: #1a1a2e;
+  color: #e2e8f0;
+}
+
 /* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
   width: 8px;

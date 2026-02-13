@@ -13,6 +13,7 @@ import {
   X,
   Check,
   Gift,
+  RefreshCw,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -21,10 +22,10 @@ import {
 
 type BadgeCategory = 'ATTENDANCE' | 'MILESTONE' | 'SPECIAL' | 'OBS';
 
-type CriteriaType = 'event_count' | 'first_event' | 'obs_event' | 'manual';
+type CriteriaType = 'event_count' | 'first_event' | 'obs_event' | 'obs_count' | 'membership_active' | 'unique_months' | 'manual';
 
 interface BadgeCriteria {
-  type: 'event_count' | 'first_event' | 'obs_event';
+  type: 'event_count' | 'first_event' | 'obs_event' | 'obs_count' | 'membership_active' | 'unique_months';
   count?: number;
 }
 
@@ -38,7 +39,7 @@ interface Badge {
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
-  _count: { userBadges: number };
+  earnedCount: number;
 }
 
 interface BadgeFormData {
@@ -81,6 +82,9 @@ const CRITERIA_OPTIONS: { value: CriteriaType; label: string }[] = [
   { value: 'event_count', label: 'Event Count' },
   { value: 'first_event', label: 'First Event' },
   { value: 'obs_event', label: 'OBS Event' },
+  { value: 'obs_count', label: 'OBS Event Count' },
+  { value: 'membership_active', label: 'Active Membership' },
+  { value: 'unique_months', label: 'Unique Months Attended' },
   { value: 'manual', label: 'Manual Only' },
 ];
 
@@ -122,11 +126,13 @@ function formToCriteria(
   criteriaCount: number
 ): BadgeCriteria | null {
   if (criteriaType === 'manual') return null;
-  if (criteriaType === 'event_count') {
-    return { type: 'event_count', count: criteriaCount };
+  if (criteriaType === 'event_count' || criteriaType === 'obs_count' || criteriaType === 'unique_months') {
+    return { type: criteriaType, count: criteriaCount };
   }
   return { type: criteriaType } as BadgeCriteria;
 }
+
+const CRITERIA_NEEDS_COUNT: CriteriaType[] = ['event_count', 'obs_count', 'unique_months'];
 
 // ---------------------------------------------------------------------------
 // Component
@@ -156,6 +162,9 @@ export default function AdminBadgesPage() {
 
   // Seed state
   const [seeding, setSeeding] = useState(false);
+
+  // Recalculate state
+  const [recalculating, setRecalculating] = useState(false);
 
   // Toast
   const [toast, setToast] = useState<{
@@ -385,6 +394,30 @@ export default function AdminBadgesPage() {
     }
   };
 
+  // ---------- Recalculate badges ----------
+
+  const recalculateBadges = async () => {
+    setRecalculating(true);
+    try {
+      const res = await fetch('/api/admin/badges/recalculate', {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error('Failed to recalculate badges');
+      const data = await res.json();
+      showToast(
+        data.totalAwarded > 0
+          ? `Awarded ${data.totalAwarded} badge(s) to ${data.usersAffected} user(s)`
+          : 'All badges are up to date',
+        'success'
+      );
+      fetchBadges();
+    } catch {
+      showToast('Failed to recalculate badges', 'error');
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
   // ---------- Render ----------
 
   return (
@@ -401,6 +434,19 @@ export default function AdminBadgesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={recalculateBadges}
+            disabled={recalculating}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all text-sm font-medium disabled:opacity-50"
+            title="Retroactively award badges to all qualifying users"
+          >
+            {recalculating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 text-emerald-400" />
+            )}
+            Recalculate
+          </button>
           <button
             onClick={seedDefaults}
             disabled={seeding}
@@ -490,7 +536,7 @@ export default function AdminBadgesPage() {
                 </span>
                 <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                   <Users className="w-3 h-3" />
-                  {badge._count.userBadges} earned
+                  {badge.earnedCount} earned
                 </span>
                 {badge.criteria && (
                   <span className="text-xs text-gray-500">
@@ -498,7 +544,15 @@ export default function AdminBadgesPage() {
                       ? `${badge.criteria.count} events`
                       : badge.criteria.type === 'first_event'
                       ? 'First event'
-                      : 'OBS event'}
+                      : badge.criteria.type === 'obs_event'
+                      ? 'OBS event'
+                      : badge.criteria.type === 'obs_count'
+                      ? `${badge.criteria.count} OBS events`
+                      : badge.criteria.type === 'membership_active'
+                      ? 'Active membership'
+                      : badge.criteria.type === 'unique_months'
+                      ? `${badge.criteria.count} unique months`
+                      : badge.criteria.type}
                   </span>
                 )}
                 {!badge.criteria && (
@@ -687,11 +741,15 @@ export default function AdminBadgesPage() {
                     ))}
                   </select>
 
-                  {/* Event count input */}
-                  {form.criteriaType === 'event_count' && (
+                  {/* Count input for count-based criteria */}
+                  {CRITERIA_NEEDS_COUNT.includes(form.criteriaType) && (
                     <div className="mt-3">
                       <label className="text-xs text-gray-500 block mb-1">
-                        Number of events required
+                        {form.criteriaType === 'unique_months'
+                          ? 'Number of unique months required'
+                          : form.criteriaType === 'obs_count'
+                          ? 'Number of OBS events required'
+                          : 'Number of events required'}
                       </label>
                       <input
                         type="number"

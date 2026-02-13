@@ -20,7 +20,7 @@ export async function GET() {
   try {
     const userId = session.user.id;
 
-    const [userBadges, totalEventsAttended, allBadgesRaw] = await Promise.all([
+    const [userBadges, regAttended, obsAttended, allBadgesRaw] = await Promise.all([
       prisma.userBadge.findMany({
         where: { userId },
         include: {
@@ -37,7 +37,16 @@ export async function GET() {
       prisma.registration.count({
         where: {
           userId,
-          status: 'ATTENDED',
+          OR: [
+            { status: 'ATTENDED' },
+            { checkedInAt: { not: null } },
+          ],
+        },
+      }),
+      prisma.oBSRegistration.count({
+        where: {
+          userId,
+          checkedIn: true,
         },
       }),
       prisma.badge.findMany({
@@ -46,6 +55,8 @@ export async function GET() {
         select: { id: true, name: true, description: true, icon: true, category: true },
       }),
     ]);
+
+    const totalEventsAttended = regAttended + obsAttended;
 
     const badges = userBadges.map((ub) => ({
       id: ub.badge.id,

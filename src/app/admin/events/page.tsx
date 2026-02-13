@@ -22,6 +22,8 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
+  Upload,
+  ImageIcon,
 } from 'lucide-react';
 
 type EventType =
@@ -78,6 +80,7 @@ interface EventFormData {
   guestPrice: string;
   campingAvailable: boolean;
   campingPrice: string;
+  imageUrl: string;
 }
 
 const EVENT_TYPES: { value: EventType; label: string; color: string }[] = [
@@ -201,6 +204,7 @@ export default function EventsPage() {
         guestPrice: formData.isFreeEvent ? null : (formData.guestPrice ? parseFloat(formData.guestPrice) : null),
         campingAvailable: formData.campingAvailable,
         campingPrice: formData.campingAvailable ? (formData.campingPrice ? parseFloat(formData.campingPrice) : null) : null,
+        imageUrl: formData.imageUrl || null,
       };
 
       const url = editingEvent
@@ -536,7 +540,59 @@ function EventFormPanel({ event, onClose, onSubmit }: EventFormPanelProps) {
     guestPrice: event?.guest_price?.toString() || '',
     campingAvailable: event?.campingAvailable || false,
     campingPrice: event?.camping_price?.toString() || '',
+    imageUrl: event?.imageUrl || '',
   });
+
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleImageUpload = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File size exceeds 10MB limit');
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+      setUploadError('Only JPG, PNG, GIF, and WebP images are allowed');
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const presignedRes = await fetch('/api/upload/presigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          size: file.size,
+          folder: 'events',
+        }),
+      });
+
+      if (!presignedRes.ok) {
+        const data = await presignedRes.json();
+        throw new Error(data.error || 'Failed to get upload URL');
+      }
+
+      const { uploadUrl, publicUrl } = await presignedRes.json();
+
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      });
+
+      if (!uploadRes.ok) throw new Error('Failed to upload image');
+
+      setFormData((prev) => ({ ...prev, imageUrl: publicUrl }));
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -593,6 +649,92 @@ function EventFormPanel({ event, onClose, onSubmit }: EventFormPanelProps) {
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 placeholder:text-white/25 text-sm px-3 py-2 focus:outline-none focus:border-blue-500/40"
               placeholder="Event details and description..."
             />
+          </div>
+
+          {/* Event Image */}
+          <div>
+            <label className="block text-sm font-medium text-white/70 mb-2">
+              <span className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-white/40" />
+                Cover Image
+              </span>
+            </label>
+
+            {formData.imageUrl ? (
+              <div className="relative group">
+                <img
+                  src={formData.imageUrl}
+                  alt="Event cover"
+                  className="w-full h-48 object-cover rounded-lg border border-white/[0.08]"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-3">
+                  <label className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+                    Replace
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(file);
+                      }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, imageUrl: '' })}
+                    className="bg-red-500/80 hover:bg-red-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+                {uploading && (
+                  <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <label
+                className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-white/[0.1] rounded-lg cursor-pointer hover:border-blue-500/40 hover:bg-white/[0.02] transition-colors"
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleImageUpload(file);
+                }}
+                onDragOver={(e) => e.preventDefault()}
+              >
+                {uploading ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                    <span className="text-sm text-white/50">Uploading...</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="w-8 h-8 text-white/25" />
+                    <span className="text-sm text-white/50">
+                      Click to upload or drag and drop
+                    </span>
+                    <span className="text-xs text-white/30">
+                      JPG, PNG, GIF or WebP (max 10MB)
+                    </span>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(file);
+                  }}
+                />
+              </label>
+            )}
+
+            {uploadError && (
+              <p className="text-xs text-red-400 mt-2">{uploadError}</p>
+            )}
           </div>
 
           {/* Type and Status */}

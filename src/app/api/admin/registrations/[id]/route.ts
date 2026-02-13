@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '../../utils';
+import { awardBadgesForCheckIn, revokeBadgesIfUnqualified } from '@/lib/badges';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -109,12 +110,18 @@ export async function PUT(request: Request, { params }: RouteParams) {
       }
     }
 
+    // Fetch the registration before update to detect status transitions
+    const beforeUpdate = await prisma.registration.findUnique({
+      where: { id },
+      select: { status: true, checkedInAt: true, userId: true, eventId: true },
+    });
+
     const registration = await prisma.registration.update({
       where: { id },
       data: updateData,
       include: {
         event: {
-          select: { title: true },
+          select: { id: true, title: true },
         },
         user: {
           select: { firstName: true, lastName: true },
@@ -136,6 +143,27 @@ export async function PUT(request: Request, { params }: RouteParams) {
         },
       },
     });
+
+    // Award badges when status transitions to ATTENDED or check-in is set
+    if (beforeUpdate) {
+      const wasAttended = beforeUpdate.status === 'ATTENDED' || beforeUpdate.checkedInAt !== null;
+      const isNowAttended =
+        (status === 'ATTENDED') ||
+        (updateData.checkedInAt !== undefined && updateData.checkedInAt !== null);
+
+      if (!wasAttended && isNowAttended) {
+        await awardBadgesForCheckIn(beforeUpdate.userId, registration.event.id);
+      }
+
+      // Revoke badges when attendance is reversed
+      const isNowUnattended =
+        (status !== undefined && status !== 'ATTENDED') ||
+        (updateData.checkedInAt === null);
+
+      if (wasAttended && isNowUnattended) {
+        await revokeBadgesIfUnqualified(beforeUpdate.userId);
+      }
+    }
 
     return NextResponse.json(registration);
   } catch (error) {
