@@ -15,6 +15,13 @@ import {
   Trash2,
   Filter,
   Tent,
+  Bell,
+  Clock,
+  Send,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  Loader2,
 } from 'lucide-react';
 
 type EventType =
@@ -101,6 +108,7 @@ export default function EventsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [reminderEventId, setReminderEventId] = useState<string | null>(null);
   const perPage = 25;
 
   const fetchEvents = useCallback(async () => {
@@ -425,6 +433,14 @@ export default function EventsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => setReminderEventId(event.id)}
+                          className="bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                          title="Manage reminders"
+                        >
+                          <Bell className="w-3 h-3" />
+                          Reminders
+                        </button>
+                        <button
                           onClick={() => handleEditEvent(event)}
                           className="bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors"
                         >
@@ -484,6 +500,14 @@ export default function EventsPage() {
           event={editingEvent}
           onClose={() => setIsFormOpen(false)}
           onSubmit={handleFormSubmit}
+        />
+      )}
+
+      {/* Reminders Slide-over */}
+      {reminderEventId && (
+        <ReminderPanel
+          eventId={reminderEventId}
+          onClose={() => setReminderEventId(null)}
         />
       )}
     </div>
@@ -805,6 +829,594 @@ function EventFormPanel({ event, onClose, onSubmit }: EventFormPanelProps) {
             </button>
           </div>
         </form>
+      </div>
+    </>
+  );
+}
+
+// ─── Reminder Panel ──────────────────────────────────────────────────────────
+
+interface Reminder {
+  id: string;
+  daysBefore: number;
+  scheduledFor: string;
+  emailSubject: string | null;
+  emailBody: string | null;
+  useGenericTemplate: boolean;
+  status: 'PENDING' | 'SENT' | 'PARTIALLY_SENT' | 'FAILED' | 'CANCELLED';
+  sentAt: string | null;
+  sentCount: number;
+  failedCount: number;
+  createdBy: { name: string | null };
+}
+
+interface ReminderPanelProps {
+  eventId: string;
+  onClose: () => void;
+}
+
+const PRESET_REMINDERS = [
+  { label: '1 week before', daysBefore: 7, icon: '📅' },
+  { label: '3 days before', daysBefore: 3, icon: '⏰' },
+  { label: '2 days before', daysBefore: 2, icon: '⏰' },
+  { label: '1 day before', daysBefore: 1, icon: '🔔' },
+  { label: 'Day of event', daysBefore: 0, icon: '🎯' },
+];
+
+function ReminderPanel({ eventId, onClose }: ReminderPanelProps) {
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [eventInfo, setEventInfo] = useState<{ title: string; startDate: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
+  const [customDays, setCustomDays] = useState('');
+  const [customSubject, setCustomSubject] = useState('');
+  const [customBody, setCustomBody] = useState('');
+  const [useGeneric, setUseGeneric] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editSubject, setEditSubject] = useState('');
+  const [editBody, setEditBody] = useState('');
+
+  const fetchReminders = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}/reminders`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setReminders(data.reminders || []);
+      setEventInfo(data.event || null);
+    } catch (error) {
+      console.error('Error fetching reminders:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [eventId]);
+
+  useEffect(() => {
+    fetchReminders();
+  }, [fetchReminders]);
+
+  const addReminder = async (daysBefore: number, subject?: string, body?: string, generic?: boolean) => {
+    setAdding(true);
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}/reminders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          daysBefore,
+          emailSubject: subject || undefined,
+          emailBody: body || undefined,
+          useGenericTemplate: generic ?? !subject,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to create');
+
+      const data = await res.json();
+      if (data.created === 0) {
+        showToast('Reminder already exists or scheduled time is in the past', 'error');
+      } else {
+        showToast('Reminder added', 'success');
+      }
+      fetchReminders();
+    } catch {
+      showToast('Failed to add reminder', 'error');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const addPresetBatch = async () => {
+    setAdding(true);
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}/reminders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          reminders: [
+            { daysBefore: 7, useGenericTemplate: true },
+            { daysBefore: 2, useGenericTemplate: true },
+            { daysBefore: 1, useGenericTemplate: true },
+          ],
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to create');
+
+      const data = await res.json();
+      showToast(`${data.created} reminder(s) added`, 'success');
+      fetchReminders();
+    } catch {
+      showToast('Failed to add reminders', 'error');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const deleteReminder = async (reminderId: string) => {
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}/reminders/${reminderId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!res.ok) throw new Error('Failed to delete');
+      showToast('Reminder removed', 'success');
+      fetchReminders();
+    } catch {
+      showToast('Failed to delete reminder', 'error');
+    }
+  };
+
+  const updateReminder = async (reminderId: string, data: Record<string, unknown>) => {
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}/reminders/${reminderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) throw new Error('Failed to update');
+      showToast('Reminder updated', 'success');
+      setEditingId(null);
+      fetchReminders();
+    } catch {
+      showToast('Failed to update reminder', 'error');
+    }
+  };
+
+  const processNow = async () => {
+    setProcessing(true);
+    try {
+      const res = await fetch('/api/cron/send-reminders', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!res.ok) throw new Error('Failed');
+      const data = await res.json();
+      showToast(
+        `Processed ${data.processed} reminder(s): ${data.totalEmailsSent} sent, ${data.totalEmailsFailed} failed`,
+        data.totalEmailsFailed > 0 ? 'error' : 'success'
+      );
+      fetchReminders();
+    } catch {
+      showToast('Failed to process reminders', 'error');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleCustomSubmit = () => {
+    const days = parseInt(customDays);
+    if (isNaN(days) || days < 0) {
+      showToast('Enter a valid number of days', 'error');
+      return;
+    }
+    addReminder(days, useGeneric ? undefined : customSubject, useGeneric ? undefined : customBody, useGeneric);
+    setShowCustom(false);
+    setCustomDays('');
+    setCustomSubject('');
+    setCustomBody('');
+    setUseGeneric(true);
+  };
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg text-sm font-medium ${
+      type === 'success'
+        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+        : 'bg-red-500/15 text-red-400 border border-red-500/30'
+    } z-[60]`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-500/15 text-amber-400">
+            <Clock className="w-3 h-3" /> Pending
+          </span>
+        );
+      case 'SENT':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/15 text-emerald-400">
+            <CheckCircle className="w-3 h-3" /> Sent
+          </span>
+        );
+      case 'PARTIALLY_SENT':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-orange-500/15 text-orange-400">
+            <AlertCircle className="w-3 h-3" /> Partial
+          </span>
+        );
+      case 'FAILED':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-500/15 text-red-400">
+            <XCircle className="w-3 h-3" /> Failed
+          </span>
+        );
+      case 'CANCELLED':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-slate-500/15 text-slate-400">
+            <XCircle className="w-3 h-3" /> Cancelled
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const formatScheduledDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
+  const dayLabel = (days: number) => {
+    if (days === 0) return 'Day of event';
+    if (days === 1) return '1 day before';
+    return `${days} days before`;
+  };
+
+  const existingDays = new Set(reminders.filter((r) => r.status !== 'CANCELLED').map((r) => r.daysBefore));
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+        onClick={onClose}
+      />
+
+      <div className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-[#0a0a0a] border-l border-white/[0.06] z-50 overflow-y-auto">
+        <div className="sticky top-0 bg-[#0a0a0a] border-b border-white/[0.06] px-6 py-4 flex items-center justify-between z-10">
+          <div>
+            <h2 className="text-lg font-semibold text-white/80 flex items-center gap-2">
+              <Bell className="w-5 h-5 text-amber-400" />
+              Event Reminders
+            </h2>
+            {eventInfo && (
+              <p className="text-xs text-white/40 mt-1">{eventInfo.title}</p>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/40 hover:text-white/60 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Quick Presets */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-white/70">Quick Add</h3>
+              <button
+                onClick={addPresetBatch}
+                disabled={adding}
+                className="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors disabled:opacity-50"
+              >
+                {adding ? 'Adding...' : 'Add recommended set (7d, 2d, 1d)'}
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {PRESET_REMINDERS.map((preset) => (
+                <button
+                  key={preset.daysBefore}
+                  onClick={() => addReminder(preset.daysBefore)}
+                  disabled={adding || existingDays.has(preset.daysBefore)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    existingDays.has(preset.daysBefore)
+                      ? 'bg-white/[0.02] text-white/20 cursor-not-allowed'
+                      : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20'
+                  }`}
+                >
+                  <span>{preset.icon}</span>
+                  {preset.label}
+                  {existingDays.has(preset.daysBefore) && (
+                    <CheckCircle className="w-3 h-3 text-emerald-400" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Reminder */}
+          <div className="space-y-3">
+            <button
+              onClick={() => setShowCustom(!showCustom)}
+              className="flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Custom Reminder
+            </button>
+
+            {showCustom && (
+              <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5">
+                    Days before event
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="90"
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm px-3 py-2 focus:outline-none focus:border-blue-500/40"
+                    placeholder="e.g., 14 for two weeks before"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.06] rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="useGenericReminder"
+                    checked={useGeneric}
+                    onChange={(e) => setUseGeneric(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/[0.08] bg-white/[0.04] text-blue-500"
+                  />
+                  <label htmlFor="useGenericReminder" className="text-xs font-medium text-white/60 cursor-pointer">
+                    Use generic template (auto-generates email with event details)
+                  </label>
+                </div>
+
+                {!useGeneric && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-white/50 mb-1.5">
+                        Email Subject
+                      </label>
+                      <input
+                        type="text"
+                        value={customSubject}
+                        onChange={(e) => setCustomSubject(e.target.value)}
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm px-3 py-2 focus:outline-none focus:border-blue-500/40"
+                        placeholder="e.g., Don't forget about {{eventTitle}}!"
+                      />
+                      <p className="text-[10px] text-white/30 mt-1">
+                        Variables: {'{{firstName}}'}, {'{{name}}'}, {'{{eventTitle}}'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-white/50 mb-1.5">
+                        Email Body (HTML)
+                      </label>
+                      <textarea
+                        value={customBody}
+                        onChange={(e) => setCustomBody(e.target.value)}
+                        rows={6}
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm px-3 py-2 focus:outline-none focus:border-blue-500/40 font-mono text-xs"
+                        placeholder="<p>Hi {{firstName}},</p>&#10;<p>Just a reminder about...</p>"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCustomSubmit}
+                    disabled={adding || !customDays}
+                    className="flex-1 bg-amber-500 text-white hover:bg-amber-600 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    Add Reminder
+                  </button>
+                  <button
+                    onClick={() => setShowCustom(false)}
+                    className="bg-white/[0.04] border border-white/[0.08] text-white/70 hover:bg-white/[0.08] rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Existing Reminders List */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-white/70">
+                Scheduled Reminders ({reminders.length})
+              </h3>
+              {reminders.some((r) => r.status === 'PENDING') && (
+                <button
+                  onClick={processNow}
+                  disabled={processing}
+                  className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors disabled:opacity-50"
+                >
+                  {processing ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Send className="w-3 h-3" />
+                  )}
+                  {processing ? 'Processing...' : 'Send due reminders now'}
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-20 bg-white/[0.02] rounded-lg animate-pulse" />
+                ))}
+              </div>
+            ) : reminders.length === 0 ? (
+              <div className="text-center py-8">
+                <Bell className="w-10 h-10 text-white/10 mx-auto mb-3" />
+                <p className="text-sm text-white/40">No reminders configured yet</p>
+                <p className="text-xs text-white/25 mt-1">
+                  Add reminders above to automatically email registered attendees
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {reminders.map((reminder) => (
+                  <div
+                    key={reminder.id}
+                    className={`bg-white/[0.02] border rounded-xl p-4 ${
+                      reminder.status === 'SENT'
+                        ? 'border-emerald-500/20'
+                        : reminder.status === 'FAILED'
+                          ? 'border-red-500/20'
+                          : reminder.status === 'CANCELLED'
+                            ? 'border-white/[0.04]'
+                            : 'border-white/[0.06]'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium text-white/80">
+                            {dayLabel(reminder.daysBefore)}
+                          </span>
+                          {getStatusBadge(reminder.status)}
+                        </div>
+                        <p className="text-xs text-white/40">
+                          Scheduled: {formatScheduledDate(reminder.scheduledFor)}
+                        </p>
+                        {reminder.useGenericTemplate ? (
+                          <p className="text-xs text-white/30 mt-1 italic">
+                            Using auto-generated template
+                          </p>
+                        ) : (
+                          <p className="text-xs text-white/30 mt-1">
+                            Subject: {reminder.emailSubject || '(no subject)'}
+                          </p>
+                        )}
+                        {(reminder.status === 'SENT' || reminder.status === 'PARTIALLY_SENT') && (
+                          <p className="text-xs text-white/40 mt-1">
+                            Sent {reminder.sentCount} email(s)
+                            {reminder.failedCount > 0 && (
+                              <span className="text-red-400"> ({reminder.failedCount} failed)</span>
+                            )}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      {reminder.status === 'PENDING' && (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {editingId === reminder.id ? (
+                            <button
+                              onClick={() => {
+                                updateReminder(reminder.id, {
+                                  emailSubject: editSubject || null,
+                                  emailBody: editBody || null,
+                                  useGenericTemplate: !editSubject && !editBody,
+                                });
+                              }}
+                              className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
+                            >
+                              Save
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setEditingId(reminder.id);
+                                setEditSubject(reminder.emailSubject || '');
+                                setEditBody(reminder.emailBody || '');
+                              }}
+                              className="bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => deleteReminder(reminder.id)}
+                            className="bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Edit Form */}
+                    {editingId === reminder.id && (
+                      <div className="mt-3 pt-3 border-t border-white/[0.06] space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-white/50 mb-1">
+                            Custom Subject (leave blank for auto)
+                          </label>
+                          <input
+                            type="text"
+                            value={editSubject}
+                            onChange={(e) => setEditSubject(e.target.value)}
+                            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm px-3 py-1.5 focus:outline-none focus:border-blue-500/40"
+                            placeholder="Auto-generated if blank"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-white/50 mb-1">
+                            Custom Body HTML (leave blank for auto)
+                          </label>
+                          <textarea
+                            value={editBody}
+                            onChange={(e) => setEditBody(e.target.value)}
+                            rows={4}
+                            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm px-3 py-1.5 focus:outline-none focus:border-blue-500/40 font-mono text-xs"
+                            placeholder="Auto-generated if blank"
+                          />
+                        </div>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="text-xs text-white/40 hover:text-white/60"
+                        >
+                          Cancel edit
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Process Info */}
+          <div className="bg-blue-500/[0.06] border border-blue-500/20 rounded-xl p-4">
+            <p className="text-xs text-blue-400/80 font-medium mb-1">How reminders work</p>
+            <ul className="text-xs text-white/40 space-y-1">
+              <li>Reminders send at 9:00 AM ET on the scheduled day</li>
+              <li>Only registered/confirmed attendees receive the email</li>
+              <li>Each reminder also creates an in-app notification</li>
+              <li>Use &quot;Send due reminders now&quot; to manually trigger processing</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </>
   );

@@ -22,6 +22,31 @@ export async function GET(request: Request) {
       return NextResponse.json({ users: [] });
     }
 
+    // Use startsWith for name fields so "Ty" matches "Tyler" but not "Murphy"
+    // Only fall back to email contains for exact-looking queries (3+ chars)
+    const nameFilters = [
+      { firstName: { startsWith: q, mode: 'insensitive' as const } },
+      { lastName: { startsWith: q, mode: 'insensitive' as const } },
+    ];
+
+    // For the combined "name" field, check startsWith and optionally contains
+    // (handles "John Smith" when searching "Smi" or "John S")
+    const nameContainsFilters: Array<Record<string, unknown>> = [
+      { name: { startsWith: q, mode: 'insensitive' } },
+    ];
+
+    // If query has a space, also do substring match on full name
+    if (q.includes(' ')) {
+      nameContainsFilters.push(
+        { name: { contains: q, mode: 'insensitive' } },
+      );
+    }
+
+    // Only search email if query is 3+ chars to avoid noisy partial matches
+    const emailFilter = q.length >= 3
+      ? [{ email: { startsWith: q, mode: 'insensitive' as const } }]
+      : [];
+
     const users = await prisma.user.findMany({
       where: {
         AND: [
@@ -29,10 +54,9 @@ export async function GET(request: Request) {
           NOT_COMPANION,
           {
             OR: [
-              { firstName: { contains: q, mode: 'insensitive' } },
-              { lastName: { contains: q, mode: 'insensitive' } },
-              { email: { contains: q, mode: 'insensitive' } },
-              { name: { contains: q, mode: 'insensitive' } },
+              ...nameFilters,
+              ...nameContainsFilters,
+              ...emailFilter,
             ],
           },
         ],
@@ -46,6 +70,7 @@ export async function GET(request: Request) {
         avatarUrl: true,
         image: true,
       },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       take: 10,
     });
 
