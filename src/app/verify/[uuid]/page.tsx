@@ -3,11 +3,15 @@
  *
  * Verifies membership status when QR code is scanned.
  * Used by event staff to check in members.
+ *
+ * - Shows membership verification card for all visitors
+ * - For admins/moderators: shows today's event registrations with check-in buttons
  */
 
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
 import {
   CheckCircle2,
   XCircle,
@@ -17,6 +21,7 @@ import {
   Users,
   GraduationCap,
 } from 'lucide-react';
+import { CheckInSection } from './check-in-section';
 
 interface VerifyPageProps {
   params: Promise<{ uuid: string }>;
@@ -56,6 +61,62 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
     LIFETIME: Star,
   };
   const TierIcon = tierIcons[membershipType as keyof typeof tierIcons] || Star;
+
+  // Get current session (may be null for anonymous visitors)
+  const session = await getSession();
+  const isAdmin =
+    session?.user?.role === 'ADMIN' || session?.user?.role === 'MODERATOR';
+
+  // Fetch today's event registrations for this user
+  const now = new Date();
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    0,
+    0,
+    0,
+    0
+  );
+  const endOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    59,
+    999
+  );
+
+  const todayRegistrations = await prisma.registration.findMany({
+    where: {
+      userId: user.id,
+      status: { in: ['CONFIRMED', 'PENDING', 'ATTENDED'] },
+      event: {
+        status: 'PUBLISHED',
+        startDate: { lte: endOfToday },
+        endDate: { gte: startOfToday },
+      },
+    },
+    include: {
+      event: {
+        select: {
+          id: true,
+          title: true,
+          startDate: true,
+        },
+      },
+    },
+    orderBy: {
+      event: { startDate: 'asc' },
+    },
+  });
+
+  const registrations = todayRegistrations.map((reg) => ({
+    id: reg.id,
+    eventTitle: reg.event.title,
+    checkedInAt: reg.checkedInAt ? reg.checkedInAt.toISOString() : null,
+  }));
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -137,6 +198,15 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
             )}
           </div>
         </div>
+
+        {/* Today's Events & Check-In Section */}
+        {registrations.length > 0 && (
+          <CheckInSection
+            uuid={uuid}
+            registrations={registrations}
+            isAdmin={isAdmin}
+          />
+        )}
 
         {/* SPAC Branding */}
         <div className="mt-6 text-center">

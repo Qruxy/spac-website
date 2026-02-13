@@ -23,6 +23,8 @@ import {
   Home,
   MessageSquare,
   Bell,
+  Users,
+  Award,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import NotificationBell from '@/components/notifications/notification-bell';
@@ -39,9 +41,19 @@ const sidebarLinks = [
     icon: User,
   },
   {
+    name: 'My Family',
+    href: '/family',
+    icon: Users,
+  },
+  {
     name: 'Membership Card',
     href: '/membership-card',
     icon: QrCode,
+  },
+  {
+    name: 'Badges',
+    href: '/badges',
+    icon: Award,
   },
   {
     name: 'My Events',
