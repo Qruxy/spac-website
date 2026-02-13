@@ -8,7 +8,7 @@
  * then redirects to dashboard (free) or checkout (paid).
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -112,10 +112,52 @@ export default function RegisterPage() {
     }
   };
 
+  const stepLabels = ['Choose Plan', 'Create Account'];
+  const currentStepNum = step === 'tier' ? 1 : 2;
+
+  // Step indicator (visual only)
+  const StepIndicator = () => (
+    <div className="flex items-center justify-center gap-2 mb-6">
+      {stepLabels.map((label, i) => {
+        const num = i + 1;
+        const isActive = num === currentStepNum;
+        const isComplete = num < currentStepNum;
+        return (
+          <React.Fragment key={label}>
+            <div className="flex items-center gap-1.5">
+              <div
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : isComplete
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {isComplete ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  num
+                )}
+              </div>
+              <span className={`text-xs font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                {label}
+              </span>
+            </div>
+            {i < stepLabels.length - 1 && (
+              <div className={`h-px w-8 ${isComplete ? 'bg-primary' : 'bg-muted'}`} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+
   // Step 1: Tier Selection
   if (step === 'tier') {
     return (
       <>
+        <StepIndicator />
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-foreground">Join SPAC</h1>
           <p className="text-muted-foreground mt-2">
@@ -203,6 +245,7 @@ export default function RegisterPage() {
 
   return (
     <>
+      <StepIndicator />
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
         <p className="text-muted-foreground mt-2">

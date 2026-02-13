@@ -266,7 +266,7 @@ export function DonationForm({ tiers }: DonationFormProps) {
           className={`text-lg font-semibold ${
             isLoading || amount < 5 ? 'opacity-50 cursor-not-allowed' : ''
           }`}
-          color="#818cf8"
+          color="#ef4444"
           speed="4s"
         >
           <span className="flex items-center gap-2 px-4">

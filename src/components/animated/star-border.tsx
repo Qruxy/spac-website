@@ -22,7 +22,7 @@ type StarBorderProps<T extends ElementType = 'button'> = ComponentPropsWithoutRe
 export function StarBorder<T extends ElementType = 'button'>({
   as,
   className = '',
-  color = '#818cf8', // Indigo-400 to match theme
+  color = '#ef4444', // Red-500 brand accent
   speed = '6s',
   thickness = 1,
   children,

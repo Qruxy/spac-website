@@ -18,6 +18,7 @@ import dynamic from 'next/dynamic';
 import { CircularText } from '@/components/animated/circular-text';
 import { BlurText } from '@/components/animated/blur-text';
 import { ShinyText } from '@/components/animated/shiny-text';
+import { StarBorder } from '@/components/animated/star-border';
 import '@/components/animated/circular-text.css';
 import spacLogo from '../../../public/images/spac-logo-hires.png';
 
@@ -26,6 +27,17 @@ const Galaxy = dynamic(
   () => import('@/components/animated/galaxy').then((mod) => mod.Galaxy),
   { ssr: false }
 );
+
+export function HomeCtaButton() {
+  return (
+    <StarBorder as={Link} href="/register" color="#ef4444" speed="4s">
+      <span className="flex items-center gap-2 text-lg font-semibold">
+        Become a Member
+        <ArrowRight className="h-5 w-5" />
+      </span>
+    </StarBorder>
+  );
+}
 
 export function HeroSection() {
   // Check for prefers-reduced-motion
@@ -156,13 +168,12 @@ export function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
         >
-          <Link
-            href="/register"
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-8 py-3 text-lg font-semibold text-white transition-all hover:bg-blue-500 hover:scale-105 shadow-lg shadow-blue-600/30"
-          >
-            Join Today
-            <ArrowRight className="h-5 w-5" />
-          </Link>
+          <StarBorder as={Link} href="/register" color="#ef4444" speed="4s">
+            <span className="flex items-center gap-2 text-lg font-semibold">
+              Join Today
+              <ArrowRight className="h-5 w-5" />
+            </span>
+          </StarBorder>
           <Link
             href="/events"
             className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 backdrop-blur-sm px-8 py-3 text-lg font-semibold text-white transition-all hover:bg-white/10 hover:scale-105"

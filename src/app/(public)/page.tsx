@@ -8,7 +8,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/db';
-import { HeroSection } from './hero-section';
+import { HeroSection, HomeCtaButton } from './hero-section';
 import { StatsSection } from './stats-section';
 import { FeaturesSection } from './features-section';
 import { MemberMediaSection } from './member-media-section';
@@ -192,13 +192,7 @@ export default async function HomePage() {
             there&apos;s a place for you at SPAC. Join our community of stargazers
             today.
           </p>
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 text-lg font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Become a Member
-            <ArrowRight className="h-5 w-5" />
-          </Link>
+          <HomeCtaButton />
         </div>
       </section>
     </>

@@ -3,12 +3,12 @@
 /**
  * Stats Section Component
  *
- * Displays animated statistics counters that count up when scrolled into view.
- * Enhanced with React Bits CountUp component for smoother spring physics.
+ * Displays animated statistics with digit roller counters that animate when scrolled into view.
+ * Uses DigitCounter for the rolling digit effect and GradualBlur for the header.
  */
 
-// Direct imports to avoid barrel export bundle bloat
-import { CountUp } from '@/components/animated/count-up';
+import { DigitCounter } from '@/components/animated/digit-counter';
+import { GradualBlur } from '@/components/animated/gradual-blur';
 import { FadeIn } from '@/components/animated/fade-in';
 
 interface Stat {
@@ -25,25 +25,26 @@ export function StatsSection({ stats }: StatsSectionProps) {
   return (
     <section className="bg-primary/5 py-24">
       <div className="container mx-auto px-4">
-        <FadeIn>
-          <h2 className="mb-12 text-center text-3xl font-bold text-foreground">
-            Our Legacy in Numbers
-          </h2>
-        </FadeIn>
+        <div className="mb-12 text-center">
+          <GradualBlur
+            text="Our Legacy in Numbers"
+            as="h2"
+            className="text-3xl font-bold text-foreground"
+          />
+        </div>
 
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {stats.map((stat, index) => (
             <FadeIn key={stat.label} delay={index * 0.1}>
               <div className="text-center">
-                <div className="text-4xl font-bold text-primary sm:text-5xl">
-                  <CountUp
-                    to={stat.value}
-                    duration={2.5}
-                    delay={index * 0.15}
-                    separator=","
+                <div className="text-4xl font-bold text-primary sm:text-5xl flex items-center justify-center">
+                  <DigitCounter
+                    value={stat.value}
+                    suffix={stat.suffix || undefined}
                     className="tabular-nums"
+                    digitHeight={48}
+                    digitWidth={30}
                   />
-                  {stat.suffix}
                 </div>
                 <div className="mt-2 text-sm text-muted-foreground sm:text-base">
                   {stat.label}

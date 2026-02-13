@@ -4,10 +4,11 @@
  * EventsView Component
  *
  * Client component that handles view toggling between list and calendar.
+ * Uses Mantine Card components for event cards and GooeyNav for filtering.
  */
 
 import { useState } from 'react';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
   Calendar as CalendarIcon,
@@ -19,13 +20,14 @@ import {
   Mic2,
   Tent,
   Star,
-  Filter,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Card, Badge, Group, Text } from '@mantine/core';
+import { GooeyNav } from '@/components/animated/gooey-nav';
 import type { CalendarEvent } from './EventCalendar';
 
 // Dynamically import EventCalendar to reduce initial bundle size (~60KB savings)
-const EventCalendar = dynamic(() => import('./EventCalendar'), {
+const EventCalendar = nextDynamic(() => import('./EventCalendar'), {
   loading: () => (
     <div className="h-[600px] rounded-xl bg-muted/20 animate-pulse flex items-center justify-center">
       <CalendarIcon className="h-8 w-8 text-muted-foreground" />
@@ -48,15 +50,16 @@ const eventTypes = [
   { id: 'workshop', label: 'Workshops', icon: Star },
 ];
 
-const eventTypeStyles: Record<string, { bg: string; text: string }> = {
-  STAR_PARTY: { bg: 'bg-blue-500/10', text: 'text-blue-400' },
-  MEETING: { bg: 'bg-green-500/10', text: 'text-green-400' },
-  OBS_SESSION: { bg: 'bg-orange-500/10', text: 'text-orange-400' },
-  WORKSHOP: { bg: 'bg-purple-500/10', text: 'text-purple-400' },
-  OUTREACH: { bg: 'bg-pink-500/10', text: 'text-pink-400' },
-  SOCIAL: { bg: 'bg-yellow-500/10', text: 'text-yellow-400' },
-  SPECIAL: { bg: 'bg-red-500/10', text: 'text-red-400' },
-  EDUCATIONAL: { bg: 'bg-cyan-500/10', text: 'text-cyan-400' },
+// Color mapping for event type accent bars and badges (hex colors)
+const eventTypeAccentColors: Record<string, string> = {
+  STAR_PARTY: '#3b82f6',
+  MEETING: '#22c55e',
+  OBS_SESSION: '#f97316',
+  WORKSHOP: '#a855f7',
+  OUTREACH: '#ec4899',
+  SOCIAL: '#eab308',
+  SPECIAL: '#ef4444',
+  EDUCATIONAL: '#06b6d4',
 };
 
 const eventTypeLabels: Record<string, string> = {
@@ -70,9 +73,9 @@ const eventTypeLabels: Record<string, string> = {
   EDUCATIONAL: 'Educational',
 };
 
-const getTypeStyle = (type: string) => {
+const getAccentColor = (type: string) => {
   const upperType = type.toUpperCase().replace(/\s+/g, '_');
-  return eventTypeStyles[upperType] || { bg: 'bg-muted', text: 'text-muted-foreground' };
+  return eventTypeAccentColors[upperType] || '#6b7280';
 };
 
 const getTypeLabel = (type: string) => {
@@ -83,6 +86,15 @@ const getTypeLabel = (type: string) => {
 export default function EventsView({ events, initialType = 'all' }: EventsViewProps) {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [typeFilter, setTypeFilter] = useState(initialType);
+
+  // Map typeFilter to activeIndex for GooeyNav
+  const activeFilterIndex = eventTypes.findIndex((t) => t.id === typeFilter);
+
+  // Build GooeyNav items from eventTypes
+  const gooeyNavItems = eventTypes.map((type) => ({
+    label: type.label,
+    icon: <type.icon className="h-4 w-4" />,
+  }));
 
   // Filter events by type
   const filteredEvents =
@@ -97,23 +109,16 @@ export default function EventsView({ events, initialType = 'all' }: EventsViewPr
       {/* View Toggle and Filters */}
       <section className="container mx-auto px-4 mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          {/* Filters */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
-            <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            {eventTypes.map((type) => (
-              <button
-                key={type.id}
-                onClick={() => setTypeFilter(type.id)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
-                  typeFilter === type.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <type.icon className="h-4 w-4" />
-                {type.label}
-              </button>
-            ))}
+          {/* GooeyNav Filter */}
+          <div className="overflow-x-auto pb-2 sm:pb-0">
+            <GooeyNav
+              items={gooeyNavItems}
+              activeIndex={activeFilterIndex >= 0 ? activeFilterIndex : 0}
+              accentColor="#3b82f6"
+              onItemClick={(index) => {
+                setTypeFilter(eventTypes[index].id);
+              }}
+            />
           </div>
 
           {/* View Toggle */}
@@ -167,112 +172,195 @@ export default function EventsView({ events, initialType = 'all' }: EventsViewPr
                 </button>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                 {filteredEvents.map((event) => {
                   const startDate = new Date(event.startDate);
-                  const typeStyle = getTypeStyle(event.type);
+                  const accentColor = getAccentColor(event.type);
 
                   return (
                     <Link
                       key={event.id}
                       href={`/events/${event.slug}`}
                       className="block group"
+                      style={{ textDecoration: 'none' }}
                     >
-                      <div className="rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-lg">
-                        <div className="flex flex-col md:flex-row md:items-start gap-4">
-                          {/* Date Badge */}
-                          <div className="flex-shrink-0 w-20 text-center">
-                            <div className="rounded-lg bg-primary/10 p-3">
-                              <div className="text-xs text-primary font-medium">
+                      <Card
+                        shadow="sm"
+                        padding="lg"
+                        radius="md"
+                        withBorder
+                        className="h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
+                        styles={{
+                          root: {
+                            backgroundColor: 'var(--mantine-color-dark-7, #1a1b1e)',
+                            borderColor: 'var(--mantine-color-dark-4, #373A40)',
+                            '&:hover': {
+                              borderColor: accentColor,
+                            },
+                          },
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {/* Colored accent bar at top */}
+                        <Card.Section>
+                          <div
+                            style={{
+                              height: 4,
+                              background: `linear-gradient(90deg, ${accentColor}, ${accentColor}88)`,
+                            }}
+                          />
+                        </Card.Section>
+
+                        {/* Date + Type badge row */}
+                        <Group justify="space-between" mt="md" mb="xs">
+                          <Group gap="xs">
+                            {/* Compact date badge */}
+                            <div
+                              className="flex flex-col items-center justify-center rounded-lg px-3 py-2"
+                              style={{ backgroundColor: `${accentColor}18` }}
+                            >
+                              <span
+                                className="text-[10px] font-semibold uppercase leading-tight"
+                                style={{ color: accentColor }}
+                              >
                                 {format(startDate, 'MMM')}
-                              </div>
-                              <div className="text-2xl font-bold text-foreground">
+                              </span>
+                              <span className="text-lg font-bold leading-tight text-white">
                                 {format(startDate, 'd')}
-                              </div>
+                              </span>
+                            </div>
+
+                            <Badge
+                              variant="light"
+                              size="sm"
+                              styles={{
+                                root: {
+                                  backgroundColor: `${accentColor}20`,
+                                  color: accentColor,
+                                  borderColor: `${accentColor}40`,
+                                  border: `1px solid ${accentColor}40`,
+                                },
+                              }}
+                            >
+                              {getTypeLabel(event.type)}
+                            </Badge>
+                          </Group>
+
+                          {/* Price badge */}
+                          {event.memberPrice === 0 && event.guestPrice === 0 && (
+                            <Badge
+                              variant="light"
+                              color="green"
+                              size="sm"
+                              styles={{
+                                root: {
+                                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                                  color: '#4ade80',
+                                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.05em',
+                                },
+                              }}
+                            >
+                              Free
+                            </Badge>
+                          )}
+                          {(event.memberPrice > 0 || event.guestPrice > 0) && (
+                            <Badge
+                              variant="light"
+                              color="yellow"
+                              size="sm"
+                              styles={{
+                                root: {
+                                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                                  color: '#fbbf24',
+                                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                                  fontWeight: 700,
+                                },
+                              }}
+                            >
+                              ${event.memberPrice}{event.guestPrice > 0 ? ` / $${event.guestPrice}` : ''}
+                            </Badge>
+                          )}
+                        </Group>
+
+                        {/* Title */}
+                        <Text
+                          fw={600}
+                          size="lg"
+                          className="group-hover:text-blue-400 transition-colors"
+                          lineClamp={2}
+                          mt={4}
+                          c="white"
+                        >
+                          {event.title}
+                        </Text>
+
+                        {/* Description */}
+                        {event.description && (
+                          <Text size="sm" c="dimmed" lineClamp={2} mt="xs">
+                            {event.description.replace(/<[^>]*>/g, '')}
+                          </Text>
+                        )}
+
+                        {/* Metadata row */}
+                        <Group gap="lg" mt="md">
+                          <Group gap={4}>
+                            <Clock className="h-3.5 w-3.5 text-gray-400" />
+                            <Text size="xs" c="dimmed">
+                              {format(startDate, 'h:mm a')}
+                            </Text>
+                          </Group>
+
+                          <Group gap={4}>
+                            <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                            <Text size="xs" c="dimmed" lineClamp={1} maw={140}>
+                              {event.locationName}
+                            </Text>
+                          </Group>
+
+                          {event.capacity && (
+                            <Group gap={4}>
+                              <Users className="h-3.5 w-3.5 text-gray-400" />
+                              <Text size="xs" c="dimmed">
+                                {event.capacity}
+                              </Text>
+                            </Group>
+                          )}
+                        </Group>
+
+                        {/* Spots availability bar */}
+                        {event.spotsAvailable !== null && event.capacity !== null && (
+                          <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                            <Group justify="space-between" mb={4}>
+                              <Text size="xs" c="dimmed">
+                                Availability
+                              </Text>
+                              <Text
+                                size="xs"
+                                fw={600}
+                                style={{
+                                  color: event.spotsAvailable < 10 ? '#fb923c' : '#4ade80',
+                                }}
+                              >
+                                {event.spotsAvailable} spots left
+                              </Text>
+                            </Group>
+                            <div className="w-full h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all"
+                                style={{
+                                  width: `${((event.capacity - event.spotsAvailable) / event.capacity) * 100}%`,
+                                  backgroundColor: event.spotsAvailable < 10 ? '#fb923c' : '#4ade80',
+                                }}
+                              />
                             </div>
                           </div>
-
-                          {/* Event Details */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <span
-                                  className={`inline-block rounded-full px-3 py-1 text-xs font-medium mb-2 ${typeStyle.bg} ${typeStyle.text}`}
-                                >
-                                  {getTypeLabel(event.type)}
-                                </span>
-                                <h2 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                                  {event.title}
-                                </h2>
-                              </div>
-
-                              {/* Availability Badge */}
-                              {event.spotsAvailable !== null && event.capacity !== null && (
-                                <div className="text-right flex-shrink-0">
-                                  <div
-                                    className={`text-sm font-medium ${
-                                      event.spotsAvailable < 10
-                                        ? 'text-orange-400'
-                                        : 'text-green-400'
-                                    }`}
-                                  >
-                                    {event.spotsAvailable} spots left
-                                  </div>
-                                  <div className="w-24 h-2 rounded-full bg-muted overflow-hidden mt-1">
-                                    <div
-                                      className={`h-full rounded-full ${
-                                        event.spotsAvailable < 10
-                                          ? 'bg-orange-400'
-                                          : 'bg-green-400'
-                                      }`}
-                                      style={{
-                                        width: `${
-                                          ((event.capacity - event.spotsAvailable) /
-                                            event.capacity) *
-                                          100
-                                        }%`,
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {event.description && (
-                              <p className="text-muted-foreground mt-2 line-clamp-2">
-                                {event.description.replace(/<[^>]*>/g, '')}
-                              </p>
-                            )}
-
-                            <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
-                                {format(startDate, 'h:mm a')}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-4 w-4" />
-                                {event.locationName}
-                              </span>
-                              {event.capacity && (
-                                <span className="flex items-center gap-1">
-                                  <Users className="h-4 w-4" />
-                                  {event.capacity} capacity
-                                </span>
-                              )}
-                              {event.memberPrice === 0 && event.guestPrice === 0 && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-green-500/15 border border-green-500/30 px-3 py-1 text-xs font-bold text-green-400 uppercase tracking-wide">
-                                  Free
-                                </span>
-                              )}
-                              {(event.memberPrice > 0 || event.guestPrice > 0) && (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-400">
-                                  ${event.memberPrice} members {event.guestPrice > 0 && `· $${event.guestPrice} guests`}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                        )}
+                      </Card>
                     </Link>
                   );
                 })}

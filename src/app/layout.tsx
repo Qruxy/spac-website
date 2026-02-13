@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import Script from 'next/script';
+import { ColorSchemeScript } from '@mantine/core';
+import '@mantine/core/styles.css';
 import { Providers } from '@/providers';
 import './globals.css';
 
@@ -107,6 +109,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
+        <ColorSchemeScript defaultColorScheme="dark" />
         <Script
           id="organization-jsonld"
           type="application/ld+json"

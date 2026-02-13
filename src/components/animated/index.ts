@@ -24,6 +24,13 @@ export { GradientText } from './gradient-text';
 export { RotatingText } from './rotating-text';
 export { TiltedCard } from './tilted-card';
 export { StarBorder } from './star-border';
+export { GradualBlur } from './gradual-blur';
+export { MagicBento, BentoTile } from './magic-bento';
+export { ChromaGrid, type ChromaGridItem } from './chroma-grid';
+export { ProfileCard } from './profile-card';
+export { GooeyNav, type NavItem } from './gooey-nav';
+export { DigitCounter } from './digit-counter';
+export { Stepper } from './stepper';
 
 // Background effects (use dynamic import with ssr: false for WebGL components)
 export { default as Aurora } from './aurora';

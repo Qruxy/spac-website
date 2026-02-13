@@ -18,6 +18,7 @@ import {
 // Direct imports to avoid barrel export bundle bloat
 import { SpotlightCard } from '@/components/animated/spotlight-card';
 import { FadeIn } from '@/components/animated/fade-in';
+import { GradualBlur } from '@/components/animated/gradual-blur';
 
 // Icon mapping - icons must be defined in client component
 const iconMap: Record<string, LucideIcon> = {
@@ -43,15 +44,19 @@ export function FeaturesSection({ features }: FeaturesSectionProps) {
   return (
     <section className="py-24">
       <div className="container mx-auto px-4">
-        <FadeIn>
-          <h2 className="mb-4 text-center text-3xl font-bold text-foreground">
-            What We Offer
-          </h2>
-          <p className="mx-auto mb-12 max-w-2xl text-center text-muted-foreground">
-            From monthly star parties to hands-on telescope building, SPAC offers
-            something for astronomers of all skill levels.
-          </p>
-        </FadeIn>
+        <div className="mb-12 text-center">
+          <GradualBlur
+            text="What We Offer"
+            as="h2"
+            className="mb-4 text-3xl font-bold text-foreground"
+          />
+          <FadeIn delay={0.3}>
+            <p className="mx-auto max-w-2xl text-muted-foreground">
+              From monthly star parties to hands-on telescope building, SPAC offers
+              something for astronomers of all skill levels.
+            </p>
+          </FadeIn>
+        </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => {
