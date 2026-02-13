@@ -244,7 +244,7 @@ export default function AdminMediaPage() {
     };
     return (
       <span
-        className={`${styles[status] || 'bg-slate-500/15 text-slate-400'} px-2 py-1 rounded-md text-[11px] font-medium uppercase`}
+        className={`${styles[status] || 'bg-slate-500/15 text-slate-400'} px-2 py-1 rounded-md text-xs font-medium uppercase`}
       >
         {status}
       </span>
@@ -271,13 +271,12 @@ export default function AdminMediaPage() {
   const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] p-6">
-      <div className="max-w-[1400px] mx-auto">
+    <div className="space-y-6">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white/80 mb-2">Media Management</h1>
-            <p className="text-white/50 text-sm">Review and approve user-uploaded media</p>
+            <h1 className="text-2xl font-bold text-white/90">Media Management</h1>
+            <p className="text-white/50 text-sm mt-1">Review and approve user-uploaded media</p>
           </div>
           {statusFilter === 'PENDING' && (
             <button
@@ -453,11 +452,11 @@ export default function AdminMediaPage() {
                       </div>
                       {getStatusBadge(item.status)}
                     </div>
-                    <div className="flex items-center gap-1.5 text-white/40 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-white/40 text-xs">
                       <User className="w-3 h-3 flex-shrink-0" />
                       <span className="truncate">{getUserName(item.users)}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-white/40 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-white/40 text-xs">
                       <Calendar className="w-3 h-3 flex-shrink-0" />
                       <span>{formatDate(item.createdAt)}</span>
                     </div>
@@ -521,7 +520,6 @@ export default function AdminMediaPage() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

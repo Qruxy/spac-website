@@ -84,7 +84,7 @@ export default async function MembershipCardPage() {
       {/* 3D Lanyard with Flip to QR Code */}
       <div className="mb-6">
         <p className="text-center text-sm text-muted-foreground mb-3">
-          Drag the card to interact! Click below to see your QR code.
+          Your QR code is ready! Click below to view your interactive 3D card.
         </p>
         <MembershipLanyard
           verificationUrl={verificationUrl}
@@ -106,7 +106,7 @@ export default async function MembershipCardPage() {
             <span className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center">
               1
             </span>
-            Click &quot;View QR Code&quot; to flip your card and show the QR code
+            Your QR code is shown by default — ready for scanning
           </li>
           <li className="flex items-start gap-2">
             <span className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center">

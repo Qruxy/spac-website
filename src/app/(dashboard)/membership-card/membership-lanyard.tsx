@@ -32,7 +32,7 @@ export function MembershipLanyard({
   memberName,
   memberId,
 }: MembershipLanyardProps) {
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(true);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   useEffect(() => {

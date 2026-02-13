@@ -108,19 +108,12 @@ export function CommunicationsPanel() {
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <a
-          href="/admin"
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-          title="Back to Admin"
-        >
-          <ArrowLeft className="h-5 w-5 text-slate-400" />
-        </a>
-        <div className="p-3 bg-indigo-600/20 rounded-lg">
-          <Mail className="h-8 w-8 text-indigo-400" />
+        <div className="p-2.5 bg-indigo-600/20 rounded-lg">
+          <Mail className="h-6 w-6 text-indigo-400" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-white">Communications</h1>
-          <p className="text-slate-400">Send emails and manage communication templates</p>
+          <h1 className="text-2xl font-bold text-white/90">Communications</h1>
+          <p className="text-sm text-white/50">Send emails and manage communication templates</p>
         </div>
       </div>
 
@@ -555,6 +548,21 @@ function ComposeTab() {
           />
           <span className="text-white">Also send as in-app notification</span>
         </label>
+      </div>
+
+      {/* Social Media Sharing */}
+      <div className="bg-gradient-to-r from-blue-500/[0.06] to-purple-500/[0.06] border border-blue-500/20 rounded-xl p-4 space-y-2">
+        <p className="text-sm font-medium text-white/70">Also share to social media</p>
+        <div className="flex flex-wrap gap-3">
+          <label className="flex items-center gap-2 cursor-pointer bg-white/[0.04] rounded-lg px-3 py-2">
+            <input type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900/50 text-blue-600 focus:ring-blue-500" />
+            <span className="text-sm text-white/60">Post to Facebook</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer bg-white/[0.04] rounded-lg px-3 py-2">
+            <input type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900/50 text-pink-600 focus:ring-pink-500" />
+            <span className="text-sm text-white/60">Post to Instagram</span>
+          </label>
+        </div>
       </div>
 
       {/* Actions */}

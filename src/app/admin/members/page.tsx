@@ -14,433 +14,440 @@ import {
   Users,
   Filter,
   Mail,
+  ImageIcon as Image,
+  ShoppingBag,
+  Clock,
+  CreditCard,
+  ChevronDown,
+  ChevronUp,
+  Eye,
 } from 'lucide-react';
 
-// Types
+type UserRole = 'MEMBER' | 'MODERATOR' | 'ADMIN';
+type MembershipStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | null;
+
 interface User {
   id: string;
-  name: string | null;
+  email: string;
   firstName: string | null;
   lastName: string | null;
-  email: string;
-  role: 'ADMIN' | 'MODERATOR' | 'MEMBER';
   phone: string | null;
-  emailVerified: Date | null;
+  role: UserRole;
   isValidated: boolean;
   isBanned: boolean;
   bannedFromClassifieds: boolean;
   bannedFromMedia: boolean;
   adminNotes: string | null;
-  createdAt: Date | string;
-  membershipStatus: 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING' | null;
+  createdAt: string;
   membershipType: string | null;
-  membershipEndDate: Date | string | null;
+  membershipStatus: MembershipStatus;
+  membershipEndDate: string | null;
 }
 
-interface UsersResponse {
-  data: User[];
-  total: number;
+interface MediaItem {
+  id: string;
+  url: string;
+  thumbnailUrl: string | null;
+  filename: string;
+  status: string;
+  createdAt: string;
 }
 
-type RoleFilter = 'ALL' | 'ADMIN' | 'MODERATOR' | 'MEMBER';
-type MembershipFilter = 'ALL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING';
+interface ListingItem {
+  id: string;
+  title: string;
+  status: string;
+  askingPrice: number | null;
+  createdAt: string;
+}
 
-// Helper Components
-const RoleBadge = ({ role }: { role: string }) => {
-  const styles = {
-    ADMIN: 'bg-red-500/15 text-red-400',
-    MODERATOR: 'bg-amber-500/15 text-amber-400',
-    MEMBER: 'bg-blue-500/15 text-blue-400',
-  };
+interface ActivityData {
+  media: MediaItem[];
+  listings: ListingItem[];
+}
 
-  return (
-    <span className={`${styles[role as keyof typeof styles] || styles.MEMBER} px-2 py-1 rounded text-[11px] font-medium uppercase tracking-wide`}>
-      {role}
-    </span>
-  );
-};
-
-const MembershipBadge = ({ status }: { status: string | null }) => {
-  if (!status) {
-    return <span className="text-white/30 text-[11px]">None</span>;
-  }
-
-  const styles = {
-    ACTIVE: 'bg-emerald-500/15 text-emerald-400',
-    EXPIRED: 'bg-red-500/15 text-red-400',
-    CANCELLED: 'bg-slate-500/15 text-slate-400',
-    PENDING: 'bg-amber-500/15 text-amber-400',
-  };
-
-  return (
-    <span className={`${styles[status as keyof typeof styles] || styles.PENDING} px-2 py-1 rounded text-[11px] font-medium uppercase tracking-wide`}>
-      {status}
-    </span>
-  );
-};
-
-const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className={`fixed bottom-6 right-6 ${type === 'success' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-red-500/15 text-red-400 border-red-500/30'} border rounded-lg px-4 py-3 shadow-lg z-50 flex items-center gap-2 max-w-md`}>
-      {type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-      <span className="text-sm font-medium">{message}</span>
-      <button onClick={onClose} className="ml-2 hover:opacity-70">
-        <X className="w-3 h-3" />
-      </button>
-    </div>
-  );
-};
-
-const ConfirmDialog = ({
-  message,
-  onConfirm,
-  onCancel
-}: {
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) => {
-  return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-[#0a0a0a] border border-white/[0.06] rounded-xl p-6 max-w-md w-full">
-        <h3 className="text-white/80 font-semibold mb-2">Confirm Action</h3>
-        <p className="text-white/50 text-sm mb-6">{message}</p>
-        <div className="flex gap-3 justify-end">
-          <button
-            onClick={onCancel}
-            className="bg-white/[0.04] text-white/60 hover:bg-white/[0.08] rounded-lg px-4 py-2 text-sm font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg px-4 py-2 text-sm font-medium"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Main Component
-export default function MembersPage() {
-  // State
+export default function AdminMembersPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [perPage] = useState(25);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
-  const [membershipFilter, setMembershipFilter] = useState<MembershipFilter>('ALL');
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'ALL'>('ALL');
+  const [membershipFilter, setMembershipFilter] = useState<MembershipStatus | 'ALL'>('ALL');
+  const [sortField] = useState('createdAt');
+  const [sortOrder] = useState<'ASC' | 'DESC'>('DESC');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [editedUser, setEditedUser] = useState<Partial<User>>({});
-  const [saving, setSaving] = useState(false);
+  const [activity, setActivity] = useState<ActivityData | null>(null);
+  const [loadingActivity, setLoadingActivity] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
-  const perPage = 25;
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-      setPage(1); // Reset to first page on search
-    }, 300);
-
+      setPage(1);
+    }, 400);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Load data
-  const loadData = useCallback(async () => {
+  // Fetch users
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const filter: Record<string, string> = {};
-      if (debouncedSearch) {
-        filter.q = debouncedSearch;
-      }
-      if (roleFilter !== 'ALL') {
-        filter.role = roleFilter;
-      }
-      if (membershipFilter !== 'ALL') {
-        filter.membershipStatus = membershipFilter;
-      }
+      if (debouncedSearch) filter.q = debouncedSearch;
+      if (roleFilter !== 'ALL') filter.role = roleFilter;
+      if (membershipFilter !== 'ALL' && membershipFilter) filter.membershipStatus = membershipFilter;
 
       const params = new URLSearchParams({
         page: page.toString(),
         perPage: perPage.toString(),
-        sortField: 'createdAt',
-        sortOrder: 'DESC',
+        sortField,
+        sortOrder,
         filter: JSON.stringify(filter),
       });
 
-      const response = await fetch(`/api/admin/users?${params}`, {
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to load users');
-      }
-
-      const data: UsersResponse = await response.json();
-      setUsers(data.data);
-      setTotal(data.total);
+      const res = await fetch(`/api/admin/users?${params}`);
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const data = await res.json();
+      setUsers(data.users || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalCount(data.total || 0);
     } catch (error) {
-      console.error('Error loading users:', error);
-      setToast({ message: 'Failed to load members', type: 'error' });
+      showToast('Failed to load users', 'error');
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, roleFilter, membershipFilter]);
+  }, [page, perPage, debouncedSearch, roleFilter, membershipFilter, sortField, sortOrder]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    fetchUsers();
+  }, [fetchUsers]);
 
-  // Handlers
-  const handleRowClick = (user: User) => {
-    setSelectedUser(user);
-    setEditedUser({
-      role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone,
-      adminNotes: user.adminNotes,
-      isValidated: user.isValidated,
-      isBanned: user.isBanned,
-      bannedFromClassifieds: user.bannedFromClassifieds,
-      bannedFromMedia: user.bannedFromMedia,
-    });
-  };
+  // Fetch activity for selected user
+  const fetchActivity = useCallback(async (userId: string) => {
+    setLoadingActivity(true);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/activity`);
+      if (!res.ok) throw new Error('Failed to fetch activity');
+      const data = await res.json();
+      setActivity(data);
+    } catch (error) {
+      showToast('Failed to load activity', 'error');
+      setActivity({ media: [], listings: [] });
+    } finally {
+      setLoadingActivity(false);
+    }
+  }, []);
 
-  const handleClosePanel = () => {
-    setSelectedUser(null);
-    setEditedUser({});
+  useEffect(() => {
+    if (selectedUser) {
+      fetchActivity(selectedUser.id);
+    } else {
+      setActivity(null);
+    }
+  }, [selectedUser, fetchActivity]);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
   };
 
   const handleSave = async () => {
     if (!selectedUser) return;
-
     setSaving(true);
     try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+      const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(editedUser),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: selectedUser.role,
+          firstName: selectedUser.firstName,
+          lastName: selectedUser.lastName,
+          phone: selectedUser.phone,
+          adminNotes: selectedUser.adminNotes,
+          isValidated: selectedUser.isValidated,
+          isBanned: selectedUser.isBanned,
+          bannedFromClassifieds: selectedUser.bannedFromClassifieds,
+          bannedFromMedia: selectedUser.bannedFromMedia,
+          membershipStatus: selectedUser.membershipStatus,
+        }),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update user');
-      }
-
-      setToast({ message: 'Member updated successfully', type: 'success' });
-      handleClosePanel();
-      loadData();
+      if (!res.ok) throw new Error('Failed to save user');
+      showToast('User updated successfully', 'success');
+      fetchUsers();
+      setSelectedUser(null);
     } catch (error) {
-      console.error('Error updating user:', error);
-      setToast({ message: 'Failed to update member', type: 'error' });
+      showToast('Failed to save user', 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedUser) return;
-
+  const handleDelete = async (userId: string) => {
     try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+      const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete user');
-      }
-
-      setToast({ message: 'Member deleted successfully', type: 'success' });
-      setConfirmDelete(false);
-      handleClosePanel();
-      loadData();
+      if (!res.ok) throw new Error('Failed to delete user');
+      showToast('User deleted successfully', 'success');
+      setDeleteConfirm(null);
+      setSelectedUser(null);
+      fetchUsers();
     } catch (error) {
-      console.error('Error deleting user:', error);
-      setToast({ message: 'Failed to delete member', type: 'error' });
+      showToast('Failed to delete user', 'error');
     }
   };
 
-  const formatDate = (date: Date | string | null) => {
-    if (!date) return 'N/A';
-    const d = new Date(date);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const getInitials = (user: User) => {
+    const first = user.firstName?.[0] || '';
+    const last = user.lastName?.[0] || '';
+    return (first + last).toUpperCase() || user.email[0].toUpperCase();
   };
 
-  const totalPages = Math.ceil(total / perPage);
+  const getRoleBadgeColor = (role: UserRole) => {
+    switch (role) {
+      case 'ADMIN':
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'MODERATOR':
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+      default:
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+    }
+  };
+
+  const getMembershipBadgeColor = (status: MembershipStatus) => {
+    switch (status) {
+      case 'ACTIVE':
+        return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'EXPIRED':
+        return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
+      case 'CANCELLED':
+        return 'bg-red-500/20 text-red-300 border-red-500/30';
+      default:
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+    }
+  };
+
+  const formatDate = (date: string | null) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
   const startIndex = (page - 1) * perPage + 1;
-  const endIndex = Math.min(page * perPage, total);
+  const endIndex = Math.min(page * perPage, totalCount);
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-[#060611] text-gray-100 p-4 md:p-6 lg:p-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white/80 flex items-center gap-2">
-          <Users className="w-6 h-6" />
-          Members Management
-        </h1>
-        <p className="text-white/50 text-sm mt-1">Manage user accounts, roles, and permissions</p>
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <Users className="w-8 h-8 text-blue-400" />
+          <h1 className="text-3xl font-bold">Members & Memberships</h1>
+        </div>
+        <p className="text-sm text-gray-400">
+          Manage user accounts, roles, memberships, and permissions
+        </p>
       </div>
 
-      {/* Filters & Search */}
-      <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 placeholder:text-white/25 text-sm pl-10 pr-3 py-2 focus:outline-none focus:border-blue-500/40"
-            />
-          </div>
+      {/* Filters */}
+      <div className="mb-6">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name or email..."
+                className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+              />
+            </div>
 
-          {/* Role Filter */}
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
-            <select
-              value={roleFilter}
-              onChange={(e) => {
-                setRoleFilter(e.target.value as RoleFilter);
-                setPage(1);
-              }}
-              className="bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm pl-10 pr-8 py-2 focus:outline-none focus:border-blue-500/40 appearance-none cursor-pointer min-w-[140px]"
+            {/* Filter Toggle (Mobile) */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="lg:hidden flex items-center gap-2 px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all text-sm"
             >
-              <option value="ALL">All Roles</option>
-              <option value="ADMIN">Admin</option>
-              <option value="MODERATOR">Moderator</option>
-              <option value="MEMBER">Member</option>
-            </select>
-          </div>
+              <Filter className="w-4 h-4" />
+              Filters
+              {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
 
-          {/* Membership Filter */}
-          <div className="relative">
-            <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
-            <select
-              value={membershipFilter}
-              onChange={(e) => {
-                setMembershipFilter(e.target.value as MembershipFilter);
-                setPage(1);
-              }}
-              className="bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm pl-10 pr-8 py-2 focus:outline-none focus:border-blue-500/40 appearance-none cursor-pointer min-w-[160px]"
-            >
-              <option value="ALL">All Memberships</option>
-              <option value="ACTIVE">Active</option>
-              <option value="EXPIRED">Expired</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="PENDING">Pending</option>
-            </select>
+            {/* Filters */}
+            <div className={`flex flex-col sm:flex-row gap-4 lg:flex ${showFilters ? 'flex' : 'hidden lg:flex'}`}>
+              <select
+                value={roleFilter}
+                onChange={(e) => {
+                  setRoleFilter(e.target.value as UserRole | 'ALL');
+                  setPage(1);
+                }}
+                className="bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 min-w-[140px]"
+              >
+                <option value="ALL">All Roles</option>
+                <option value="MEMBER">Member</option>
+                <option value="MODERATOR">Moderator</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+
+              <select
+                value={membershipFilter || 'ALL'}
+                onChange={(e) => {
+                  setMembershipFilter(e.target.value === 'ALL' ? 'ALL' : e.target.value as MembershipStatus);
+                  setPage(1);
+                }}
+                className="bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 min-w-[140px]"
+              >
+                <option value="ALL">All Memberships</option>
+                <option value="ACTIVE">Active</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="null">None</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden">
+      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                <th className="text-left px-4 py-3 text-white/50 font-medium text-[11px] uppercase tracking-wider">Name</th>
-                <th className="text-left px-4 py-3 text-white/50 font-medium text-[11px] uppercase tracking-wider">Role</th>
-                <th className="text-left px-4 py-3 text-white/50 font-medium text-[11px] uppercase tracking-wider">Membership</th>
-                <th className="text-left px-4 py-3 text-white/50 font-medium text-[11px] uppercase tracking-wider">Joined</th>
-                <th className="text-left px-4 py-3 text-white/50 font-medium text-[11px] uppercase tracking-wider">Status</th>
+              <tr className="border-b border-white/10 bg-white/5">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Role
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Membership
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Joined
+                </th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                // Loading skeleton
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-white/[0.04]">
-                    <td className="px-4 py-3">
-                      <div className="h-4 bg-white/[0.04] rounded animate-pulse w-32 mb-1" />
-                      <div className="h-3 bg-white/[0.04] rounded animate-pulse w-48" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-6 bg-white/[0.04] rounded animate-pulse w-20" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-4 bg-white/[0.04] rounded animate-pulse w-24 mb-1" />
-                      <div className="h-6 bg-white/[0.04] rounded animate-pulse w-16" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-4 bg-white/[0.04] rounded animate-pulse w-24" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-4 bg-white/[0.04] rounded animate-pulse w-16" />
-                    </td>
-                  </tr>
-                ))
-              ) : users.length === 0 ? (
-                // Empty state
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center">
-                    <Users className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                    <p className="text-white/50 text-sm font-medium">No members found</p>
-                    <p className="text-white/30 text-xs mt-1">Try adjusting your search or filters</p>
+                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-400">
+                    Loading members...
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-400">
+                    No members found
                   </td>
                 </tr>
               ) : (
-                // Data rows
                 users.map((user) => (
                   <tr
                     key={user.id}
-                    onClick={() => handleRowClick(user)}
-                    className="border-b border-white/[0.04] hover:bg-white/[0.02] cursor-pointer transition-colors"
+                    className="border-b border-white/5 hover:bg-white/5 transition-colors"
                   >
-                    <td className="px-4 py-3">
-                      <div className="text-white/80 text-[13px] font-medium">
-                        {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.name || 'Unnamed User'}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                          {getInitials(user)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm truncate">
+                            {user.firstName && user.lastName
+                              ? `${user.firstName} ${user.lastName}`
+                              : user.email}
+                          </div>
+                          <div className="text-xs text-gray-400 truncate flex items-center gap-1.5">
+                            <Mail className="w-3 h-3" />
+                            {user.email}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-white/40 text-[11px] mt-0.5 flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
-                        {user.email}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(
+                          user.role
+                        )}`}
+                      >
+                        <Shield className="w-3 h-3" />
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="text-sm">
+                        {user.membershipType ? (
+                          <>
+                            <div className="font-medium text-gray-200">{user.membershipType}</div>
+                            {user.membershipEndDate && (
+                              <div className="text-xs text-gray-400">
+                                Ends {formatDate(user.membershipEndDate)}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-gray-500 text-xs">No membership</span>
+                        )}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <RoleBadge role={user.role} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-white/60 text-[11px] mb-1">
-                        {user.membershipType || 'No membership'}
-                      </div>
-                      <MembershipBadge status={user.membershipStatus} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-white/60 text-[13px]">{formatDate(user.createdAt)}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {user.isValidated && (
-                          <span className="bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1">
-                            <Check className="w-3 h-3" />
-                            Verified
+                    <td className="px-4 py-4">
+                      <div className="flex flex-col gap-1.5">
+                        {user.membershipStatus && (
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border w-fit ${getMembershipBadgeColor(
+                              user.membershipStatus
+                            )}`}
+                          >
+                            <CreditCard className="w-3 h-3" />
+                            {user.membershipStatus}
                           </span>
                         )}
                         {user.isBanned && (
-                          <span className="bg-red-500/15 text-red-400 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-red-500/20 text-red-300 border-red-500/30 w-fit">
                             <Ban className="w-3 h-3" />
                             Banned
                           </span>
                         )}
+                        {!user.isValidated && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-yellow-500/20 text-yellow-300 border-yellow-500/30 w-fit">
+                            <Clock className="w-3 h-3" />
+                            Unverified
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-400">
+                      {formatDate(user.createdAt)}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setSelectedUser(user)}
+                          className="p-2 hover:bg-white/10 rounded-lg transition-colors group"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4 text-gray-400 group-hover:text-blue-400" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -451,27 +458,30 @@ export default function MembersPage() {
         </div>
 
         {/* Pagination */}
-        {!loading && total > 0 && (
-          <div className="border-t border-white/[0.06] px-4 py-3 flex items-center justify-between bg-white/[0.02]">
-            <div className="text-white/50 text-sm">
-              Showing {startIndex}-{endIndex} of {total} members
+        {!loading && users.length > 0 && (
+          <div className="px-4 py-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-gray-400">
+              Showing <span className="font-medium text-gray-200">{startIndex}</span> to{' '}
+              <span className="font-medium text-gray-200">{endIndex}</span> of{' '}
+              <span className="font-medium text-gray-200">{totalCount}</span> members
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage(page - 1)}
                 disabled={page === 1}
-                className="bg-white/[0.04] text-white/60 hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1"
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronLeft className="w-4 h-4" />
-                Previous
+                <ChevronLeft className="w-5 h-5" />
               </button>
+              <span className="text-sm px-3">
+                Page {page} of {totalPages}
+              </span>
               <button
                 onClick={() => setPage(page + 1)}
-                disabled={page >= totalPages}
-                className="bg-white/[0.04] text-white/60 hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1"
+                disabled={page === totalPages}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -480,252 +490,364 @@ export default function MembersPage() {
 
       {/* Detail Panel */}
       {selectedUser && (
-        <>
-          {/* Overlay */}
-          <div
-            className="fixed inset-0 bg-black/60 z-40"
-            onClick={handleClosePanel}
-          />
-
-          {/* Panel */}
-          <div className="fixed top-0 right-0 bottom-0 w-full md:w-[400px] bg-[#0a0a0a] border-l border-white/[0.06] z-50 overflow-y-auto">
-            <div className="p-6 space-y-6">
-              {/* Header */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-white/80">
-                    {selectedUser.firstName && selectedUser.lastName
-                      ? `${selectedUser.firstName} ${selectedUser.lastName}`
-                      : selectedUser.name || 'Unnamed User'}
-                  </h2>
-                  <p className="text-white/40 text-xs mt-1 flex items-center gap-1">
-                    <Mail className="w-3 h-3" />
-                    {selectedUser.email}
-                  </p>
-                  <p className="text-white/30 text-xs mt-1">
-                    Joined {formatDate(selectedUser.createdAt)}
-                  </p>
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedUser(null)} />
+          <div className="absolute right-0 top-0 bottom-0 w-full max-w-[480px] bg-[#0a0a14] border-l border-white/10 shadow-2xl overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-[#0a0a14]/95 backdrop-blur-xl border-b border-white/10 p-6 z-10">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xl font-bold">
+                    {getInitials(selectedUser)}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">
+                      {selectedUser.firstName && selectedUser.lastName
+                        ? `${selectedUser.firstName} ${selectedUser.lastName}`
+                        : 'Unnamed User'}
+                    </h2>
+                    <p className="text-sm text-gray-400 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5" />
+                      {selectedUser.email}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Joined {formatDate(selectedUser.createdAt)}
+                    </p>
+                  </div>
                 </div>
                 <button
-                  onClick={handleClosePanel}
-                  className="text-white/40 hover:text-white/80 transition-colors"
+                  onClick={() => setSelectedUser(null)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
+            </div>
 
-              {/* Edit Form */}
-              <div className="space-y-4">
-                {/* Role */}
-                <div>
-                  <label className="block text-white/50 text-[11px] font-medium mb-1.5 uppercase tracking-wider">
-                    Role
-                  </label>
-                  <select
-                    value={editedUser.role || selectedUser.role}
-                    onChange={(e) => setEditedUser({ ...editedUser, role: e.target.value as User['role'] })}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm px-3 py-2 focus:outline-none focus:border-blue-500/40"
-                  >
-                    <option value="MEMBER">Member</option>
-                    <option value="MODERATOR">Moderator</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
-                </div>
-
-                {/* First Name */}
-                <div>
-                  <label className="block text-white/50 text-[11px] font-medium mb-1.5 uppercase tracking-wider">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    value={editedUser.firstName ?? selectedUser.firstName ?? ''}
-                    onChange={(e) => setEditedUser({ ...editedUser, firstName: e.target.value })}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 placeholder:text-white/25 text-sm px-3 py-2 focus:outline-none focus:border-blue-500/40"
-                    placeholder="Enter first name"
-                  />
-                </div>
-
-                {/* Last Name */}
-                <div>
-                  <label className="block text-white/50 text-[11px] font-medium mb-1.5 uppercase tracking-wider">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    value={editedUser.lastName ?? selectedUser.lastName ?? ''}
-                    onChange={(e) => setEditedUser({ ...editedUser, lastName: e.target.value })}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 placeholder:text-white/25 text-sm px-3 py-2 focus:outline-none focus:border-blue-500/40"
-                    placeholder="Enter last name"
-                  />
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label className="block text-white/50 text-[11px] font-medium mb-1.5 uppercase tracking-wider">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    value={editedUser.phone ?? selectedUser.phone ?? ''}
-                    onChange={(e) => setEditedUser({ ...editedUser, phone: e.target.value })}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 placeholder:text-white/25 text-sm px-3 py-2 focus:outline-none focus:border-blue-500/40"
-                    placeholder="Enter phone number"
-                  />
-                </div>
-
-                {/* Toggle Switches */}
-                <div className="space-y-3 pt-2">
-                  {/* Validated */}
-                  <label className="flex items-center justify-between cursor-pointer">
-                    <span className="text-white/60 text-sm flex items-center gap-2">
-                      <Check className="w-4 h-4" />
-                      Validated
-                    </span>
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={editedUser.isValidated ?? selectedUser.isValidated}
-                        onChange={(e) => setEditedUser({ ...editedUser, isValidated: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-white/[0.08] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/60 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500/40 peer-checked:after:bg-blue-400"></div>
+            <div className="p-6 space-y-6">
+              {/* Membership Section */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-blue-400" />
+                  Membership
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Type</label>
+                    <div className="text-sm font-medium">
+                      {selectedUser.membershipType || 'No membership'}
                     </div>
-                  </label>
-
-                  {/* Banned */}
-                  <label className="flex items-center justify-between cursor-pointer">
-                    <span className="text-white/60 text-sm flex items-center gap-2">
-                      <Ban className="w-4 h-4" />
-                      Banned
-                    </span>
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={editedUser.isBanned ?? selectedUser.isBanned}
-                        onChange={(e) => setEditedUser({ ...editedUser, isBanned: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-white/[0.08] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/60 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500/40 peer-checked:after:bg-red-400"></div>
+                  </div>
+                  {selectedUser.membershipEndDate && (
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">End Date</label>
+                      <div className="text-sm font-medium">
+                        {formatDate(selectedUser.membershipEndDate)}
+                      </div>
                     </div>
-                  </label>
-
-                  {/* Banned from Classifieds */}
-                  <label className="flex items-center justify-between cursor-pointer">
-                    <span className="text-white/60 text-sm">Banned from Classifieds</span>
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={editedUser.bannedFromClassifieds ?? selectedUser.bannedFromClassifieds}
-                        onChange={(e) => setEditedUser({ ...editedUser, bannedFromClassifieds: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-white/[0.08] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/60 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500/40 peer-checked:after:bg-amber-400"></div>
+                  )}
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-2">Status</label>
+                    <div className="flex flex-wrap gap-2">
+                      {(['ACTIVE', 'EXPIRED', 'CANCELLED'] as const).map((status) => (
+                        <button
+                          key={status}
+                          onClick={() =>
+                            setSelectedUser({ ...selectedUser, membershipStatus: status })
+                          }
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                            selectedUser.membershipStatus === status
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() =>
+                          setSelectedUser({ ...selectedUser, membershipStatus: null })
+                        }
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          selectedUser.membershipStatus === null
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        None
+                      </button>
                     </div>
-                  </label>
-
-                  {/* Banned from Media */}
-                  <label className="flex items-center justify-between cursor-pointer">
-                    <span className="text-white/60 text-sm">Banned from Media</span>
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={editedUser.bannedFromMedia ?? selectedUser.bannedFromMedia}
-                        onChange={(e) => setEditedUser({ ...editedUser, bannedFromMedia: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-white/[0.08] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/60 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500/40 peer-checked:after:bg-amber-400"></div>
-                    </div>
-                  </label>
+                  </div>
                 </div>
+              </div>
 
-                {/* Admin Notes */}
-                <div>
-                  <label className="block text-white/50 text-[11px] font-medium mb-1.5 uppercase tracking-wider">
-                    Admin Notes
-                  </label>
-                  <textarea
-                    value={editedUser.adminNotes ?? selectedUser.adminNotes ?? ''}
-                    onChange={(e) => setEditedUser({ ...editedUser, adminNotes: e.target.value })}
-                    rows={4}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 placeholder:text-white/25 text-sm px-3 py-2 focus:outline-none focus:border-blue-500/40 resize-none"
-                    placeholder="Internal notes about this member..."
-                  />
+              {/* Role Management */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-purple-400" />
+                  Role Management
+                </h3>
+                <select
+                  value={selectedUser.role}
+                  onChange={(e) =>
+                    setSelectedUser({ ...selectedUser, role: e.target.value as UserRole })
+                  }
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                >
+                  <option value="MEMBER">Member</option>
+                  <option value="MODERATOR">Moderator</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+
+              {/* Account Controls */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                  <Edit3 className="w-5 h-5 text-green-400" />
+                  Account Controls
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { key: 'isValidated', label: 'Email Validated', icon: Check },
+                    { key: 'isBanned', label: 'Banned from Site', icon: Ban },
+                    { key: 'bannedFromClassifieds', label: 'Banned from Classifieds', icon: ShoppingBag },
+                    { key: 'bannedFromMedia', label: 'Banned from Media', icon: Image },
+                  ].map(({ key, label, icon: Icon }) => (
+                    <label
+                      key={key}
+                      className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      <span className="text-sm flex items-center gap-2">
+                        <Icon className="w-4 h-4 text-gray-400" />
+                        {label}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedUser({
+                            ...selectedUser,
+                            [key]: !selectedUser[key as keyof User],
+                          })
+                        }
+                        className={`relative w-11 h-6 rounded-full transition-colors ${
+                          selectedUser[key as keyof User]
+                            ? 'bg-blue-500'
+                            : 'bg-gray-600'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                            selectedUser[key as keyof User]
+                              ? 'translate-x-5'
+                              : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </label>
+                  ))}
                 </div>
+              </div>
+
+              {/* Admin Notes */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                  <Edit3 className="w-5 h-5 text-yellow-400" />
+                  Admin Notes
+                </h3>
+                <textarea
+                  value={selectedUser.adminNotes || ''}
+                  onChange={(e) =>
+                    setSelectedUser({ ...selectedUser, adminNotes: e.target.value })
+                  }
+                  placeholder="Add internal notes about this user..."
+                  rows={4}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+                />
+              </div>
+
+              {/* Activity Trail */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-orange-400" />
+                  Recent Activity
+                </h3>
+                {loadingActivity ? (
+                  <p className="text-sm text-gray-400 text-center py-4">Loading activity...</p>
+                ) : activity ? (
+                  <div className="space-y-4">
+                    {/* Recent Media */}
+                    {activity.media.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2 flex items-center gap-2">
+                          <Image className="w-3.5 h-3.5" />
+                          Recent Media ({activity.media.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {activity.media.slice(0, 5).map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-3 p-2 bg-white/5 rounded-lg"
+                            >
+                              <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
+                                {item.thumbnailUrl ? (
+                                  <img
+                                    src={item.thumbnailUrl}
+                                    alt={item.filename}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Image className="w-5 h-5 text-gray-500" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate">{item.filename}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-xs text-gray-500">
+                                    {formatDate(item.createdAt)}
+                                  </span>
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded ${
+                                      item.status === 'APPROVED'
+                                        ? 'bg-green-500/20 text-green-300'
+                                        : item.status === 'REJECTED'
+                                        ? 'bg-red-500/20 text-red-300'
+                                        : 'bg-yellow-500/20 text-yellow-300'
+                                    }`}
+                                  >
+                                    {item.status}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recent Listings */}
+                    {activity.listings.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2 flex items-center gap-2">
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          Recent Classifieds ({activity.listings.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {activity.listings.slice(0, 5).map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between p-2 bg-white/5 rounded-lg"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate">{item.title}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-xs text-gray-500">
+                                    {formatDate(item.createdAt)}
+                                  </span>
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded ${
+                                      item.status === 'ACTIVE'
+                                        ? 'bg-green-500/20 text-green-300'
+                                        : item.status === 'SOLD'
+                                        ? 'bg-blue-500/20 text-blue-300'
+                                        : 'bg-gray-500/20 text-gray-300'
+                                    }`}
+                                  >
+                                    {item.status}
+                                  </span>
+                                </div>
+                              </div>
+                              {item.askingPrice !== null && (
+                                <div className="text-xs font-medium text-green-400">
+                                  ${item.askingPrice.toLocaleString()}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activity.media.length === 0 && activity.listings.length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-4">No recent activity</p>
+                    )}
+                  </div>
+                ) : null}
               </div>
 
               {/* Actions */}
-              <div className="space-y-3 pt-4 border-t border-white/[0.06]">
+              <div className="flex gap-3 pt-4">
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="w-full bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2"
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
                 >
-                  {saving ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Save Changes
-                    </>
-                  )}
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
-
                 <button
-                  onClick={() => setConfirmDelete(true)}
-                  className="w-full bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2"
+                  onClick={() => setDeleteConfirm(selectedUser.id)}
+                  className="px-4 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 rounded-lg transition-colors flex items-center justify-center"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete Member
                 </button>
               </div>
-
-              {/* Membership Info */}
-              {selectedUser.membershipType && (
-                <div className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-4 space-y-2">
-                  <h3 className="text-white/60 text-[11px] font-medium uppercase tracking-wider">Membership Info</h3>
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-white/40 text-xs">Type:</span>
-                      <span className="text-white/70 text-xs font-medium">{selectedUser.membershipType}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-white/40 text-xs">Status:</span>
-                      <MembershipBadge status={selectedUser.membershipStatus} />
-                    </div>
-                    {selectedUser.membershipEndDate && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-white/40 text-xs">End Date:</span>
-                        <span className="text-white/70 text-xs font-medium">{formatDate(selectedUser.membershipEndDate)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
-        </>
+        </div>
       )}
 
-      {/* Confirm Delete Dialog */}
-      {confirmDelete && (
-        <ConfirmDialog
-          message="Are you sure you want to delete this member? This action cannot be undone."
-          onConfirm={handleDelete}
-          onCancel={() => setConfirmDelete(false)}
-        />
+      {/* Delete Confirmation */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setDeleteConfirm(null)}
+          />
+          <div className="relative bg-[#0a0a14] border border-red-500/30 rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-red-400">
+              <Trash2 className="w-5 h-5" />
+              Delete User
+            </h3>
+            <p className="text-sm text-gray-300 mb-6">
+              Are you sure you want to permanently delete this user? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2.5 rounded-lg transition-colors text-sm"
+              >
+                Delete User
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 font-medium py-2.5 rounded-lg transition-colors text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Toast */}
       {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
+          <div
+            className={`px-4 py-3 rounded-lg shadow-lg border flex items-center gap-3 ${
+              toast.type === 'success'
+                ? 'bg-green-500/20 border-green-500/30 text-green-300'
+                : 'bg-red-500/20 border-red-500/30 text-red-300'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <Check className="w-5 h-5" />
+            ) : (
+              <X className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+          </div>
+        </div>
       )}
     </div>
   );
