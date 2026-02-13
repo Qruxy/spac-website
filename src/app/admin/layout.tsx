@@ -1,24 +1,27 @@
-/**
- * Admin Layout
- *
- * Minimal layout for admin panel - React Admin provides its own UI.
- * Includes GlobalDock for navigation back to public/dashboard areas.
- * Server-side auth check ensures only admins can access.
- */
-
-import { requireAdmin } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { getSession } from '@/lib/auth';
+import { AdminShell } from '@/components/admin/admin-shell';
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Server-side auth check - redirects non-admins
-  await requireAdmin();
+  const session = await getSession();
+
+  if (!session?.user) {
+    redirect('/login?callbackUrl=/admin');
+  }
+
+  if (session.user.role !== 'ADMIN' && session.user.role !== 'MODERATOR') {
+    redirect('/dashboard?error=unauthorized');
+  }
 
   return (
-    <div className="admin-root">
+    <AdminShell
+      user={{ name: session.user.name || null, role: session.user.role }}
+    >
       {children}
-    </div>
+    </AdminShell>
   );
 }

@@ -17,10 +17,8 @@ export const dynamic = 'force-dynamic';
 
 export default function AdminCommunicationsPage() {
   return (
-    <div className="min-h-screen bg-[#0f0f23]">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <CommunicationsPanel />
-      </div>
+    <div className="max-w-7xl">
+      <CommunicationsPanel />
     </div>
   );
 }
