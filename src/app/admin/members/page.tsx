@@ -116,7 +116,9 @@ export default function AdminMembersPage() {
       const res = await fetch(`/api/admin/users?${params}`);
       if (!res.ok) throw new Error('Failed to fetch users');
       const data = await res.json();
-      setUsers(data.data || []);
+      const allUsers = data.data || [];
+      const filtered = allUsers.filter((u: User) => !u.email.includes('+companion@'));
+      setUsers(filtered);
       setTotalCount(data.total || 0);
       setTotalPages(Math.ceil((data.total || 0) / perPage) || 1);
     } catch (error) {
@@ -364,7 +366,8 @@ export default function AdminMembersPage() {
                 users.map((user) => (
                   <tr
                     key={user.id}
-                    className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                    onClick={() => setSelectedUser(user)}
+                    className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
@@ -439,16 +442,8 @@ export default function AdminMembersPage() {
                     <td className="px-4 py-4 text-sm text-gray-400">
                       {formatDate(user.createdAt)}
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setSelectedUser(user)}
-                          className="p-2 hover:bg-white/10 rounded-lg transition-colors group"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4 text-gray-400 group-hover:text-blue-400" />
-                        </button>
-                      </div>
+                    <td className="px-4 py-4 text-right">
+                      <Eye className="w-4 h-4 text-gray-400 inline-block" />
                     </td>
                   </tr>
                 ))

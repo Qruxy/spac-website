@@ -150,6 +150,29 @@ export async function deleteS3Object(key: string): Promise<void> {
 }
 
 /**
+ * Generate a user-scoped S3 key for avatar uploads
+ * Industry standard: users/{userId}/avatar.{ext}
+ */
+export function generateUserAvatarKey(userId: string, filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
+  return `users/${userId}/avatar.${ext}`;
+}
+
+/**
+ * Generate a user-scoped S3 key for user-owned content
+ * Industry standard: users/{userId}/{folder}/{uuid}.{ext}
+ */
+export function generateUserScopedKey(
+  userId: string,
+  filename: string,
+  folder: string = 'uploads'
+): string {
+  const ext = filename.split('.').pop()?.toLowerCase() || '';
+  const uniqueId = uuidv4();
+  return `users/${userId}/${folder}/${uniqueId}.${ext}`;
+}
+
+/**
  * Generate thumbnail key from original key
  */
 export function getThumbnailKey(originalKey: string): string {
