@@ -38,20 +38,11 @@ interface Listing {
   description: string | null;
   category: string;
   condition: string;
-  price: number | null;
   askingPrice: number;
   status: string;
   createdAt: string;
   seller: Seller;
   _count: { images: number };
-}
-
-interface ListingsResponse {
-  listings: Listing[];
-  total: number;
-  page: number;
-  perPage: number;
-  totalPages: number;
 }
 
 export default function AdminListingsPage() {
@@ -86,10 +77,10 @@ export default function AdminListingsPage() {
       const response = await fetch(`/api/admin/listings?${params}`);
       if (!response.ok) throw new Error('Failed to fetch listings');
 
-      const data: ListingsResponse = await response.json();
-      setListings(data.listings);
-      setTotal(data.total);
-      setTotalPages(data.totalPages);
+      const data = await response.json();
+      setListings(data.data || []);
+      setTotal(data.total || 0);
+      setTotalPages(Math.ceil((data.total || 0) / perPage) || 1);
     } catch (error) {
       showToast('Failed to load listings', 'error');
     } finally {

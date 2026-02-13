@@ -43,7 +43,13 @@ export async function GET(request: Request, { params }: RouteParams) {
       }),
     ]);
 
-    return NextResponse.json({ media, listings });
+    // Map price to askingPrice for frontend consistency
+    const mappedListings = listings.map(({ price, ...rest }) => ({
+      ...rest,
+      askingPrice: price ? Number(price) : null,
+    }));
+
+    return NextResponse.json({ media, listings: mappedListings });
   } catch (error) {
     console.error('Error fetching user activity:', error);
     return NextResponse.json(

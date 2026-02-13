@@ -116,9 +116,9 @@ export default function AdminMembersPage() {
       const res = await fetch(`/api/admin/users?${params}`);
       if (!res.ok) throw new Error('Failed to fetch users');
       const data = await res.json();
-      setUsers(data.users || []);
-      setTotalPages(data.totalPages || 1);
+      setUsers(data.data || []);
       setTotalCount(data.total || 0);
+      setTotalPages(Math.ceil((data.total || 0) / perPage) || 1);
     } catch (error) {
       showToast('Failed to load users', 'error');
     } finally {
@@ -248,7 +248,7 @@ export default function AdminMembersPage() {
   const endIndex = Math.min(page * perPage, totalCount);
 
   return (
-    <div className="min-h-screen bg-[#060611] text-gray-100 p-4 md:p-6 lg:p-8">
+    <div className="text-gray-100">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">

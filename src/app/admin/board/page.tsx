@@ -220,7 +220,7 @@ export default function BoardMembersPage() {
   };
 
   return (
-    <div className="min-h-screen p-6 md:p-8">
+    <div>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
