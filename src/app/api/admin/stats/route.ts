@@ -146,8 +146,8 @@ export async function GET(request: Request) {
         recentAuditLogs,
       ] = await Promise.all([
         // Events created by month (last 6 months)
-        prisma.$queryRaw`
-          SELECT 
+        prisma.$queryRaw<Array<{ month: Date; count: bigint }>>`
+          SELECT
             DATE_TRUNC('month', start_date) as month,
             COUNT(*) as count
           FROM events
@@ -155,7 +155,7 @@ export async function GET(request: Request) {
           GROUP BY DATE_TRUNC('month', start_date)
           ORDER BY month DESC
           LIMIT 6
-        `,
+        `.then(rows => rows.map(r => ({ month: r.month, count: Number(r.count) }))),
 
         // Registrations by status
         prisma.registration.groupBy({
