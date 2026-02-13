@@ -41,6 +41,7 @@ export async function GET(request: Request) {
         firstName: true,
         lastName: true,
         name: true,
+        email: true,
         avatarUrl: true,
         image: true,
       },
@@ -50,7 +51,10 @@ export async function GET(request: Request) {
     return NextResponse.json({
       users: users.map(u => ({
         id: u.id,
+        firstName: u.firstName || '',
+        lastName: u.lastName || '',
         name: u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User',
+        email: u.email || '',
         avatarUrl: u.avatarUrl || u.image,
       })),
     });

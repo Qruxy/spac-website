@@ -9,7 +9,6 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
-  Telescope,
   Facebook,
   Mail,
   MapPin,
@@ -79,7 +78,8 @@ export function Footer() {
           {/* Brand Column */}
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2 text-foreground">
-              <Telescope className="h-8 w-8 text-primary" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/spac-logo.png" alt="SPAC" className="h-8 w-8 object-contain" />
               <span className="text-xl font-bold">SPAC</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground max-w-xs">

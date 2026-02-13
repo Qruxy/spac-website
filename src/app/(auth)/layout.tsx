@@ -7,7 +7,6 @@
  */
 
 import Link from 'next/link';
-import { Telescope } from 'lucide-react';
 import { GlobalDock } from '@/components/layout';
 import type { ReactNode } from 'react';
 
@@ -23,7 +22,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         href="/"
         className="mb-8 flex items-center gap-2 text-foreground hover:text-primary transition-colors"
       >
-        <Telescope className="h-8 w-8" />
+        <img src="/images/spac-logo.png" alt="SPAC" className="h-8 w-8 object-contain" />
         <span className="text-xl font-bold">SPAC</span>
       </Link>
 

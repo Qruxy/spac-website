@@ -19,7 +19,6 @@ import {
   Settings,
   LogOut,
   QrCode,
-  Telescope,
   Shield,
   Home,
   MessageSquare,
@@ -109,7 +108,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
         <div className="flex h-16 items-center justify-between px-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 text-foreground">
-            <Telescope className="h-8 w-8 text-primary" />
+            <img src="/images/spac-logo.png" alt="SPAC" className="h-8 w-8 object-contain" />
             <span className="text-xl font-bold hidden sm:inline">SPAC</span>
           </Link>
 

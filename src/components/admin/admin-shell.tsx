@@ -11,13 +11,13 @@ import {
   Image as ImageIcon,
   Award,
   Mail,
-  Sun,
   Menu,
   X,
   Home,
   LogOut,
   ChevronRight,
   User,
+  Star,
 } from 'lucide-react';
 
 const navItems = [
@@ -28,7 +28,7 @@ const navItems = [
   { name: 'Media', href: '/admin/media', icon: ImageIcon, exact: false },
   { name: 'Board', href: '/admin/board', icon: Award, exact: false },
   { name: 'Email', href: '/admin/communications', icon: Mail, exact: false },
-  { name: 'OBS Event', href: '/admin/obs', icon: Sun, exact: false },
+  { name: 'OBS Event', href: '/admin/obs', icon: Star, exact: false },
 ] as const;
 
 interface AdminShellProps {
@@ -66,9 +66,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
       >
         {/* Logo */}
         <div className="h-16 flex items-center gap-3 px-5 border-b border-white/[0.06]">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center ring-1 ring-blue-500/20">
-            <Sun className="h-5 w-5 text-blue-400" />
-          </div>
+          <img src="/images/spac-logo.png" alt="SPAC" className="h-9 w-9 rounded-lg object-contain" />
           <div>
             <p className="text-sm font-bold text-white tracking-wide">SPAC</p>
             <p className="text-[10px] text-blue-400/70 uppercase tracking-[0.15em]">
