@@ -6,6 +6,7 @@
  */
 
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -103,6 +104,12 @@ async function getNewsletters() {
 }
 
 export default async function NewsletterPage() {
+  // Members-only — redirect to login if not authenticated
+  const session = await getSession();
+  if (!session?.user) {
+    redirect('/auth/signin?callbackUrl=/newsletter');
+  }
+
   const { newsletters, total, totalPages, years } = await getNewsletters();
 
   return (

@@ -8,9 +8,11 @@
  */
 
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import nextDynamic from 'next/dynamic';
+import { getSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 import {
@@ -166,6 +168,12 @@ export default async function ClassifiedsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  // Members-only — redirect to login if not authenticated
+  const session = await getSession();
+  if (!session?.user) {
+    redirect('/auth/signin?callbackUrl=/classifieds');
+  }
+
   const params = await searchParams;
   const categoryFilter = params.category || 'all';
   const conditionFilter = params.condition;

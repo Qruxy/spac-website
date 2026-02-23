@@ -7,7 +7,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import {
   ArrowLeft,
   MapPin,
@@ -99,6 +99,11 @@ const categoryLabels: Record<string, string> = {
 export default async function ListingDetailPage({ params }: PageProps) {
   const { slug } = await params;
   const session = await getSession();
+
+  // Members-only
+  if (!session?.user) {
+    redirect(`/auth/signin?callbackUrl=/classifieds/${slug}`);
+  }
 
   // Fetch listing with related data
   const listing = await prisma.listing.findUnique({
