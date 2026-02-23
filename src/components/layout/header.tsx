@@ -36,21 +36,22 @@ import { cn } from '@/lib/utils';
 import spacLogo from '../../../public/images/spac-logo-hires.png';
 
 // Primary navigation - shown in header
+// membersOnly: true = only rendered when authenticated
 const navigation = [
-  { name: 'About', href: '/about', icon: Users },
-  { name: 'Events', href: '/events', icon: Calendar },
-  { name: 'Gallery', href: '/gallery', icon: Image },
-  { name: 'Classifieds', href: '/classifieds', icon: ShoppingBag },
+  { name: 'About', href: '/about', icon: Users, membersOnly: false },
+  { name: 'Events', href: '/events', icon: Calendar, membersOnly: false },
+  { name: 'Gallery', href: '/gallery', icon: Image, membersOnly: false },
+  { name: 'Classifieds', href: '/classifieds', icon: ShoppingBag, membersOnly: true },
 ];
 
 // Additional pages for expanded navigation (mobile menu & dropdown)
 const moreLinks = [
-  { name: 'VSA', href: '/vsa', icon: GraduationCap },
-  { name: 'Newsletter', href: '/newsletter', icon: Newspaper },
-  { name: 'Donations', href: '/donations', icon: Heart },
-  { name: 'OBS Star Party', href: '/obs', icon: Star },
-  { name: 'Mirror Lab', href: '/mirror-lab', icon: FlaskConical },
-  { name: 'History', href: '/history', icon: History },
+  { name: 'VSA', href: '/vsa', icon: GraduationCap, membersOnly: false },
+  { name: 'Newsletter', href: '/newsletter', icon: Newspaper, membersOnly: true },
+  { name: 'Donations', href: '/donations', icon: Heart, membersOnly: false },
+  { name: 'OBS Star Party', href: '/obs', icon: Star, membersOnly: false },
+  { name: 'Mirror Lab', href: '/mirror-lab', icon: FlaskConical, membersOnly: false },
+  { name: 'History', href: '/history', icon: History, membersOnly: false },
 ];
 
 export function Header() {
@@ -86,7 +87,7 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:gap-6">
-            {navigation.map((item) => (
+            {navigation.filter(item => !item.membersOnly || isAuthenticated).map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
@@ -108,7 +109,7 @@ export function Header() {
                 onClick={() => setMoreMenuOpen(!moreMenuOpen)}
                 className={cn(
                   'flex items-center gap-1 text-sm font-medium transition-colors',
-                  moreLinks.some(link => pathname.startsWith(link.href))
+                  moreLinks.filter(link => !link.membersOnly || isAuthenticated).some(link => pathname.startsWith(link.href))
                     ? 'text-primary'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
@@ -135,7 +136,7 @@ export function Header() {
                       className="absolute right-0 mt-2 w-56 rounded-lg border border-border bg-card/95 backdrop-blur-lg shadow-lg z-20 overflow-hidden"
                     >
                       <div className="py-2">
-                        {moreLinks.map((link) => (
+                        {moreLinks.filter(link => !link.membersOnly || isAuthenticated).map((link) => (
                           <Link
                             key={link.name}
                             href={link.href}
@@ -341,7 +342,7 @@ export function Header() {
                       <span className="text-lg">🏠</span>
                       Home
                     </Link>
-                    {navigation.map((item, index) => (
+                    {navigation.filter(item => !item.membersOnly || isAuthenticated).map((item, index) => (
                       <motion.div
                         key={item.name}
                         initial={{ opacity: 0, x: -20 }}
@@ -375,7 +376,7 @@ export function Header() {
                     <p className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                       More
                     </p>
-                    {moreLinks.map((link, index) => (
+                    {moreLinks.filter(link => !link.membersOnly || isAuthenticated).map((link, index) => (
                       <motion.div
                         key={link.name}
                         initial={{ opacity: 0, x: -20 }}

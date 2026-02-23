@@ -107,7 +107,7 @@ export default async function NewsletterPage() {
   // Members-only — redirect to login if not authenticated
   const session = await getSession();
   if (!session?.user) {
-    redirect('/auth/signin?callbackUrl=/newsletter');
+    redirect('/login?callbackUrl=/newsletter');
   }
 
   const { newsletters, total, totalPages, years } = await getNewsletters();

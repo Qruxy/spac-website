@@ -102,7 +102,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
 
   // Members-only
   if (!session?.user) {
-    redirect(`/auth/signin?callbackUrl=/classifieds/${slug}`);
+    redirect(`/login?callbackUrl=/classifieds/${slug}`);
   }
 
   // Fetch listing with related data

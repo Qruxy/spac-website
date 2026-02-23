@@ -31,23 +31,23 @@ import {
 import Dock, { type DockItemData } from '@/components/Dock';
 import { cn } from '@/lib/utils';
 
-// Core public navigation - always visible
+// Core navigation — membersOnly items are hidden when not authenticated
 const publicNav = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'About', href: '/about', icon: Users },
-  { name: 'Events', href: '/events', icon: Calendar },
-  { name: 'Gallery', href: '/gallery', icon: Image },
-  { name: 'Classifieds', href: '/classifieds', icon: ShoppingBag },
+  { name: 'Home', href: '/', icon: Home, membersOnly: false },
+  { name: 'About', href: '/about', icon: Users, membersOnly: false },
+  { name: 'Events', href: '/events', icon: Calendar, membersOnly: false },
+  { name: 'Gallery', href: '/gallery', icon: Image, membersOnly: false },
+  { name: 'Classifieds', href: '/classifieds', icon: ShoppingBag, membersOnly: true },
 ];
 
-// Extended public navigation for more menu
+// Extended navigation for more menu
 const extendedNav = [
-  { name: 'VSA', href: '/vsa', icon: Users },
-  { name: 'Donations', href: '/donations', icon: Users },
-  { name: 'Newsletter', href: '/newsletter', icon: Calendar },
-  { name: 'OBS', href: '/obs', icon: Calendar },
-  { name: 'Mirror Lab', href: '/mirror-lab', icon: Users },
-  { name: 'History', href: '/history', icon: Calendar },
+  { name: 'VSA', href: '/vsa', icon: Users, membersOnly: false },
+  { name: 'Donations', href: '/donations', icon: Users, membersOnly: false },
+  { name: 'Newsletter', href: '/newsletter', icon: Calendar, membersOnly: true },
+  { name: 'OBS', href: '/obs', icon: Calendar, membersOnly: false },
+  { name: 'Mirror Lab', href: '/mirror-lab', icon: Users, membersOnly: false },
+  { name: 'History', href: '/history', icon: Calendar, membersOnly: false },
 ];
 
 // Dashboard quick access
@@ -111,8 +111,8 @@ export function GlobalDock({ variant = 'full' }: GlobalDockProps) {
     });
 
     // Divider representation (visual spacing handled in component)
-    // Public navigation items
-    publicNav.slice(1).forEach((item) => {
+    // Public navigation items (hide members-only when not authenticated)
+    publicNav.slice(1).filter(item => !item.membersOnly || isAuthenticated).forEach((item) => {
       items.push({
         icon: (
           <item.icon
@@ -279,17 +279,19 @@ export function GlobalDock({ variant = 'full' }: GlobalDockProps) {
             <span className="text-[10px] font-medium">Gallery</span>
           </Link>
 
-          {/* Classifieds */}
-          <Link
-            href="/classifieds"
-            className={cn(
-              'flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors min-w-[50px]',
-              isActive('/classifieds') ? 'text-primary' : 'text-neutral-400 active:text-white'
-            )}
-          >
-            <ShoppingBag className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Market</span>
-          </Link>
+          {/* Classifieds — members only */}
+          {isAuthenticated && (
+            <Link
+              href="/classifieds"
+              className={cn(
+                'flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors min-w-[50px]',
+                isActive('/classifieds') ? 'text-primary' : 'text-neutral-400 active:text-white'
+              )}
+            >
+              <ShoppingBag className="w-5 h-5" />
+              <span className="text-[10px] font-medium">Market</span>
+            </Link>
+          )}
 
           {/* Context-aware last slot */}
           {isAuthenticated ? (
