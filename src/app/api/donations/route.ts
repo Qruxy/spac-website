@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { createPayPalOrder, createPayPalSubscription, capturePayPalOrder, getPayPalAccessToken } from '@/lib/paypal';
 import { getSession } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 import { rateLimit, getRateLimitKey, RATE_LIMITS } from '@/lib/rate-limit';
 import { z } from 'zod';
 
@@ -130,11 +131,29 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Capture the payment
     const captureResult = await capturePayPalOrder(token);
 
     if (captureResult.status === 'COMPLETED') {
-      // Payment successful - redirect to thank you page
+      const capturedAmount = captureResult.purchase_units?.[0]?.payments?.captures?.[0]?.amount;
+      const session = await getSession();
+
+      // Record the donation in the DB for audit trail and financial reconciliation
+      await prisma.payment.create({
+        data: {
+          userId: session?.user?.id ?? null,
+          type: 'DONATION',
+          amount: capturedAmount ? parseFloat(capturedAmount.value) : 0,
+          currency: capturedAmount?.currency_code?.toLowerCase() || 'usd',
+          status: 'SUCCEEDED',
+          paypalOrderId: captureResult.id,
+          paidAt: new Date(),
+          description: 'One-time donation',
+        },
+      }).catch(dbErr => {
+        // Log but don't fail the redirect — payment already captured
+        console.error('Failed to record donation payment in DB:', dbErr);
+      });
+
       return NextResponse.redirect(`${baseUrl}/donations/thank-you?order_id=${captureResult.id}`);
     } else {
       return NextResponse.redirect(`${baseUrl}/donations?error=payment_failed`);

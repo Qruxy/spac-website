@@ -8,14 +8,13 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { requireAdmin } from '../../utils';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     const group = await prisma.memberGroup.findUnique({
       where: { id: params.id },
@@ -45,10 +44,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     const { name, description } = (await request.json()) as {
       name?: string;
@@ -79,10 +77,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     await prisma.memberGroup.delete({ where: { id: params.id } });
 

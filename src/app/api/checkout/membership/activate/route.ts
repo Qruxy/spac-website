@@ -2,30 +2,47 @@
  * Membership Activation API
  *
  * Activates membership after PayPal subscription approval.
+ * SECURITY: Auth required — userId is taken from session, never from query string.
  */
 
 import { NextResponse } from 'next/server';
 import { getPayPalSubscription } from '@/lib/paypal';
+import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const subscriptionId = searchParams.get('subscription_id'); // PayPal subscription ID
-  const userId = searchParams.get('userId');
+  const subscriptionId = searchParams.get('subscription_id');
   const tier = searchParams.get('tier');
   const interval = searchParams.get('interval');
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
-  if (!subscriptionId || !userId) {
+  // Auth required — userId comes from session, NOT from the URL
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.redirect(`${baseUrl}/auth/signin?error=auth_required`);
+  }
+  const userId = session.user.id;
+
+  if (!subscriptionId) {
     return NextResponse.redirect(`${baseUrl}/billing?error=missing_parameters`);
   }
 
   try {
-    // Verify the subscription is active
+    // Verify the subscription is active with PayPal
     const subscription = await getPayPalSubscription(subscriptionId);
 
     if (subscription.status !== 'ACTIVE' && subscription.status !== 'APPROVED') {
       return NextResponse.redirect(`${baseUrl}/billing?error=subscription_not_active`);
+    }
+
+    // SECURITY: Verify the subscription's custom_id matches the session user.
+    // At subscription creation time, custom_id is set to the userId so we can
+    // verify ownership here.
+    const customId = subscription.custom_id as string | undefined;
+    if (customId && customId !== userId) {
+      console.error(`[membership/activate] Subscription ${subscriptionId} custom_id ${customId} does not match session user ${userId}`);
+      return NextResponse.redirect(`${baseUrl}/billing?error=subscription_mismatch`);
     }
 
     // Get next billing date
@@ -60,7 +77,6 @@ export async function GET(request: Request) {
       },
     });
 
-    // Log the membership activation
     await prisma.auditLog.create({
       data: {
         user_id: userId,

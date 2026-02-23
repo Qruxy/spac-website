@@ -7,14 +7,13 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { requireAdmin } from '../../utils';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     const { userIds } = (await request.json()) as { userIds: string[] };
 
@@ -43,10 +42,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     const { userId } = (await request.json()) as { userId: string };
 

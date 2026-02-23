@@ -27,15 +27,14 @@ export async function POST(
     }
 
     const { id } = await params;
-    const body = await request.json();
-    const { checkedInById } = body;
+    await request.json(); // consume body (unused — checkedInById always taken from session)
 
     const registration = await prisma.oBSRegistration.update({
       where: { id },
       data: {
         checkedIn: true,
         checkedInAt: new Date(),
-        checkedInById: checkedInById || session.user.id,
+        checkedInById: session.user.id, // always use session; never trust client-supplied value
       },
     });
 

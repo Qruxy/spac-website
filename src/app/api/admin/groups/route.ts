@@ -7,14 +7,13 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { requireAdmin } from '../utils';
 
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     const groups = await prisma.memberGroup.findMany({
       orderBy: { name: 'asc' },
@@ -33,10 +32,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     const { name, description, memberIds } = (await request.json()) as {
       name: string;
@@ -52,7 +50,7 @@ export async function POST(request: Request) {
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        createdById: session.user.id,
+        createdById: auth.userId,
         members: memberIds?.length
           ? { createMany: { data: memberIds.map((userId) => ({ userId })) } }
           : undefined,
