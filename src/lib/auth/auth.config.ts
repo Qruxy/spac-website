@@ -98,10 +98,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Too many login attempts. Please try again later.');
         }
 
-        // Demo user with specific credentials
+        // Demo user — password must be set via DEMO_ADMIN_PASSWORD env var.
+        // If not configured, demo login is disabled entirely (production default).
+        const DEMO_PASSWORD = process.env.DEMO_ADMIN_PASSWORD;
         const DEMO_USER = {
           username: 'demo',
-          password: 'Sp@C2025!',
           email: 'demo@spac.local',
           firstName: 'Demo',
           lastName: 'Admin',
@@ -110,7 +111,8 @@ export const authOptions: NextAuthOptions = {
 
         // Check if logging in as demo user
         if (credentials.email === DEMO_USER.username || credentials.email === DEMO_USER.email) {
-          if (credentials.password !== DEMO_USER.password) {
+          // Disabled if no env var set (production default)
+          if (!DEMO_PASSWORD || credentials.password !== DEMO_PASSWORD) {
             return null;
           }
 

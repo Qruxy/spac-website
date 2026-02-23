@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { capturePayPalOrder } from '@/lib/paypal';
+import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
 export async function GET(request: Request) {
@@ -18,6 +19,12 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${baseUrl}/obs?error=missing_parameters`);
   }
 
+  // Auth required — prevent anonymous capture attempts
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.redirect(`${baseUrl}/auth/signin?callbackUrl=/obs`);
+  }
+
   try {
     // Get the registration
     const registration = await prisma.oBSRegistration.findUnique({
@@ -26,6 +33,16 @@ export async function GET(request: Request) {
 
     if (!registration) {
       return NextResponse.redirect(`${baseUrl}/obs?error=registration_not_found`);
+    }
+
+    // Verify the registration belongs to the current user
+    if (registration.userId !== session.user.id) {
+      return NextResponse.redirect(`${baseUrl}/obs?error=unauthorized`);
+    }
+
+    // Idempotency: already paid → redirect to success
+    if (registration.paymentStatus === 'PAID') {
+      return NextResponse.redirect(`${baseUrl}/obs/success?registration_id=${registrationId}`);
     }
 
     // Capture the payment

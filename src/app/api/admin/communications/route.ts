@@ -7,17 +7,16 @@
 
 import { NextResponse } from 'next/server';
 import { prisma, NOT_COMPANION } from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { requireAdmin } from '../utils';
 import { sendBulkEmail, renderTemplate } from '@/lib/email';
 import { notifyAdminAnnouncement } from '@/lib/notifications';
 
 // GET /api/admin/communications - Get email history
 export async function GET(request: Request) {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -56,10 +55,9 @@ export async function GET(request: Request) {
 // POST /api/admin/communications - Send email to members
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     const body = await request.json();
     const { subject, html, templateId, recipientFilter, sendNotification, manualEmails } = body as {

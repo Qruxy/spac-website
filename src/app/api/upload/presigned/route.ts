@@ -47,8 +47,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Determine folder based on context or use default
-    const uploadFolder = folder || 'uploads';
+    // Restrict folder to an explicit allowlist — prevents writes to arbitrary S3 paths
+    const ALLOWED_FOLDERS = ['uploads', 'gallery', 'events', 'equipment', 'avatars', 'media', 'vsa'];
+    const uploadFolder = (folder && ALLOWED_FOLDERS.includes(folder)) ? folder : 'uploads';
 
     // Generate presigned URL
     const result = await createPresignedUploadUrl({

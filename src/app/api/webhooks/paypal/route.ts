@@ -32,8 +32,8 @@ export async function POST(request: Request) {
     if (isProduction) {
       console.error('CRITICAL: PAYPAL_WEBHOOK_ID not configured in production!');
       return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
+        { error: 'Service unavailable' },
+        { status: 503 }
       );
     }
     console.warn('DEV MODE: Skipping PayPal webhook verification (PAYPAL_WEBHOOK_ID not set)');
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     console.error(`Webhook handler error: ${errorMessage}`);
     return NextResponse.json(
-      { error: `Webhook handler error: ${errorMessage}` },
+      { error: 'Internal server error' }, // don't leak internals to PayPal
       { status: 500 }
     );
   }

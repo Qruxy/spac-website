@@ -7,15 +7,14 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { requireAdmin } from '../../utils';
 
 // GET /api/admin/communications/templates
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     const templates = await prisma.emailTemplate.findMany({
       orderBy: { updatedAt: 'desc' },
@@ -35,10 +34,9 @@ export async function GET() {
 // POST /api/admin/communications/templates
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+
+    if (!auth.authorized) return auth.error!;
 
     const body = await request.json();
     const { name, subject, bodyHtml, description, category, variables } = body as {
@@ -62,7 +60,7 @@ export async function POST(request: Request) {
         description,
         category: (category as 'GENERAL' | 'WELCOME' | 'MEMBERSHIP' | 'EVENT' | 'NEWSLETTER' | 'ADMIN' | 'SYSTEM') || 'GENERAL',
         variables: variables || [],
-        createdById: session.user.id,
+        createdById: auth.userId,
       },
     });
 
