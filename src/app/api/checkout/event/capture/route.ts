@@ -29,6 +29,16 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${baseUrl}/my-events?error=registration_not_found`);
     }
 
+    // Idempotency: if already confirmed, redirect to success (handles duplicate browser requests)
+    if (registration.status === 'CONFIRMED') {
+      return NextResponse.redirect(`${baseUrl}/my-events?registered=${registration.eventId}`);
+    }
+
+    // Only capture PENDING registrations
+    if (registration.status !== 'PENDING') {
+      return NextResponse.redirect(`${baseUrl}/my-events?error=registration_not_capturable`);
+    }
+
     // Capture the payment
     const captureResult = await capturePayPalOrder(token);
 

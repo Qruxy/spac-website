@@ -8,6 +8,12 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { createPayPalOrder, capturePayPalOrder } from '@/lib/paypal';
 import { prisma } from '@/lib/db';
+import { z } from 'zod';
+
+const CheckoutSchema = z.object({
+  eventId: z.string().min(1),
+  guestCount: z.number().int().min(0).max(10).default(0),
+});
 
 export async function POST(request: Request) {
   try {
@@ -21,17 +27,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { eventId, guestCount = 0 } = body as {
-      eventId: string;
-      guestCount?: number;
-    };
-
-    if (!eventId) {
+    const parsed = CheckoutSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Event ID is required' },
+        { error: parsed.error.errors[0]?.message || 'Invalid request body' },
         { status: 400 }
       );
     }
+    const { eventId, guestCount } = parsed.data;
 
     // Get event details
     const event = await prisma.event.findUnique({
@@ -87,8 +90,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // Calculate price - Decimal needs to be converted to number
-    const isMember = session.user.membershipStatus === 'ACTIVE';
+    // Calculate price — query membership fresh (don't trust stale session cache)
+    const freshMembership = await prisma.membership.findFirst({
+      where: { userId: session.user.id, status: 'ACTIVE' },
+    });
+    const isMember = !!freshMembership;
     const basePrice = isMember && event.memberPrice
       ? Number(event.memberPrice)
       : Number(event.guest_price || 0);
@@ -104,21 +110,31 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create PayPal order
+    // Create PayPal order — on failure, cancel the PENDING registration to free capacity
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const order = await createPayPalOrder({
-      amount: totalPrice,
-      description: `Event Registration: ${event.title}${guestCount > 0 ? ` (+${guestCount} guests)` : ''}`,
-      returnUrl: `${baseUrl}/api/checkout/event/capture?registrationId=${registration.id}`,
-      cancelUrl: `${baseUrl}/events/${event.slug}?canceled=true`,
-      metadata: {
-        type: 'event_registration',
-        userId: session.user.id,
-        eventId,
-        registrationId: registration.id,
-        guestCount: String(guestCount),
-      },
-    });
+    let order;
+    try {
+      order = await createPayPalOrder({
+        amount: totalPrice,
+        description: `Event Registration: ${event.title}${guestCount > 0 ? ` (+${guestCount} guests)` : ''}`,
+        returnUrl: `${baseUrl}/api/checkout/event/capture?registrationId=${registration.id}`,
+        cancelUrl: `${baseUrl}/events/${event.slug}?canceled=true`,
+        metadata: {
+          type: 'event_registration',
+          userId: session.user.id,
+          eventId,
+          registrationId: registration.id,
+          guestCount: String(guestCount),
+        },
+      });
+    } catch (paypalError) {
+      // Rollback: cancel the PENDING registration so capacity is not permanently consumed
+      await prisma.registration.update({
+        where: { id: registration.id },
+        data: { status: 'CANCELLED' },
+      }).catch(e => console.error('Failed to rollback registration:', e));
+      throw paypalError;
+    }
 
     // Find the approval URL
     const approvalLink = order.links.find(link => link.rel === 'approve');
