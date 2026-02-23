@@ -253,11 +253,10 @@ export default function Galaxy({
 
     let program: Program;
 
-    // PERF: Cap render resolution to a pixel budget so the fragment shader
-    // doesn't scale quadratically with monitor size. At 4K a full-res render
-    // is ~8M pixels/frame; capped at 720p it's ~921K — ~9x less GPU work.
-    // CSS stretches the canvas to fill the container so it looks identical.
-    const MAX_RENDER_PIXELS = 1280 * 720; // ~720p budget
+    // PERF: Cap render resolution so the fragment shader doesn't scale
+    // quadratically with monitor size. CSS stretches canvas to fill container.
+    // 1440p = 2560x1440 = 3.7M px — good quality, manageable GPU budget.
+    const MAX_RENDER_PIXELS = 2560 * 1440; // 1440p budget
 
     function resize() {
       const cssW = ctn.offsetWidth;
@@ -322,9 +321,9 @@ export default function Galaxy({
     let animateId: number;
     let running = false;
     let lastFrameTime = 0;
-    // Cap at 30fps — a background starfield doesn't need 60/120fps.
-    // Halves GPU time on high-refresh monitors (144Hz → 30fps = 4.8x reduction).
-    const FRAME_MS = 1000 / 30;
+    // Cap at 60fps — prevents runaway frame rate on 120/144Hz monitors
+    // without sacrificing smoothness.
+    const FRAME_MS = 1000 / 60;
 
     function update(t: number) {
       animateId = requestAnimationFrame(update);
