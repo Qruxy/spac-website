@@ -253,14 +253,35 @@ export default function Galaxy({
 
     let program: Program;
 
+    // PERF: Cap render resolution to a pixel budget so the fragment shader
+    // doesn't scale quadratically with monitor size. At 4K a full-res render
+    // is ~8M pixels/frame; capped at 720p it's ~921K — ~9x less GPU work.
+    // CSS stretches the canvas to fill the container so it looks identical.
+    const MAX_RENDER_PIXELS = 1280 * 720; // ~720p budget
+
     function resize() {
-      const scale = 1;
-      renderer.setSize(ctn.offsetWidth * scale, ctn.offsetHeight * scale);
+      const cssW = ctn.offsetWidth;
+      const cssH = ctn.offsetHeight || 1;
+      const totalPixels = cssW * cssH;
+      const scale = totalPixels > MAX_RENDER_PIXELS
+        ? Math.sqrt(MAX_RENDER_PIXELS / totalPixels)
+        : 1;
+      const renderW = Math.round(cssW * scale);
+      const renderH = Math.round(cssH * scale);
+
+      renderer.setSize(renderW, renderH);
+
+      // Always stretch canvas to fill container via inline style
+      const canvas = gl.canvas as HTMLCanvasElement;
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      canvas.style.display = 'block';
+
       if (program) {
         program.uniforms.uResolution.value = new Color(
-          gl.canvas.width,
-          gl.canvas.height,
-          gl.canvas.width / gl.canvas.height
+          renderW,
+          renderH,
+          renderW / renderH
         );
       }
     }
@@ -299,11 +320,16 @@ export default function Galaxy({
 
     const mesh = new Mesh(gl, { geometry, program });
     let animateId: number;
-    // Track whether the rAF loop is active so visibilitychange can pause/resume it
     let running = false;
+    let lastFrameTime = 0;
+    // Cap at 30fps — a background starfield doesn't need 60/120fps.
+    // Halves GPU time on high-refresh monitors (144Hz → 30fps = 4.8x reduction).
+    const FRAME_MS = 1000 / 30;
 
     function update(t: number) {
       animateId = requestAnimationFrame(update);
+      if (t - lastFrameTime < FRAME_MS) return; // skip frame
+      lastFrameTime = t;
       if (!disableAnimation) {
         program.uniforms.uTime.value = t * 0.001;
         program.uniforms.uStarSpeed.value = (t * 0.001 * starSpeed) / 10.0;
