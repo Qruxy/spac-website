@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireAdmin } from '../../utils';
+import { requireAdmin } from '../../../utils';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
