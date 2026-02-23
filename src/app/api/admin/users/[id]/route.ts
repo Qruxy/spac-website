@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '../../utils';
+import { getSession } from '@/lib/auth';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -23,8 +24,31 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     const rawUser = await prisma.user.findUnique({
       where: { id },
-      include: {
-        membership: true,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        name: true,
+        role: true,
+        phone: true,
+        emailVerified: true,
+        isValidated: true,
+        isBanned: true,
+        bannedFromClassifieds: true,
+        bannedFromMedia: true,
+        adminNotes: true,
+        qrUuid: true,
+        createdAt: true,
+        updatedAt: true,
+        // Explicitly excluded: passwordHash, cognitoId, stripeCustomerId, paypalSubscriberId
+        membership: {
+          select: {
+            type: true,
+            status: true,
+            endDate: true,
+          },
+        },
       },
     });
 
@@ -69,6 +93,28 @@ export async function PUT(request: Request, { params }: RouteParams) {
       name, firstName, lastName, role, phone, emailVerified, isValidated,
       isBanned, bannedFromClassifieds, bannedFromMedia, adminNotes,
     } = body;
+
+    // Role escalation guard: only ADMIN can change roles; MODERATOR cannot.
+    // Prevent promoting any user to a role higher than MODERATOR via this endpoint.
+    if (role !== undefined) {
+      const session = await getSession();
+      if (session?.user.role !== 'ADMIN') {
+        return NextResponse.json(
+          { error: 'Only admins can change user roles' },
+          { status: 403 }
+        );
+      }
+      if (!['MEMBER', 'MODERATOR', 'ADMIN'].includes(role)) {
+        return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+      }
+      // Prevent self-demotion (admin locking themselves out)
+      if (id === auth.userId && role !== 'ADMIN') {
+        return NextResponse.json(
+          { error: 'Cannot change your own role' },
+          { status: 403 }
+        );
+      }
+    }
 
     const user = await prisma.user.update({
       where: { id },

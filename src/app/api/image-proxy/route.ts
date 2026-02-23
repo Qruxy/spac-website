@@ -18,7 +18,9 @@ const ALLOWED_DOMAINS = [
   // S3/CloudFront domains (adjust to match your bucket)
   'spac-media.s3.amazonaws.com',
   'spac-media.s3.us-east-1.amazonaws.com',
-  'd1234567890.cloudfront.net', // Update with actual CloudFront domain
+  `${process.env.CLOUDFRONT_DOMAIN || 'd2gbp2i1j2c26l.cloudfront.net'}`,
+  'spac-astronomy-media-132498934035.s3.amazonaws.com',
+  'spac-astronomy-media-132498934035.s3.us-east-1.amazonaws.com',
   // Common image CDNs
   'images.unsplash.com',
   'cdn.discordapp.com',
@@ -130,18 +132,40 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch the image server-side with timeout
+    // Fetch the image server-side with timeout.
+    // Use redirect:'manual' and re-validate redirect targets against the allowlist
+    // to prevent SSRF bypass via open redirects on trusted domains.
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-    const response = await fetch(imageUrl.toString(), {
+    let fetchUrl = imageUrl.toString();
+    let response = await fetch(fetchUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; SPAC-Website/1.0)',
         'Accept': 'image/*',
       },
       signal: controller.signal,
-      redirect: 'follow',
+      redirect: 'manual',
     });
+
+    // Follow redirects manually, re-validating each hop against the allowlist
+    let redirectHops = 0;
+    while ((response.status === 301 || response.status === 302 || response.status === 307 || response.status === 308) && redirectHops < 3) {
+      const location = response.headers.get('location');
+      if (!location) break;
+      const redirectUrl = new URL(location, fetchUrl);
+      if (!isAllowedDomain(redirectUrl.hostname)) {
+        clearTimeout(timeoutId);
+        return NextResponse.json({ error: 'Redirect to non-allowed domain blocked' }, { status: 403 });
+      }
+      fetchUrl = redirectUrl.toString();
+      response = await fetch(fetchUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SPAC-Website/1.0)', 'Accept': 'image/*' },
+        signal: controller.signal,
+        redirect: 'manual',
+      });
+      redirectHops++;
+    }
 
     clearTimeout(timeoutId);
 
