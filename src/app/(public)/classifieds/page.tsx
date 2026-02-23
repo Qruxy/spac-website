@@ -171,7 +171,7 @@ export default async function ClassifiedsPage({
   // Members-only — redirect to login if not authenticated
   const session = await getSession();
   if (!session?.user) {
-    redirect('/auth/signin?callbackUrl=/classifieds');
+    redirect('/login?callbackUrl=/classifieds');
   }
 
   const params = await searchParams;

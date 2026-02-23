@@ -27,11 +27,11 @@ import { cn } from '@/lib/utils';
 import spacLogo from '../../../public/images/spac-logo-hires.png';
 
 const navigation = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'About', href: '/about', icon: Users },
-  { name: 'Events', href: '/events', icon: Calendar },
-  { name: 'Gallery', href: '/gallery', icon: Image },
-  { name: 'Classifieds', href: '/classifieds', icon: ShoppingBag },
+  { name: 'Home', href: '/', icon: Home, membersOnly: false },
+  { name: 'About', href: '/about', icon: Users, membersOnly: false },
+  { name: 'Events', href: '/events', icon: Calendar, membersOnly: false },
+  { name: 'Gallery', href: '/gallery', icon: Image, membersOnly: false },
+  { name: 'Classifieds', href: '/classifieds', icon: ShoppingBag, membersOnly: true },
 ];
 
 export function DockNav() {
@@ -42,8 +42,8 @@ export function DockNav() {
 
   // Build dock items for desktop
   const dockItems: DockItemData[] = [
-    // Navigation items
-    ...navigation.map((item) => ({
+    // Navigation items (hide members-only when not authenticated)
+    ...navigation.filter(item => !item.membersOnly || isAuthenticated).map((item) => ({
       icon: (
         <item.icon
           className={cn(
