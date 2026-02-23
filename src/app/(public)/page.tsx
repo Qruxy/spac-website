@@ -3,21 +3,43 @@
  *
  * Main landing page for SPAC website.
  * Uses ISR with 1-hour revalidation for upcoming events.
+ *
+ * PERF FIXES:
+ * - Client-only sections (FeaturesSection, TestimonialsSection, StatsSection) loaded with
+ *   dynamic({ssr:false}) — removes them from the critical bundle, defers animation JS
+ *   until after hydration so they don't compete with hero paint.
+ * - Server components (MemberMediaSection) wrapped in Suspense for streaming.
+ * - Events section wrapped in Suspense with skeleton so slow DB revalidation doesn't
+ *   block the rest of the page.
  */
 
+import { Suspense } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import { HeroSection, HomeCtaButton } from './hero-section';
-import { StatsSection } from './stats-section';
-import { FeaturesSection } from './features-section';
 import { MemberMediaSection } from './member-media-section';
-import { TestimonialsSection } from './testimonials-section';
 import { EventCard, NoEventsCard, type EventData } from './event-card';
 
-export const revalidate = 3600; // Revalidate every hour
+// Client-only animation-heavy sections — deferred so they don't block hero paint
+const FeaturesSection = dynamic(
+  () => import('./features-section').then((m) => m.FeaturesSection),
+  { ssr: false, loading: () => <div className="py-24" aria-hidden="true" /> }
+);
 
-// Features data - iconName must match keys in FeaturesSection iconMap
+const TestimonialsSection = dynamic(
+  () => import('./testimonials-section').then((m) => m.TestimonialsSection),
+  { ssr: false, loading: () => <div className="py-16" aria-hidden="true" /> }
+);
+
+const StatsSection = dynamic(
+  () => import('./stats-section').then((m) => m.StatsSection),
+  { ssr: false, loading: () => <div className="py-24" aria-hidden="true" /> }
+);
+
+export const revalidate = 3600;
+
 const features = [
   {
     title: 'Monthly Star Parties',
@@ -64,18 +86,15 @@ const stats = [
   { value: 97, label: 'Years Strong', suffix: '' },
 ];
 
-// Fetch upcoming events from the database
 async function getUpcomingEvents(): Promise<EventData[]> {
   try {
     const events = await prisma.event.findMany({
       where: {
         status: 'PUBLISHED',
-        startDate: {
-          gte: new Date(), // Only future events
-        },
+        startDate: { gte: new Date() },
       },
       orderBy: { startDate: 'asc' },
-      take: 6, // Limit to next 6 events
+      take: 6,
       select: {
         id: true,
         slug: true,
@@ -89,9 +108,7 @@ async function getUpcomingEvents(): Promise<EventData[]> {
         capacity: true,
         memberPrice: true,
         guest_price: true,
-        _count: {
-          select: { registrations: true },
-        },
+        _count: { select: { registrations: true } },
       },
     });
 
@@ -107,9 +124,7 @@ async function getUpcomingEvents(): Promise<EventData[]> {
       locationAddress: event.locationAddress,
       memberPrice: Number(event.memberPrice),
       guestPrice: Number(event.guest_price),
-      spotsAvailable: event.capacity
-        ? event.capacity - event._count.registrations
-        : null,
+      spotsAvailable: event.capacity ? event.capacity - event._count.registrations : null,
       capacity: event.capacity,
     }));
   } catch (error) {
@@ -118,21 +133,48 @@ async function getUpcomingEvents(): Promise<EventData[]> {
   }
 }
 
-export default async function HomePage() {
-  const upcomingEvents = await getUpcomingEvents();
-
+function EventsSkeleton() {
   return (
     <>
-      {/* Hero Section with Star Field */}
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="rounded-xl border border-border bg-card p-6 animate-pulse">
+          <div className="h-4 bg-muted rounded w-1/3 mb-3" />
+          <div className="h-6 bg-muted rounded w-3/4 mb-2" />
+          <div className="h-4 bg-muted rounded w-full mb-4" />
+          <div className="h-4 bg-muted rounded w-1/2" />
+        </div>
+      ))}
+    </>
+  );
+}
+
+async function UpcomingEvents() {
+  const upcomingEvents = await getUpcomingEvents();
+  return (
+    <>
+      {upcomingEvents.length > 0
+        ? upcomingEvents.map((event) => <EventCard key={event.id} event={event} />)
+        : <NoEventsCard />
+      }
+    </>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <>
+      {/* Hero — above the fold, renders immediately */}
       <HeroSection />
 
-      {/* Features Section with Animations */}
+      {/* Below-fold client components — deferred bundle, don't block hero */}
       <FeaturesSection features={features} />
 
-      {/* Member Media Section with BounceCards */}
-      <MemberMediaSection />
+      {/* Server component — Suspense streams it, won't block above-fold content */}
+      <Suspense fallback={<div className="py-24" aria-hidden="true" />}>
+        <MemberMediaSection />
+      </Suspense>
 
-      {/* Upcoming Events Preview */}
+      {/* Events — Suspense so slow DB revalidation shows skeleton instead of blocking */}
       <section className="py-24 bg-background/50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
@@ -151,18 +193,12 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          {/* Event Cards Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {upcomingEvents.length > 0 ? (
-              upcomingEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))
-            ) : (
-              <NoEventsCard />
-            )}
+            <Suspense fallback={<EventsSkeleton />}>
+              <UpcomingEvents />
+            </Suspense>
           </div>
 
-          {/* Mobile View All Link */}
           <div className="sm:hidden mt-6 text-center">
             <Link
               href="/events"
@@ -175,13 +211,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
       <TestimonialsSection />
 
-      {/* Stats Section with Animated Counters */}
       <StatsSection stats={stats} />
 
-      {/* CTA Section */}
+      {/* CTA */}
       <section className="bg-primary/5 py-24">
         <div className="container mx-auto max-w-3xl px-4 text-center">
           <h2 className="mb-4 text-3xl font-bold text-foreground">

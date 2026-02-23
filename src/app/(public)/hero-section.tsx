@@ -6,6 +6,13 @@
  * Animated hero section with Galaxy background and spinning logo badge.
  * Enhanced with React Bits BlurText and ShinyText animations.
  * Respects prefers-reduced-motion for accessibility.
+ *
+ * PERF FIXES:
+ * - Galaxy config determined once after mount (mobile + reduced-motion) — prevents
+ *   Galaxy useEffect re-running (teardown + rebuild WebGL context) when state changes
+ * - Mobile: Galaxy completely disabled (replaced with CSS gradient) — no WebGL on phones
+ * - Desktop: density reduced 1.5→0.8, mouse interaction only on pointer devices
+ * - Galaxy not rendered at all until config is ready (avoids double WebGL init)
  */
 
 import Link from 'next/link';
@@ -14,7 +21,6 @@ import { ArrowRight, Calendar } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-// Direct imports to avoid barrel export bundle bloat
 import { CircularText } from '@/components/animated/circular-text';
 import { BlurText } from '@/components/animated/blur-text';
 import { ShinyText } from '@/components/animated/shiny-text';
@@ -22,11 +28,19 @@ import { StarBorder } from '@/components/animated/star-border';
 import '@/components/animated/circular-text.css';
 import spacLogo from '../../../public/images/spac-logo-hires.png';
 
-// Dynamic import Galaxy to avoid SSR issues with WebGL
 const Galaxy = dynamic(
   () => import('@/components/animated/galaxy').then((mod) => mod.Galaxy),
   { ssr: false }
 );
+
+interface GalaxyConfig {
+  enabled: boolean;
+  disableAnimation: boolean;
+  mouseInteraction: boolean;
+  mouseRepulsion: boolean;
+  density: number;
+  glowIntensity: number;
+}
 
 export function HomeCtaButton() {
   return (
@@ -40,35 +54,54 @@ export function HomeCtaButton() {
 }
 
 export function HeroSection() {
-  // Check for prefers-reduced-motion
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  
+  // Determine Galaxy config once after mount — a single stable config so the WebGL
+  // context is never rebuilt due to state churn.
+  const [galaxyConfig, setGalaxyConfig] = useState<GalaxyConfig | null>(null);
+
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-    
-    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
+
+    if (isMobile) {
+      // No WebGL on mobile — too expensive; CSS gradient fallback handles the background
+      setGalaxyConfig({ enabled: false, disableAnimation: true, mouseInteraction: false, mouseRepulsion: false, density: 0, glowIntensity: 0 });
+    } else if (reducedMotion) {
+      // Desktop but motion reduced: render a static starfield (single frame, rAF stopped)
+      setGalaxyConfig({ enabled: true, disableAnimation: true, mouseInteraction: false, mouseRepulsion: false, density: 0.8, glowIntensity: 0.3 });
+    } else {
+      // Full desktop experience
+      setGalaxyConfig({ enabled: true, disableAnimation: false, mouseInteraction: true, mouseRepulsion: true, density: 0.8, glowIntensity: 0.3 });
+    }
+  }, []); // Empty deps — runs once, never triggers Galaxy re-mount
 
   return (
     <section className="relative flex min-h-[100vh] flex-col items-center justify-center overflow-hidden bg-slate-950">
-      {/* Galaxy Background */}
+      {/* Background: WebGL Galaxy on desktop, CSS gradient on mobile */}
       <div className="absolute inset-0">
-        <Galaxy
-          mouseRepulsion={!prefersReducedMotion}
-          mouseInteraction={!prefersReducedMotion}
-          disableAnimation={prefersReducedMotion}
-          density={1.5}
-          glowIntensity={0.5}
-          saturation={0.8}
-          hueShift={210}
-          transparent={false}
-        />
+        {galaxyConfig?.enabled ? (
+          <Galaxy
+            mouseRepulsion={galaxyConfig.mouseRepulsion}
+            mouseInteraction={galaxyConfig.mouseInteraction}
+            disableAnimation={galaxyConfig.disableAnimation}
+            density={galaxyConfig.density}
+            glowIntensity={galaxyConfig.glowIntensity}
+            saturation={0.8}
+            hueShift={210}
+            transparent={false}
+          />
+        ) : (
+          // Mobile fallback: pure CSS, zero GPU cost
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-blue-950/40 to-slate-950">
+            {/* Static star dots via box-shadow — no JS, no canvas, no rAF */}
+            <div className="absolute inset-0 opacity-60" style={{
+              backgroundImage: 'radial-gradient(1px 1px at 10% 15%, #fff 0, transparent 0), radial-gradient(1px 1px at 25% 45%, #93c5fd 0, transparent 0), radial-gradient(1px 1px at 40% 20%, #fff 0, transparent 0), radial-gradient(1px 1px at 55% 60%, #bfdbfe 0, transparent 0), radial-gradient(1px 1px at 70% 30%, #fff 0, transparent 0), radial-gradient(1px 1px at 85% 70%, #93c5fd 0, transparent 0), radial-gradient(1px 1px at 15% 75%, #fff 0, transparent 0), radial-gradient(1px 1px at 60% 85%, #bfdbfe 0, transparent 0), radial-gradient(1px 1px at 90% 10%, #fff 0, transparent 0), radial-gradient(1px 1px at 35% 90%, #93c5fd 0, transparent 0), radial-gradient(2px 2px at 5% 50%, #60a5fa 0, transparent 0), radial-gradient(2px 2px at 75% 15%, #fff 0, transparent 0), radial-gradient(2px 2px at 50% 5%, #bfdbfe 0, transparent 0)',
+              backgroundSize: '100% 100%',
+            }} />
+          </div>
+        )}
       </div>
 
-      {/* Gradient overlay for better text readability */}
+      {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/30 to-slate-950/70" />
 
       <div className="relative z-10 mx-auto max-w-4xl px-4 text-center">
@@ -89,16 +122,12 @@ export function HeroSection() {
               '--font-size': '13px',
             }}
           >
-            {/* Center Logo */}
             <motion.div
               className="relative z-10 rounded-full overflow-hidden"
               whileHover={{ scale: 1.05 }}
               style={{ width: 240, height: 240 }}
             >
-              {/* Glow effect */}
               <div className="absolute -inset-4 bg-primary/30 rounded-full blur-2xl" />
-
-              {/* Logo */}
               <Image
                 src={spacLogo}
                 alt="St. Petersburg Astronomy Club"
@@ -109,7 +138,6 @@ export function HeroSection() {
               />
             </motion.div>
 
-            {/* Spinning Text Ring - z-20 to appear above logo */}
             <div className="absolute inset-0 z-20" style={{ color: '#60a5fa' }}>
               <CircularText
                 text="ST. PETERSBURG ASTRONOMY CLUB ★ SINCE 1927 ★ "

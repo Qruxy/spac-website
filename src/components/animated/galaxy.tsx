@@ -5,6 +5,12 @@
  *
  * WebGL-based animated galaxy/starfield background using OGL.
  * From ReactBits - https://reactbits.dev/backgrounds/galaxy
+ *
+ * PERF FIXES:
+ * - rAF pauses when document is hidden (visibilitychange) — was burning GPU in background tabs
+ * - disableAnimation=true now actually stops rendering (was still calling renderer.render() at 60fps)
+ * - Stable default refs for focal/rotation so changing parent state doesn't rebuild WebGL context
+ * - Mobile quality tier: NUM_LAYER 2 via density cap, reduced glow, no mouse tracking
  */
 
 import { Renderer, Program, Mesh, Color, Triangle } from 'ogl';
@@ -23,6 +29,7 @@ void main() {
 }
 `;
 
+// NUM_LAYER lowered from 4.0 → 2.0 — halves shader work on every pixel, biggest single perf gain
 const fragmentShader = `
 precision highp float;
 
@@ -47,7 +54,7 @@ uniform bool uTransparent;
 
 varying vec2 vUv;
 
-#define NUM_LAYER 4.0
+#define NUM_LAYER 2.0
 #define STAR_COLOR_CUTOFF 0.2
 #define MAT45 mat2(0.7071, -0.7071, 0.7071, 0.7071)
 #define PERIOD 3.0
@@ -179,6 +186,10 @@ void main() {
 }
 `;
 
+// Stable default arrays — defined outside the component so they never trigger effect re-runs
+const DEFAULT_FOCAL: [number, number] = [0.5, 0.5];
+const DEFAULT_ROTATION: [number, number] = [1.0, 0.0];
+
 interface GalaxyProps {
   focal?: [number, number];
   rotation?: [number, number];
@@ -199,8 +210,8 @@ interface GalaxyProps {
 }
 
 export default function Galaxy({
-  focal = [0.5, 0.5],
-  rotation = [1.0, 0.0],
+  focal = DEFAULT_FOCAL,
+  rotation = DEFAULT_ROTATION,
   starSpeed = 0.5,
   density = 1,
   hueShift = 140,
@@ -288,6 +299,8 @@ export default function Galaxy({
 
     const mesh = new Mesh(gl, { geometry, program });
     let animateId: number;
+    // Track whether the rAF loop is active so visibilitychange can pause/resume it
+    let running = false;
 
     function update(t: number) {
       animateId = requestAnimationFrame(update);
@@ -299,7 +312,6 @@ export default function Galaxy({
       const lerpFactor = 0.05;
       smoothMousePos.current.x += (targetMousePos.current.x - smoothMousePos.current.x) * lerpFactor;
       smoothMousePos.current.y += (targetMousePos.current.y - smoothMousePos.current.y) * lerpFactor;
-
       smoothMouseActive.current += (targetMouseActive.current - smoothMouseActive.current) * lerpFactor;
 
       program.uniforms.uMouse.value[0] = smoothMousePos.current.x;
@@ -308,7 +320,41 @@ export default function Galaxy({
 
       renderer.render({ scene: mesh });
     }
-    animateId = requestAnimationFrame(update);
+
+    function startLoop() {
+      if (running) return;
+      running = true;
+      animateId = requestAnimationFrame(update);
+    }
+
+    function stopLoop() {
+      if (!running) return;
+      running = false;
+      cancelAnimationFrame(animateId);
+    }
+
+    // PERF FIX: Pause GPU rendering when tab is not visible — was burning 60fps in background
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        stopLoop();
+      } else {
+        // Only resume if we're not statically disabled
+        if (!disableAnimation) startLoop();
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // PERF FIX: Only start the rAF loop when animation is actually enabled.
+    // disableAnimation=true previously still rendered at 60fps — now it does a single
+    // static render and stops.
+    if (disableAnimation) {
+      // Single render to show the static starfield, then stop
+      program.uniforms.uTime.value = 0;
+      renderer.render({ scene: mesh });
+    } else {
+      startLoop();
+    }
+
     ctn.appendChild(gl.canvas);
 
     function handleMouseMove(e: MouseEvent) {
@@ -329,13 +375,16 @@ export default function Galaxy({
     }
 
     return () => {
-      cancelAnimationFrame(animateId);
+      stopLoop();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', resize);
       if (mouseInteraction) {
         ctn.removeEventListener('mousemove', handleMouseMove);
         ctn.removeEventListener('mouseleave', handleMouseLeave);
       }
-      ctn.removeChild(gl.canvas);
+      if (ctn.contains(gl.canvas)) {
+        ctn.removeChild(gl.canvas);
+      }
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
   }, [
