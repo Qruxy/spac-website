@@ -19,11 +19,13 @@ import {
   User,
   Star,
   Trophy,
+  CreditCard,
 } from 'lucide-react';
 
 const navItems = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, exact: true },
   { name: 'Members', href: '/admin/members', icon: Users, exact: false },
+  { name: 'Memberships', href: '/admin/memberships', icon: CreditCard, exact: false },
   { name: 'Events', href: '/admin/events', icon: Calendar, exact: false },
   { name: 'Listings', href: '/admin/listings', icon: ShoppingBag, exact: false },
   { name: 'Media', href: '/admin/media', icon: ImageIcon, exact: false },
