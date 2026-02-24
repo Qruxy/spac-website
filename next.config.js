@@ -103,6 +103,9 @@ const nextConfig = {
       PAYPAL_PLAN_FAMILY_MONTHLY: process.env.PAYPAL_PLAN_FAMILY_MONTHLY,
       PAYPAL_PLAN_FAMILY_ANNUAL: process.env.PAYPAL_PLAN_FAMILY_ANNUAL,
       PAYPAL_PLAN_STUDENT_ANNUAL: process.env.PAYPAL_PLAN_STUDENT_ANNUAL,
+      AUTH_COGNITO_ID: process.env.AUTH_COGNITO_ID,
+      AUTH_COGNITO_SECRET: process.env.AUTH_COGNITO_SECRET,
+      AUTH_COGNITO_ISSUER: process.env.AUTH_COGNITO_ISSUER,
     },
   }),
   // GitHub Pages static export settings
