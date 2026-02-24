@@ -52,11 +52,30 @@ export async function PUT(request: Request) {
     avatarUrl?: string;
   };
 
+  // Validate avatarUrl against trusted domains only
+  const ALLOWED_AVATAR_HOSTS = [
+    process.env.CLOUDFRONT_DOMAIN,
+    'spac-astronomy-media-132498934035.s3.us-east-1.amazonaws.com',
+    'spac-astronomy-media-132498934035.s3.amazonaws.com',
+  ].filter(Boolean) as string[];
+
+  if (avatarUrl !== undefined && avatarUrl !== null && avatarUrl !== '') {
+    try {
+      const parsed = new URL(avatarUrl);
+      const allowed = ALLOWED_AVATAR_HOSTS.some((host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`));
+      if (!allowed) {
+        return NextResponse.json({ error: 'Avatar URL must point to SPAC media storage' }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: 'Invalid avatar URL' }, { status: 400 });
+    }
+  }
+
   const data: Record<string, string | null> = {};
   if (firstName !== undefined) data.firstName = firstName.trim();
   if (lastName !== undefined) data.lastName = lastName.trim();
   if (phone !== undefined) data.phone = phone.trim() || null;
-  if (avatarUrl !== undefined) data.avatarUrl = avatarUrl;
+  if (avatarUrl !== undefined) data.avatarUrl = avatarUrl || null;
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 });

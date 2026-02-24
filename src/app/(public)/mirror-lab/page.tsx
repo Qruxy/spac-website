@@ -22,7 +22,7 @@ const FadeIn = nextDynamic(
 );
 
 export const metadata: Metadata = {
-  title: 'Mirror Lab | SPAC',
+  title: 'Mirror Lab',
   description:
     'Learn to grind, polish, and figure your own telescope mirror at SPAC\'s Mirror Lab workshop. Build your telescope from scratch!',
 };

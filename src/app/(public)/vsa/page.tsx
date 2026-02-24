@@ -30,7 +30,7 @@ const CountUp = nextDynamic(
 );
 
 export const metadata: Metadata = {
-  title: 'VSA - Very Small Array | SPAC',
+  title: 'VSA - Very Small Array',
   description: 'Learn about SPAC\'s Very Small Array smart telescope program, current observation targets, and how to get involved.',
 };
 

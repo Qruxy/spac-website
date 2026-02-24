@@ -163,8 +163,11 @@ export async function GET(request: Request) {
       prisma.listing.count({ where }),
     ]);
 
+    // Strip internal fields before returning
+    const sanitized = listings.map(({ buyer_id, archived_at, soldPrice, soldAt, ...listing }) => listing);
+
     return NextResponse.json({
-      listings,
+      listings: sanitized,
       pagination: {
         page,
         limit,

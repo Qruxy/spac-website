@@ -28,7 +28,7 @@ const CountUp = nextDynamic(
 );
 
 export const metadata: Metadata = {
-  title: 'The Eyepiece Newsletter Archive | SPAC',
+  title: 'The Eyepiece Newsletter Archive',
   description:
     'Browse the complete archive of The Eyepiece, the official newsletter of the St. Petersburg Astronomy Club.',
 };
