@@ -10,8 +10,51 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db';
 
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const RATE_LIMIT_MAX = 5; // max registration attempts per IP per window
+
+async function checkRateLimit(ip: string): Promise<boolean> {
+  const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
+  const attempts = await prisma.auditLog.count({
+    where: {
+      action: 'CREATE',
+      entityType: 'RegisterAttempt',
+      ipAddress: ip,
+      createdAt: { gte: since },
+    },
+  });
+  return attempts < RATE_LIMIT_MAX;
+}
+
+async function recordAttempt(ip: string) {
+  await prisma.auditLog.create({
+    data: {
+      action: 'CREATE',
+      entityType: 'RegisterAttempt',
+      entityId: 'rate-limit',
+      ipAddress: ip,
+    },
+  }).catch(() => { /* non-fatal */ });
+}
+
 export async function POST(request: Request) {
   try {
+    // IP-based rate limiting (works across Lambda instances via shared DB)
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
+    const allowed = await checkRateLimit(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many registration attempts. Please wait 15 minutes and try again.' },
+        { status: 429 }
+      );
+    }
+
+    await recordAttempt(ip);
+
     const body = await request.json();
     const { firstName, lastName, email, password } = body;
 

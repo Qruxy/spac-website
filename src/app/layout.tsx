@@ -32,6 +32,7 @@ const exo2 = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://stpeteastronomyclub.org'),
   title: {
     default: 'St. Petersburg Astronomy Club | SPAC',
     template: '%s | SPAC',

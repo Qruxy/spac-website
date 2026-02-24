@@ -1,16 +1,18 @@
 /**
  * Member Dashboard
  *
- * Overview page for authenticated members showing:
+ * Overview page for authenticated members showing real data:
  * - Membership status
- * - Upcoming registered events
- * - Active listings
+ * - Upcoming registered events (from DB)
+ * - Active listings (from DB)
+ * - Photo submission count (from DB)
  * - Quick actions
  */
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 import {
   Calendar,
   ShoppingBag,
@@ -34,6 +36,57 @@ export default async function DashboardPage() {
 
   const firstName = user.name?.split(' ')[0] || 'Member';
   const membershipActive = user.membershipStatus === 'ACTIVE';
+
+  // Real data queries — all scoped to this user
+  const now = new Date();
+
+  const [upcomingRegistrations, activeListings, photoCount, userProfile] = await Promise.all([
+    // Events the user is registered for that haven't happened yet
+    prisma.registration.findMany({
+      where: {
+        userId: user.id,
+        status: { in: ['CONFIRMED', 'PENDING', 'WAITLISTED'] },
+        event: { startDate: { gte: now }, status: 'PUBLISHED' },
+      },
+      include: {
+        event: {
+          select: { title: true, startDate: true, locationName: true },
+        },
+      },
+      orderBy: { event: { startDate: 'asc' } },
+      take: 3,
+    }),
+    // User's active listings
+    prisma.listing.findMany({
+      where: { sellerId: user.id, status: 'ACTIVE' },
+      select: {
+        title: true,
+        price: true,
+        viewCount: true,
+        _count: { select: { offers: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+    }),
+    // Approved photo submissions
+    prisma.media.count({
+      where: {
+        uploaded_by_id: user.id,
+        status: 'APPROVED',
+        type: 'IMAGE',
+        listingId: null,
+      },
+    }),
+    // Account creation date for "years active"
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { createdAt: true },
+    }),
+  ]);
+
+  // Years as member (based on account creation date)
+  const joinYear = new Date(userProfile?.createdAt ?? now).getFullYear();
+  const yearsActive = Math.max(1, now.getFullYear() - joinYear);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -111,28 +164,28 @@ export default async function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         <QuickStatCard
           title="Upcoming Events"
-          value="2"
+          value={String(upcomingRegistrations.length)}
           icon={Calendar}
           href="/my-events"
           color="text-blue-400"
         />
         <QuickStatCard
           title="Active Listings"
-          value="1"
+          value={String(activeListings.length)}
           icon={ShoppingBag}
           href="/my-listings"
           color="text-green-400"
         />
         <QuickStatCard
           title="Photos Submitted"
-          value="5"
+          value={String(photoCount)}
           icon={Image}
           href="/my-photos"
           color="text-purple-400"
         />
         <QuickStatCard
-          title="Years Member"
-          value="3"
+          title="Years Active"
+          value={String(yearsActive)}
           icon={Star}
           href="/profile"
           color="text-yellow-400"
@@ -145,26 +198,36 @@ export default async function DashboardPage() {
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between p-4 border-b border-border">
             <h2 className="font-semibold text-foreground">Your Upcoming Events</h2>
-            <Link
-              href="/my-events"
-              className="text-sm text-primary hover:underline"
-            >
+            <Link href="/my-events" className="text-sm text-primary hover:underline">
               View all
             </Link>
           </div>
           <div className="p-4 space-y-4">
-            <EventItem
-              title="New Moon Star Party"
-              date="December 7, 2024"
-              time="6:00 PM"
-              status="confirmed"
-            />
-            <EventItem
-              title="December General Meeting"
-              date="December 13, 2024"
-              time="7:30 PM"
-              status="confirmed"
-            />
+            {upcomingRegistrations.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No upcoming events.{' '}
+                <Link href="/events" className="text-primary hover:underline">
+                  Browse events →
+                </Link>
+              </p>
+            ) : (
+              upcomingRegistrations.map((reg) => (
+                <EventItem
+                  key={reg.id}
+                  title={reg.event.title}
+                  date={new Date(reg.event.startDate).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                  time={new Date(reg.event.startDate).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                  status={reg.status as 'CONFIRMED' | 'PENDING' | 'WAITLISTED'}
+                />
+              ))
+            )}
             <div className="pt-2">
               <Link
                 href="/events"
@@ -181,20 +244,29 @@ export default async function DashboardPage() {
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between p-4 border-b border-border">
             <h2 className="font-semibold text-foreground">Your Active Listings</h2>
-            <Link
-              href="/my-listings"
-              className="text-sm text-primary hover:underline"
-            >
+            <Link href="/my-listings" className="text-sm text-primary hover:underline">
               View all
             </Link>
           </div>
           <div className="p-4 space-y-4">
-            <ListingItem
-              title="Celestron NexStar 6SE"
-              price={950}
-              views={23}
-              inquiries={3}
-            />
+            {activeListings.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No active listings.{' '}
+                <Link href="/dashboard/listings/new" className="text-primary hover:underline">
+                  Post one →
+                </Link>
+              </p>
+            ) : (
+              activeListings.map((listing, i) => (
+                <ListingItem
+                  key={i}
+                  title={listing.title}
+                  price={Number(listing.price)}
+                  views={listing.viewCount}
+                  inquiries={listing._count.offers}
+                />
+              ))
+            )}
             <div className="pt-2">
               <Link
                 href="/dashboard/listings/new"
@@ -225,9 +297,9 @@ export default async function DashboardPage() {
             icon={ShoppingBag}
           />
           <QuickActionCard
-            title="Upload Photo"
+            title="Submit Photo"
             description="Share your astrophotography"
-            href="/dashboard/upload"
+            href="/dashboard/gallery/submit"
             icon={Image}
           />
           <QuickActionCard
@@ -269,6 +341,12 @@ function QuickStatCard({
   );
 }
 
+const statusStyles = {
+  CONFIRMED: 'text-green-400 bg-green-500/10',
+  PENDING: 'text-yellow-400 bg-yellow-500/10',
+  WAITLISTED: 'text-orange-400 bg-orange-500/10',
+};
+
 function EventItem({
   title,
   date,
@@ -278,14 +356,8 @@ function EventItem({
   title: string;
   date: string;
   time: string;
-  status: 'confirmed' | 'pending' | 'waitlisted';
+  status: 'CONFIRMED' | 'PENDING' | 'WAITLISTED';
 }) {
-  const statusStyles = {
-    confirmed: 'text-green-400 bg-green-500/10',
-    pending: 'text-yellow-400 bg-yellow-500/10',
-    waitlisted: 'text-orange-400 bg-orange-500/10',
-  };
-
   return (
     <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
       <div>
@@ -295,10 +367,8 @@ function EventItem({
           {date} at {time}
         </p>
       </div>
-      <span
-        className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${statusStyles[status]}`}
-      >
-        {status}
+      <span className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${statusStyles[status]}`}>
+        {status.toLowerCase()}
       </span>
     </div>
   );
@@ -320,8 +390,7 @@ function ListingItem({
       <div>
         <h3 className="font-medium text-foreground">{title}</h3>
         <p className="text-sm text-muted-foreground">
-          ${price.toLocaleString()} &middot; {views} views &middot; {inquiries}{' '}
-          inquiries
+          ${price.toLocaleString()} &middot; {views} views &middot; {inquiries} inquiries
         </p>
       </div>
       <span className="text-xs font-medium px-2 py-1 rounded-full text-green-400 bg-green-500/10">

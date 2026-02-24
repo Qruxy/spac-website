@@ -30,7 +30,7 @@ const CountUp = nextDynamic(
 );
 
 export const metadata: Metadata = {
-  title: 'Our History | SPAC',
+  title: 'Our History',
   description:
     'Discover the 97-year history of the St. Petersburg Astronomy Club, founded in 1927. Explore our milestones, notable members, and astronomical achievements.',
 };
