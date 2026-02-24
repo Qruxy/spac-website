@@ -3,8 +3,11 @@
  *
  * Single login form handles all users transparently:
  * 1. Imported members  → bcrypt password hash check (DB)
- * 2. Cognito users     → USER_PASSWORD_AUTH direct API call (no redirect)
+ * 2. Cognito users     → USER_PASSWORD_AUTH via AWS SDK, sub+role from JWT decode
  * 3. Dev fallback      → email-only login (NODE_ENV=development only)
+ *
+ * Note: AUTH_COGNITO_* vars must be in next.config.js `env` block — Amplify
+ * inlines env vars at build time; they are NOT injected at Lambda runtime.
  */
 
 import type { NextAuthOptions } from 'next-auth';
@@ -55,19 +58,16 @@ declare module 'next-auth/jwt' {
 }
 
 function cognitoSecretHash(username: string): string {
-  const clientId = process.env.AUTH_COGNITO_ID!;
-  const clientSecret = process.env.AUTH_COGNITO_SECRET!;
   return crypto
-    .createHmac('sha256', clientSecret)
-    .update(username + clientId)
+    .createHmac('sha256', process.env.AUTH_COGNITO_SECRET!)
+    .update(username + process.env.AUTH_COGNITO_ID!)
     .digest('base64');
 }
 
 function decodeJwtPayload(token: string): Record<string, unknown> {
-  // JWT is three base64url segments separated by dots — decode the middle (payload)
-  const payload = token.split('.')[1];
-  const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
-  return JSON.parse(Buffer.from(padded, 'base64url').toString('utf8'));
+  const segment = token.split('.')[1];
+  const padded = segment + '='.repeat((4 - (segment.length % 4)) % 4);
+  return JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
 }
 
 async function authenticateWithCognito(
@@ -80,14 +80,14 @@ async function authenticateWithCognito(
 
   if (!clientId || !clientSecret || !issuer) return null;
 
-  const issuerMatch = issuer.match(/cognito-idp\.([\w-]+)\.amazonaws\.com/);
-  if (!issuerMatch) return null;
-  const region = issuerMatch[1];
+  const regionMatch = issuer.match(/cognito-idp\.([\w-]+)\.amazonaws\.com/);
+  if (!regionMatch) return null;
+  const region = regionMatch[1];
 
   const client = new CognitoIdentityProviderClient({ region });
 
   try {
-    const authResult = await client.send(
+    const result = await client.send(
       new InitiateAuthCommand({
         AuthFlow: 'USER_PASSWORD_AUTH',
         ClientId: clientId,
@@ -99,10 +99,15 @@ async function authenticateWithCognito(
       })
     );
 
-    const idToken = authResult.AuthenticationResult?.IdToken;
+    if (result.ChallengeName) {
+      console.error('[auth] Cognito challenge required:', result.ChallengeName);
+      return null;
+    }
+
+    const idToken = result.AuthenticationResult?.IdToken;
     if (!idToken) return null;
 
-    // Decode IdToken JWT — contains sub and cognito:groups, no admin API needed
+    // Decode IdToken JWT — contains sub + cognito:groups; no extra API call needed
     const payload = decodeJwtPayload(idToken);
     const sub = payload['sub'] as string;
     const groups = (payload['cognito:groups'] as string[] | undefined) ?? [];
@@ -141,7 +146,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Too many login attempts. Please try again later.');
         }
 
-        // --- Path 1: bcrypt (imported members) ---
+        // --- Path 1: bcrypt (imported members with passwordHash) ---
         const user = await prisma.user.findUnique({
           where: { email: emailLower },
           include: { membership: true },
@@ -163,14 +168,13 @@ export const authOptions: NextAuthOptions = {
           };
         }
 
-        // --- Path 2: Cognito direct auth (admins, moderators, non-migrated members) ---
+        // --- Path 2: Cognito (admins, moderators, Cognito-only users) ---
         const cognitoResult = await authenticateWithCognito(
           credentials.email.trim(),
           credentials.password
         );
 
         if (cognitoResult) {
-          // Upsert DB record linked to Cognito
           const dbUser = await prisma.user.upsert({
             where: { email: emailLower },
             update: {
