@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
  */
 
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import {
   requireAdmin,
@@ -87,6 +88,7 @@ export async function POST(request: Request) {
       },
     });
 
+    revalidatePath('/about');
     return NextResponse.json(boardMember, { status: 201 });
   } catch (error) {
     console.error('Admin create board member error:', error);
@@ -127,6 +129,7 @@ export async function DELETE(request: Request) {
       },
     });
 
+    revalidatePath('/about');
     return NextResponse.json({ ids });
   } catch (error) {
     console.error('Admin board members bulk delete error:', error);
