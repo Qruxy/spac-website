@@ -14,8 +14,6 @@ import crypto from 'crypto';
 import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
-  AdminGetUserCommand,
-  AdminListGroupsForUserCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { prisma } from '@/lib/db/prisma';
 import { rateLimit, getRateLimitKey, RATE_LIMITS } from '@/lib/rate-limit';
@@ -65,6 +63,13 @@ function cognitoSecretHash(username: string): string {
     .digest('base64');
 }
 
+function decodeJwtPayload(token: string): Record<string, unknown> {
+  // JWT is three base64url segments separated by dots — decode the middle (payload)
+  const payload = token.split('.')[1];
+  const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
+  return JSON.parse(Buffer.from(padded, 'base64url').toString('utf8'));
+}
+
 async function authenticateWithCognito(
   email: string,
   password: string
@@ -75,11 +80,9 @@ async function authenticateWithCognito(
 
   if (!clientId || !clientSecret || !issuer) return null;
 
-  // Extract region and pool ID from issuer URL
-  // e.g. https://cognito-idp.us-east-1.amazonaws.com/us-east-1_abc123
-  const issuerMatch = issuer.match(/cognito-idp\.([\w-]+)\.amazonaws\.com\/([\w-]+)/);
+  const issuerMatch = issuer.match(/cognito-idp\.([\w-]+)\.amazonaws\.com/);
   if (!issuerMatch) return null;
-  const [, region, userPoolId] = issuerMatch;
+  const region = issuerMatch[1];
 
   const client = new CognitoIdentityProviderClient({ region });
 
@@ -96,20 +99,13 @@ async function authenticateWithCognito(
       })
     );
 
-    if (!authResult.AuthenticationResult) return null;
+    const idToken = authResult.AuthenticationResult?.IdToken;
+    if (!idToken) return null;
 
-    // Get user details to extract sub (cognitoId)
-    const userResult = await client.send(
-      new AdminGetUserCommand({ UserPoolId: userPoolId, Username: email })
-    );
-    const sub = userResult.UserAttributes?.find((a) => a.Name === 'sub')?.Value;
-    if (!sub) return null;
-
-    // Determine role from group membership
-    const groupsResult = await client.send(
-      new AdminListGroupsForUserCommand({ UserPoolId: userPoolId, Username: email })
-    );
-    const groups = groupsResult.Groups?.map((g) => g.GroupName) ?? [];
+    // Decode IdToken JWT — contains sub and cognito:groups, no admin API needed
+    const payload = decodeJwtPayload(idToken);
+    const sub = payload['sub'] as string;
+    const groups = (payload['cognito:groups'] as string[] | undefined) ?? [];
 
     let role: 'MEMBER' | 'MODERATOR' | 'ADMIN' = 'MEMBER';
     if (groups.includes('admins')) role = 'ADMIN';
@@ -118,7 +114,6 @@ async function authenticateWithCognito(
     return { role, cognitoId: sub };
   } catch (err: unknown) {
     const code = (err as { name?: string }).name;
-    // NotAuthorizedException = wrong password, UserNotFoundException = no such user
     if (code !== 'NotAuthorizedException' && code !== 'UserNotFoundException') {
       console.error('[auth] Cognito error:', code);
     }
