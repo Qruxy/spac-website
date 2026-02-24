@@ -1,13 +1,14 @@
 /**
  * Outreach Committee Email API
- * 
- * POST - Send email to selected committee members
+ *
+ * POST - Send email to selected outreach committee members via SES
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth.config';
 import { prisma } from '@/lib/db/prisma';
+import { sendEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,52 +33,64 @@ export async function POST(request: NextRequest) {
     if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
       return NextResponse.json({ error: 'No recipients selected' }, { status: 400 });
     }
-
     if (!subject || !emailBody) {
       return NextResponse.json({ error: 'Subject and body are required' }, { status: 400 });
     }
 
-    // Get member emails
+    // Resolve committee member emails
     const members = await prisma.outreachCommitteeMember.findMany({
-      where: {
-        id: { in: memberIds },
-        isActive: true,
-      },
+      where: { id: { in: memberIds }, isActive: true },
     });
 
     const userIds = members.map((m) => m.userId);
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
-      select: { email: true, firstName: true, lastName: true },
+      select: { id: true, email: true, firstName: true, lastName: true },
     });
 
-    const emails = users.map((u) => u.email);
+    if (users.length === 0) {
+      return NextResponse.json({ error: 'No valid recipients found' }, { status: 400 });
+    }
 
-    // In production, integrate with email service (SES, SendGrid, etc.)
-    // For now, log the email details
-    console.log('=== Outreach Committee Email ===');
-    console.log('From:', session.user.email);
-    console.log('To:', emails.join(', '));
-    console.log('Subject:', subject);
-    console.log('Body:', emailBody);
-    console.log('================================');
+    // Send individually (preserves reply-to and per-recipient personalisation)
+    let sent = 0;
+    let failed = 0;
+    const errors: string[] = [];
 
-    // TODO: Implement actual email sending
-    // await sendEmail({
-    //   to: emails,
-    //   from: process.env.OUTREACH_EMAIL || 'outreach@spac.org',
-    //   replyTo: session.user.email,
-    //   subject,
-    //   text: emailBody,
-    // });
+    for (const user of users) {
+      const html = emailBody
+        .replace(/{{firstName}}/g, user.firstName)
+        .replace(/{{lastName}}/g, user.lastName)
+        .replace(/{{email}}/g, user.email);
 
-    return NextResponse.json({ 
-      success: true, 
-      message: `Email queued for ${emails.length} recipients`,
-      recipients: emails.length,
+      const result = await sendEmail({
+        to: user.email,
+        subject,
+        html,
+        recipientUserId: user.id,
+        metadata: { source: 'outreach-committee', sentBy: session.user.email },
+      });
+
+      if (result.success) {
+        sent++;
+      } else {
+        failed++;
+        if (result.error) errors.push(result.error);
+      }
+
+      // Avoid SES rate limit
+      await new Promise((r) => setTimeout(r, 120));
+    }
+
+    return NextResponse.json({
+      success: true,
+      sent,
+      failed,
+      total: users.length,
+      ...(errors.length > 0 && { errors }),
     });
   } catch (error) {
-    console.error('Failed to send email:', error);
+    console.error('Outreach email error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
