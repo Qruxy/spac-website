@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
  */
 
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { prisma } from '@/lib/db';
 import { getS3Client, getS3Bucket } from '@/lib/s3';
@@ -104,6 +105,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       },
     });
 
+    revalidatePath('/about');
     return NextResponse.json(boardMember);
   } catch (error) {
     console.error('Admin update board member error:', error);
@@ -133,6 +135,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       },
     });
 
+    revalidatePath('/about');
     return NextResponse.json(boardMember);
   } catch (error) {
     console.error('Admin delete board member error:', error);
