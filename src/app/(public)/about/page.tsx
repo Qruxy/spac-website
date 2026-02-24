@@ -26,12 +26,12 @@ export const revalidate = 3600;
 
 // Fallback board members if database is empty
 const fallbackBoardMembers = [
-  { name: 'John Smith', title: 'Club President', email: 'president@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/president/400/400' },
-  { name: 'Sarah Johnson', title: 'Vice President', email: 'vp@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/vicepresident/400/400' },
-  { name: 'Mike Williams', title: 'Secretary', email: 'secretary@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/secretary/400/400' },
-  { name: 'Emily Davis', title: 'Treasurer', email: 'treasurer@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/treasurer/400/400' },
-  { name: 'Peter McLean', title: 'Membership Chair', email: 'membership@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/membership/400/400' },
-  { name: 'Guy Earle', title: 'Newsletter Editor', email: 'newsletter@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/newsletter/400/400' },
+  { name: 'John Smith', title: 'Club President', email: 'president@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/president/400/400', bio: null },
+  { name: 'Sarah Johnson', title: 'Vice President', email: 'vp@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/vicepresident/400/400', bio: null },
+  { name: 'Mike Williams', title: 'Secretary', email: 'secretary@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/secretary/400/400', bio: null },
+  { name: 'Emily Davis', title: 'Treasurer', email: 'treasurer@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/treasurer/400/400', bio: null },
+  { name: 'Peter McLean', title: 'Membership Chair', email: 'membership@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/membership/400/400', bio: null },
+  { name: 'Guy Earle', title: 'Newsletter Editor', email: 'newsletter@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/newsletter/400/400', bio: null },
 ];
 
 async function getBoardMembers() {
@@ -44,6 +44,7 @@ async function getBoardMembers() {
         title: true,
         email: true,
         imageUrl: true,
+        bio: true,
       },
     });
     return members.length > 0 ? members : fallbackBoardMembers;

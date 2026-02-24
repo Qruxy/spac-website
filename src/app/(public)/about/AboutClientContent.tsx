@@ -9,7 +9,6 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { Mail } from 'lucide-react';
 import { GradientText } from '@/components/animated/gradient-text';
 import { StarBorder } from '@/components/animated/star-border';
 import { ChromaGrid } from '@/components/animated/chroma-grid';
@@ -26,6 +25,7 @@ interface BoardMember {
   title: string;
   email: string | null;
   imageUrl: string | null;
+  bio: string | null;
 }
 
 interface AboutClientContentProps {
@@ -90,25 +90,9 @@ export function AboutBoardSection({ boardMembers }: AboutClientContentProps) {
     image: member.imageUrl || undefined,
     title: member.name,
     subtitle: member.title,
+    bio: member.bio,
+    email: member.email,
     color: getBoardColor(member.title),
-    content: (
-      <div>
-        <h3 className="text-lg font-semibold text-white">{member.name}</h3>
-        <p className="mt-0.5 text-sm font-medium" style={{ color: getBoardColor(member.title) }}>
-          {member.title}
-        </p>
-        {member.email && (
-          <a
-            href={`mailto:${member.email}`}
-            className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Mail className="h-3 w-3" />
-            Contact
-          </a>
-        )}
-      </div>
-    ),
   }));
 
   return <ChromaGrid items={items} columns={3} />;
