@@ -295,6 +295,27 @@ class Media {
       texture.image = img;
       this.program.uniforms.uImageSizes.value = [img.naturalWidth, img.naturalHeight];
     };
+    img.onerror = () => {
+      // CORS or network failure — retry without crossOrigin using a canvas placeholder
+      // so the tile still renders rather than staying blank
+      const fallback = document.createElement('canvas');
+      fallback.width = 800;
+      fallback.height = 600;
+      const ctx = fallback.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, 800, 600);
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(10, 10, 780, 580);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 24px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.text || 'Photo', 400, 300);
+      }
+      texture.image = fallback;
+      this.program.uniforms.uImageSizes.value = [800, 600];
+    };
   }
 
   createMesh() {

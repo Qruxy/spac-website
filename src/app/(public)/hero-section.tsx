@@ -91,10 +91,45 @@ export function HeroSection() {
           />
         ) : (
           // Mobile fallback: pure CSS, zero GPU cost
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-blue-950/40 to-slate-950">
-            {/* Static star dots via box-shadow — no JS, no canvas, no rAF */}
-            <div className="absolute inset-0 opacity-60" style={{
-              backgroundImage: 'radial-gradient(1px 1px at 10% 15%, #fff 0, transparent 0), radial-gradient(1px 1px at 25% 45%, #93c5fd 0, transparent 0), radial-gradient(1px 1px at 40% 20%, #fff 0, transparent 0), radial-gradient(1px 1px at 55% 60%, #bfdbfe 0, transparent 0), radial-gradient(1px 1px at 70% 30%, #fff 0, transparent 0), radial-gradient(1px 1px at 85% 70%, #93c5fd 0, transparent 0), radial-gradient(1px 1px at 15% 75%, #fff 0, transparent 0), radial-gradient(1px 1px at 60% 85%, #bfdbfe 0, transparent 0), radial-gradient(1px 1px at 90% 10%, #fff 0, transparent 0), radial-gradient(1px 1px at 35% 90%, #93c5fd 0, transparent 0), radial-gradient(2px 2px at 5% 50%, #60a5fa 0, transparent 0), radial-gradient(2px 2px at 75% 15%, #fff 0, transparent 0), radial-gradient(2px 2px at 50% 5%, #bfdbfe 0, transparent 0)',
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-blue-950/30 to-slate-950">
+            {/* Layer 1: small white stars */}
+            <div className="absolute inset-0" style={{
+              backgroundImage: [
+                'radial-gradient(circle 1px at 10% 15%, rgba(255,255,255,0.9), transparent)',
+                'radial-gradient(circle 1px at 25% 45%, rgba(147,197,253,0.8), transparent)',
+                'radial-gradient(circle 1px at 40% 20%, rgba(255,255,255,0.9), transparent)',
+                'radial-gradient(circle 1px at 55% 60%, rgba(191,219,254,0.7), transparent)',
+                'radial-gradient(circle 1px at 70% 30%, rgba(255,255,255,0.9), transparent)',
+                'radial-gradient(circle 1px at 85% 70%, rgba(147,197,253,0.8), transparent)',
+                'radial-gradient(circle 1px at 15% 75%, rgba(255,255,255,0.9), transparent)',
+                'radial-gradient(circle 1px at 60% 85%, rgba(191,219,254,0.7), transparent)',
+                'radial-gradient(circle 1px at 90% 10%, rgba(255,255,255,0.9), transparent)',
+                'radial-gradient(circle 1px at 35% 90%, rgba(147,197,253,0.8), transparent)',
+                'radial-gradient(circle 1px at 78% 48%, rgba(255,255,255,0.9), transparent)',
+                'radial-gradient(circle 1px at 48% 33%, rgba(191,219,254,0.8), transparent)',
+                'radial-gradient(circle 1px at 22% 62%, rgba(255,255,255,0.7), transparent)',
+                'radial-gradient(circle 1px at 65% 18%, rgba(147,197,253,0.9), transparent)',
+                'radial-gradient(circle 1px at 5% 38%, rgba(255,255,255,0.8), transparent)',
+                'radial-gradient(circle 1px at 92% 55%, rgba(255,255,255,0.7), transparent)',
+                'radial-gradient(circle 1px at 33% 8%, rgba(191,219,254,0.9), transparent)',
+                'radial-gradient(circle 1px at 82% 88%, rgba(255,255,255,0.8), transparent)',
+                'radial-gradient(circle 1px at 18% 95%, rgba(147,197,253,0.7), transparent)',
+                'radial-gradient(circle 1px at 58% 72%, rgba(255,255,255,0.9), transparent)',
+              ].join(', '),
+              backgroundSize: '100% 100%',
+            }} />
+            {/* Layer 2: slightly larger accent stars */}
+            <div className="absolute inset-0" style={{
+              backgroundImage: [
+                'radial-gradient(circle 1.5px at 5% 50%, rgba(96,165,250,0.9), transparent)',
+                'radial-gradient(circle 1.5px at 75% 15%, rgba(255,255,255,0.95), transparent)',
+                'radial-gradient(circle 1.5px at 50% 5%, rgba(191,219,254,0.9), transparent)',
+                'radial-gradient(circle 2px at 30% 40%, rgba(255,255,255,0.8), transparent)',
+                'radial-gradient(circle 2px at 88% 35%, rgba(96,165,250,0.85), transparent)',
+                'radial-gradient(circle 1.5px at 45% 78%, rgba(147,197,253,0.9), transparent)',
+                'radial-gradient(circle 2px at 12% 25%, rgba(255,255,255,0.85), transparent)',
+                'radial-gradient(circle 1.5px at 67% 52%, rgba(191,219,254,0.8), transparent)',
+              ].join(', '),
               backgroundSize: '100% 100%',
             }} />
           </div>
@@ -123,19 +158,23 @@ export function HeroSection() {
             }}
           >
             <motion.div
-              className="relative z-10 rounded-full overflow-hidden"
+              className="relative z-10"
               whileHover={{ scale: 1.05 }}
               style={{ width: 240, height: 240 }}
             >
-              <div className="absolute -inset-4 bg-primary/30 rounded-full blur-2xl" />
-              <Image
-                src={spacLogo}
-                alt="St. Petersburg Astronomy Club"
-                width={240}
-                height={240}
-                className="relative z-10 rounded-full object-contain"
-                priority
-              />
+              {/* Glow ring — outside overflow-hidden so it doesn't bleed behind transparent PNG pixels */}
+              <div className="absolute -inset-6 bg-primary/25 rounded-full blur-3xl pointer-events-none" />
+              {/* Logo container: dark bg fills any transparent areas in the PNG */}
+              <div className="relative w-full h-full rounded-full overflow-hidden bg-slate-950">
+                <Image
+                  src={spacLogo}
+                  alt="St. Petersburg Astronomy Club"
+                  width={240}
+                  height={240}
+                  className="relative z-10 w-full h-full object-contain"
+                  priority
+                />
+              </div>
             </motion.div>
 
             <div className="absolute inset-0 z-20" style={{ color: '#60a5fa' }}>
