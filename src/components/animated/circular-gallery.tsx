@@ -289,15 +289,17 @@ class Media {
       transparent: true
     });
     const img = new window.Image();
-    img.crossOrigin = 'anonymous';
+    // Do NOT set crossOrigin here. The WebGL renderer never calls gl.readPixels(),
+    // so a "tainted" canvas is fine and images load from any domain without CORS.
+    // Setting crossOrigin='anonymous' would block images from servers without
+    // Access-Control-Allow-Origin headers (e.g. CloudFront without CORS policy).
     img.src = this.image;
     img.onload = () => {
       texture.image = img;
       this.program.uniforms.uImageSizes.value = [img.naturalWidth, img.naturalHeight];
     };
     img.onerror = () => {
-      // CORS or network failure — retry without crossOrigin using a canvas placeholder
-      // so the tile still renders rather than staying blank
+      // Network failure — render a dark placeholder so the tile doesn't stay blank
       const fallback = document.createElement('canvas');
       fallback.width = 800;
       fallback.height = 600;
@@ -305,10 +307,10 @@ class Media {
       if (ctx) {
         ctx.fillStyle = '#0f172a';
         ctx.fillRect(0, 0, 800, 600);
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(10, 10, 780, 580);
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 24px system-ui, sans-serif';
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(20, 20, 760, 560);
+        ctx.fillStyle = '#475569';
+        ctx.font = 'bold 22px system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.text || 'Photo', 400, 300);

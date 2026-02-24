@@ -89,13 +89,10 @@ export default async function GalleryPage({
   const { photos, total, totalPages } = data;
 
   // Get featured photos for the circular gallery (top 8 most recent).
-  // Route through Next.js image optimization (/_next/image) so images are served
-  // same-origin — this bypasses CORS restrictions on the WebGL canvas texture loading.
-  const proxyUrl = (src: string) =>
-    `/_next/image?url=${encodeURIComponent(src)}&w=800&q=75`;
-
+  // Use direct URLs — crossOrigin is not set on the WebGL img loader so images
+  // load from any domain without CORS restriction.
   const featuredPhotos = photos.slice(0, 8).map(photo => ({
-    image: proxyUrl(photo.thumbnailUrl || photo.url),
+    image: photo.thumbnailUrl || photo.url,
     text: photo.caption || 'Untitled'
   }));
 
