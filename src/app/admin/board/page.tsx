@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, X, Award, Check, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Plus, Edit3, Trash2, X, Award, Check, ChevronUp, ChevronDown, Loader2, Upload, ImageIcon } from 'lucide-react';
 
 interface BoardMember {
   id: string;
@@ -25,6 +25,180 @@ interface FormData {
   isActive: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// ImageUploader — drag-and-drop / click-to-upload, returns final public URL
+// ---------------------------------------------------------------------------
+function ImageUploader({
+  currentUrl,
+  onUploaded,
+  onRemove,
+}: {
+  currentUrl: string;
+  onUploaded: (url: string) => void;
+  onRemove: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+
+  const upload = useCallback(async (file: File) => {
+    setError('');
+
+    if (!file.type.startsWith('image/')) {
+      setError('Only image files are accepted.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image must be under 10 MB.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setProgress(10);
+
+      // 1. Get presigned URL
+      const presignRes = await fetch('/api/upload/presigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          size: file.size,
+          folder: 'board-members',
+        }),
+      });
+
+      if (!presignRes.ok) {
+        const e = await presignRes.json();
+        throw new Error(e.error || 'Failed to get upload URL');
+      }
+
+      const { uploadUrl, publicUrl } = await presignRes.json();
+      setProgress(30);
+
+      // 2. Upload directly to S3
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable) {
+            setProgress(30 + Math.round((ev.loaded / ev.total) * 60));
+          }
+        };
+        xhr.onload = () => (xhr.status < 300 ? resolve() : reject(new Error(`S3 upload failed: ${xhr.status}`)));
+        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.send(file);
+      });
+
+      setProgress(100);
+      onUploaded(publicUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+      setProgress(0);
+    }
+  }, [onUploaded]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) upload(file);
+  }, [upload]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) upload(file);
+  };
+
+  // Show current image with replace / remove options
+  if (currentUrl && !uploading) {
+    return (
+      <div className="space-y-3">
+        <div className="relative w-28 h-28 group">
+          <img
+            src={currentUrl}
+            alt="Board member"
+            className="w-28 h-28 rounded-full object-cover border border-white/10"
+          />
+          <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+              title="Replace image"
+            >
+              <Upload className="w-4 h-4 text-white" />
+            </button>
+            <button
+              type="button"
+              onClick={onRemove}
+              className="p-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-full transition-colors"
+              title="Remove image"
+            >
+              <X className="w-4 h-4 text-red-400" />
+            </button>
+          </div>
+        </div>
+        <p className="text-xs text-white/40">Hover to replace or remove</p>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
+      </div>
+    );
+  }
+
+  // Upload zone
+  return (
+    <div className="space-y-2">
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => !uploading && inputRef.current?.click()}
+        className={`relative flex flex-col items-center justify-center gap-3 w-full h-36 rounded-xl border-2 border-dashed transition-colors cursor-pointer ${
+          dragOver
+            ? 'border-blue-400 bg-blue-500/10'
+            : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
+        } ${uploading ? 'cursor-not-allowed opacity-70' : ''}`}
+      >
+        {uploading ? (
+          <>
+            <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
+            <span className="text-xs text-white/60">Uploading… {progress}%</span>
+            <div className="w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-all duration-200"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+              <ImageIcon className="w-5 h-5 text-white/40" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-white/60">
+                <span className="text-blue-400 font-medium">Click to upload</span> or drag &amp; drop
+              </p>
+              <p className="text-xs text-white/30 mt-1">JPG, PNG, WebP — max 10 MB</p>
+            </div>
+          </>
+        )}
+      </div>
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Page
+// ---------------------------------------------------------------------------
 export default function BoardMembersPage() {
   const [members, setMembers] = useState<BoardMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,55 +217,43 @@ export default function BoardMembersPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [reordering, setReordering] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchMembers();
-  }, []);
+  useEffect(() => { fetchMembers(); }, []);
 
   useEffect(() => {
     if (toast) {
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(t);
     }
   }, [toast]);
 
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/board-members?page=1&perPage=100&sortField=sortOrder&sortOrder=ASC');
-      if (!response.ok) throw new Error('Failed to fetch members');
-      const result = await response.json();
+      const res = await fetch('/api/admin/board-members?page=1&perPage=100&sortField=sortOrder&sortOrder=ASC');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const result = await res.json();
       setMembers(result.data || []);
-    } catch (error) {
+    } catch {
       showToast('Failed to load board members', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-  };
+  const showToast = (message: string, type: 'success' | 'error') => setToast({ message, type });
 
   const handleCreate = () => {
-    const nextSortOrder = members.length > 0 ? Math.max(...members.map(m => m.sortOrder)) + 1 : 1;
-    setFormData({
-      name: '',
-      title: '',
-      email: '',
-      imageUrl: '',
-      bio: '',
-      sortOrder: nextSortOrder,
-      isActive: true,
-    });
+    const nextOrder = members.length > 0 ? Math.max(...members.map((m) => m.sortOrder)) + 1 : 1;
+    setFormData({ name: '', title: '', email: '', imageUrl: '', bio: '', sortOrder: nextOrder, isActive: true });
     setEditingId(null);
     setIsPanelOpen(true);
   };
 
   const handleEdit = async (id: string) => {
     try {
-      const response = await fetch(`/api/admin/board-members/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch member');
-      const member: BoardMember = await response.json();
+      const res = await fetch(`/api/admin/board-members/${id}`);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const member: BoardMember = await res.json();
       setFormData({
         name: member.name,
         title: member.title,
@@ -103,7 +265,7 @@ export default function BoardMembersPage() {
       });
       setEditingId(id);
       setIsPanelOpen(true);
-    } catch (error) {
+    } catch {
       showToast('Failed to load member details', 'error');
     }
   };
@@ -113,32 +275,27 @@ export default function BoardMembersPage() {
       showToast('Name and Title are required', 'error');
       return;
     }
-
     try {
       setIsSaving(true);
       const url = editingId ? `/api/admin/board-members/${editingId}` : '/api/admin/board-members';
-      const method = editingId ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
+      const res = await fetch(url, {
+        method: editingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name.trim(),
           title: formData.title.trim(),
           email: formData.email.trim() || null,
-          imageUrl: formData.imageUrl.trim() || null,
+          imageUrl: formData.imageUrl || null,
           bio: formData.bio.trim() || null,
           sortOrder: formData.sortOrder,
           isActive: formData.isActive,
         }),
       });
-
-      if (!response.ok) throw new Error('Failed to save member');
-
-      showToast(editingId ? 'Member updated successfully' : 'Member created successfully', 'success');
+      if (!res.ok) throw new Error('Failed to save');
+      showToast(editingId ? 'Member updated' : 'Member created', 'success');
       setIsPanelOpen(false);
       fetchMembers();
-    } catch (error) {
+    } catch {
       showToast('Failed to save member', 'error');
     } finally {
       setIsSaving(false);
@@ -146,20 +303,13 @@ export default function BoardMembersPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
-      return;
-    }
-
+    if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
     try {
-      const response = await fetch(`/api/admin/board-members/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to delete member');
-
-      showToast('Member deleted successfully', 'success');
+      const res = await fetch(`/api/admin/board-members/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+      showToast('Member deleted', 'success');
       fetchMembers();
-    } catch (error) {
+    } catch {
       showToast('Failed to delete member', 'error');
     }
   };
@@ -167,52 +317,26 @@ export default function BoardMembersPage() {
   const handleReorder = async (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= members.length) return;
-
-    const member1 = members[index];
-    const member2 = members[targetIndex];
-
+    const m1 = members[index];
+    const m2 = members[targetIndex];
     try {
-      setReordering(member1.id);
-
-      // Swap sortOrder values
-      const order1 = member1.sortOrder;
-      const order2 = member2.sortOrder;
-
-      // Update both members
-      const [response1, response2] = await Promise.all([
-        fetch(`/api/admin/board-members/${member1.id}`, {
+      setReordering(m1.id);
+      const [r1, r2] = await Promise.all([
+        fetch(`/api/admin/board-members/${m1.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: member1.name,
-            title: member1.title,
-            email: member1.email,
-            imageUrl: member1.imageUrl,
-            bio: member1.bio,
-            sortOrder: order2,
-            isActive: member1.isActive,
-          }),
+          body: JSON.stringify({ ...m1, sortOrder: m2.sortOrder }),
         }),
-        fetch(`/api/admin/board-members/${member2.id}`, {
+        fetch(`/api/admin/board-members/${m2.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: member2.name,
-            title: member2.title,
-            email: member2.email,
-            imageUrl: member2.imageUrl,
-            bio: member2.bio,
-            sortOrder: order1,
-            isActive: member2.isActive,
-          }),
+          body: JSON.stringify({ ...m2, sortOrder: m1.sortOrder }),
         }),
       ]);
-
-      if (!response1.ok || !response2.ok) throw new Error('Failed to reorder');
-
-      showToast('Order updated successfully', 'success');
+      if (!r1.ok || !r2.ok) throw new Error('Reorder failed');
+      showToast('Order updated', 'success');
       fetchMembers();
-    } catch (error) {
+    } catch {
       showToast('Failed to reorder members', 'error');
     } finally {
       setReordering(null);
@@ -250,7 +374,7 @@ export default function BoardMembersPage() {
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">No Board Members Yet</h3>
               <p className="text-sm text-white/60 mb-6 text-center max-w-md">
-                Get started by adding your first board member to showcase your organization's leadership.
+                Get started by adding your first board member.
               </p>
               <button
                 onClick={handleCreate}
@@ -265,21 +389,11 @@ export default function BoardMembersPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/[0.06]">
-                    <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                      #
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                      Name & Title
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-medium text-white/60 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">#</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Name & Title</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06]">
@@ -290,12 +404,18 @@ export default function BoardMembersPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {member.imageUrl && (
+                          {member.imageUrl ? (
                             <img
                               src={member.imageUrl}
                               alt={member.name}
-                              className="w-10 h-10 rounded-full object-cover border border-white/10"
+                              className="w-10 h-10 rounded-full object-cover border border-white/10 flex-shrink-0"
                             />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-medium text-white/40">
+                                {member.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
                           )}
                           <div>
                             <div className="text-sm font-medium text-white">{member.name}</div>
@@ -309,8 +429,7 @@ export default function BoardMembersPage() {
                       <td className="px-6 py-4">
                         {member.isActive ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-500 text-xs font-medium rounded-full">
-                            <Check className="w-3 h-3" />
-                            Active
+                            <Check className="w-3 h-3" /> Active
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-1 bg-white/5 text-white/40 text-xs font-medium rounded-full">
@@ -320,12 +439,11 @@ export default function BoardMembersPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          {/* Up Arrow */}
                           {index > 0 && (
                             <button
                               onClick={() => handleReorder(index, 'up')}
-                              disabled={reordering === member.id}
-                              className="p-1.5 hover:bg-white/5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={!!reordering}
+                              className="p-1.5 hover:bg-white/5 rounded transition-colors disabled:opacity-50"
                               title="Move up"
                             >
                               {reordering === member.id ? (
@@ -335,12 +453,11 @@ export default function BoardMembersPage() {
                               )}
                             </button>
                           )}
-                          {/* Down Arrow */}
                           {index < members.length - 1 && (
                             <button
                               onClick={() => handleReorder(index, 'down')}
-                              disabled={reordering === member.id}
-                              className="p-1.5 hover:bg-white/5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={!!reordering}
+                              className="p-1.5 hover:bg-white/5 rounded transition-colors disabled:opacity-50"
                               title="Move down"
                             >
                               {reordering === member.id ? (
@@ -350,7 +467,6 @@ export default function BoardMembersPage() {
                               )}
                             </button>
                           )}
-                          {/* Edit */}
                           <button
                             onClick={() => handleEdit(member.id)}
                             className="p-1.5 hover:bg-white/5 rounded transition-colors"
@@ -358,7 +474,6 @@ export default function BoardMembersPage() {
                           >
                             <Edit3 className="w-4 h-4 text-blue-500 hover:text-blue-400" />
                           </button>
-                          {/* Delete */}
                           <button
                             onClick={() => handleDelete(member.id, member.name)}
                             className="p-1.5 hover:bg-white/5 rounded transition-colors"
@@ -380,16 +495,12 @@ export default function BoardMembersPage() {
       {/* Slide-over Panel */}
       {isPanelOpen && (
         <>
-          {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/50 z-40"
             onClick={() => !isSaving && setIsPanelOpen(false)}
           />
-
-          {/* Panel */}
           <div className="fixed inset-y-0 right-0 w-full max-w-[480px] bg-[#0a0e1a] border-l border-white/[0.06] z-50 overflow-y-auto">
             <div className="p-6">
-              {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white">
                   {editingId ? 'Edit Member' : 'Add Member'}
@@ -403,8 +514,17 @@ export default function BoardMembersPage() {
                 </button>
               </div>
 
-              {/* Form */}
               <div className="space-y-5">
+                {/* Photo Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Photo</label>
+                  <ImageUploader
+                    currentUrl={formData.imageUrl}
+                    onUploaded={(url) => setFormData((prev) => ({ ...prev, imageUrl: url }))}
+                    onRemove={() => setFormData((prev) => ({ ...prev, imageUrl: '' }))}
+                  />
+                </div>
+
                 {/* Name */}
                 <div>
                   <label className="block text-sm font-medium text-white/80 mb-2">
@@ -415,14 +535,14 @@ export default function BoardMembersPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-2.5 bg-white/[0.02] border border-white/[0.06] rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="John Doe"
+                    placeholder="Jane Smith"
                   />
                 </div>
 
                 {/* Title */}
                 <div>
                   <label className="block text-sm font-medium text-white/80 mb-2">
-                    Title/Position <span className="text-red-500">*</span>
+                    Title / Position <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -441,32 +561,8 @@ export default function BoardMembersPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-2.5 bg-white/[0.02] border border-white/[0.06] rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="john@example.com"
+                    placeholder="jane@example.com"
                   />
-                </div>
-
-                {/* Image URL */}
-                <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">Image URL</label>
-                  <input
-                    type="url"
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white/[0.02] border border-white/[0.06] rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                  {formData.imageUrl && (
-                    <div className="mt-3">
-                      <img
-                        src={formData.imageUrl}
-                        alt="Preview"
-                        className="w-24 h-24 rounded-full object-cover border border-white/10"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 {/* Bio */}
@@ -477,7 +573,7 @@ export default function BoardMembersPage() {
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                     rows={4}
                     className="w-full px-4 py-2.5 bg-white/[0.02] border border-white/[0.06] rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    placeholder="Brief biography..."
+                    placeholder="Brief biography…"
                   />
                 </div>
 
@@ -496,8 +592,8 @@ export default function BoardMembersPage() {
                 {/* Active Toggle */}
                 <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/[0.06] rounded-lg">
                   <div>
-                    <div className="text-sm font-medium text-white/80">Active Status</div>
-                    <div className="text-xs text-white/60 mt-1">Show this member on the public board page</div>
+                    <div className="text-sm font-medium text-white/80">Active</div>
+                    <div className="text-xs text-white/60 mt-1">Show on the public board page</div>
                   </div>
                   <button
                     type="button"
@@ -520,17 +616,17 @@ export default function BoardMembersPage() {
                 <button
                   onClick={() => setIsPanelOpen(false)}
                   disabled={isSaving}
-                  className="flex-1 px-4 py-2.5 bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
                   {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isSaving ? 'Saving...' : 'Save Member'}
+                  {isSaving ? 'Saving…' : 'Save Member'}
                 </button>
               </div>
             </div>
@@ -538,7 +634,7 @@ export default function BoardMembersPage() {
         </>
       )}
 
-      {/* Toast Notification */}
+      {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-2">
           <div
