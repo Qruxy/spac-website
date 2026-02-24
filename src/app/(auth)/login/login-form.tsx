@@ -3,9 +3,9 @@
 /**
  * Login Form Component
  *
- * Two auth paths:
- * - Cognito (admins/moderators): "Sign in with SPAC Admin" button → Cognito hosted UI
- * - Credentials (imported members): email + password form → bcrypt check
+ * Single form for all users — members and admins alike.
+ * Auth routing happens server-side: bcrypt for imported members,
+ * Cognito direct auth for admins/moderators.
  *
  * Separated from page.tsx for Suspense wrapping of useSearchParams.
  */
@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { LogIn, Loader2, AlertCircle, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { LogIn, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export function LoginForm() {
   const router = useRouter();
@@ -24,7 +24,6 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCognitoLoading, setIsCognitoLoading] = useState(false);
   const [error, setError] = useState('');
 
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
@@ -35,12 +34,6 @@ export function LoginForm() {
     router.push(callbackUrl);
     return null;
   }
-
-  const handleCognitoLogin = async () => {
-    setIsCognitoLoading(true);
-    setError('');
-    await signIn('cognito', { callbackUrl });
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,46 +62,27 @@ export function LoginForm() {
     <>
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold text-foreground">Welcome Back</h1>
-        <p className="text-muted-foreground mt-2">Sign in to your SPAC account</p>
+        <p className="text-muted-foreground mt-2">
+          Sign in to your SPAC account
+        </p>
       </div>
 
       {/* Error Display */}
       {(error || urlError) && (
         <div className="mb-6 flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-destructive text-sm">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          <span>{error || 'Authentication failed. Please try again.'}</span>
+          <span>
+            {error || 'Authentication failed. Please try again.'}
+          </span>
         </div>
       )}
 
-      {/* Cognito (admin/moderator) login */}
-      <button
-        type="button"
-        onClick={handleCognitoLogin}
-        disabled={isCognitoLoading || isLoading}
-        className="w-full flex items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-foreground hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-5"
-      >
-        {isCognitoLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <ShieldCheck className="h-4 w-4 text-primary" />
-        )}
-        Sign in as Admin / Staff
-      </button>
-
-      {/* Divider */}
-      <div className="relative mb-5">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-card px-2 text-muted-foreground">or sign in as a member</span>
-        </div>
-      </div>
-
-      {/* Credentials (member) login */}
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-foreground mb-1"
+          >
             Email
           </label>
           <input
@@ -124,7 +98,10 @@ export function LoginForm() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-foreground mb-1"
+          >
             Password
           </label>
           <div className="relative">
@@ -150,7 +127,7 @@ export function LoginForm() {
 
         <button
           type="submit"
-          disabled={isLoading || isCognitoLoading}
+          disabled={isLoading}
           className="w-full flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
@@ -178,7 +155,10 @@ export function LoginForm() {
       {/* Sign Up Link */}
       <div className="mt-4 text-center text-sm">
         <span className="text-muted-foreground">New to SPAC? </span>
-        <Link href="/register" className="text-primary hover:underline font-medium">
+        <Link
+          href="/register"
+          className="text-primary hover:underline font-medium"
+        >
           Join SPAC
         </Link>
       </div>

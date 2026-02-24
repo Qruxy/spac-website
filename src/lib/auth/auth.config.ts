@@ -1,17 +1,22 @@
 /**
- * NextAuth.js Configuration with AWS Cognito
+ * NextAuth.js Configuration
  *
- * Authentication flow:
- * - Admins/moderators: Cognito (OAuth) — managed via AWS Cognito user pool
- * - Imported members: CredentialsProvider — bcrypt password hash from migration
- *
- * Cognito user groups map to application roles: admins, moderators, members
+ * Single login form handles all users transparently:
+ * 1. Imported members  → bcrypt password hash check (DB)
+ * 2. Cognito users     → USER_PASSWORD_AUTH direct API call (no redirect)
+ * 3. Dev fallback      → email-only login (NODE_ENV=development only)
  */
 
 import type { NextAuthOptions } from 'next-auth';
-import CognitoProvider from 'next-auth/providers/cognito';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import {
+  CognitoIdentityProviderClient,
+  InitiateAuthCommand,
+  AdminGetUserCommand,
+  AdminListGroupsForUserCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
 import { prisma } from '@/lib/db/prisma';
 import { rateLimit, getRateLimitKey, RATE_LIMITS } from '@/lib/rate-limit';
 
@@ -51,42 +56,78 @@ declare module 'next-auth/jwt' {
   }
 }
 
+function cognitoSecretHash(username: string): string {
+  const clientId = process.env.AUTH_COGNITO_ID!;
+  const clientSecret = process.env.AUTH_COGNITO_SECRET!;
+  return crypto
+    .createHmac('sha256', clientSecret)
+    .update(username + clientId)
+    .digest('base64');
+}
+
+async function authenticateWithCognito(
+  email: string,
+  password: string
+): Promise<{ role: 'MEMBER' | 'MODERATOR' | 'ADMIN'; cognitoId: string } | null> {
+  const clientId = process.env.AUTH_COGNITO_ID;
+  const clientSecret = process.env.AUTH_COGNITO_SECRET;
+  const issuer = process.env.AUTH_COGNITO_ISSUER;
+
+  if (!clientId || !clientSecret || !issuer) return null;
+
+  // Extract region and pool ID from issuer URL
+  // e.g. https://cognito-idp.us-east-1.amazonaws.com/us-east-1_abc123
+  const issuerMatch = issuer.match(/cognito-idp\.([\w-]+)\.amazonaws\.com\/([\w-]+)/);
+  if (!issuerMatch) return null;
+  const [, region, userPoolId] = issuerMatch;
+
+  const client = new CognitoIdentityProviderClient({ region });
+
+  try {
+    const authResult = await client.send(
+      new InitiateAuthCommand({
+        AuthFlow: 'USER_PASSWORD_AUTH',
+        ClientId: clientId,
+        AuthParameters: {
+          USERNAME: email,
+          PASSWORD: password,
+          SECRET_HASH: cognitoSecretHash(email),
+        },
+      })
+    );
+
+    if (!authResult.AuthenticationResult) return null;
+
+    // Get user details to extract sub (cognitoId)
+    const userResult = await client.send(
+      new AdminGetUserCommand({ UserPoolId: userPoolId, Username: email })
+    );
+    const sub = userResult.UserAttributes?.find((a) => a.Name === 'sub')?.Value;
+    if (!sub) return null;
+
+    // Determine role from group membership
+    const groupsResult = await client.send(
+      new AdminListGroupsForUserCommand({ UserPoolId: userPoolId, Username: email })
+    );
+    const groups = groupsResult.Groups?.map((g) => g.GroupName) ?? [];
+
+    let role: 'MEMBER' | 'MODERATOR' | 'ADMIN' = 'MEMBER';
+    if (groups.includes('admins')) role = 'ADMIN';
+    else if (groups.includes('moderators')) role = 'MODERATOR';
+
+    return { role, cognitoId: sub };
+  } catch (err: unknown) {
+    const code = (err as { name?: string }).name;
+    // NotAuthorizedException = wrong password, UserNotFoundException = no such user
+    if (code !== 'NotAuthorizedException' && code !== 'UserNotFoundException') {
+      console.error('[auth] Cognito error:', code);
+    }
+    return null;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
-    // AWS Cognito — admins and moderators authenticate here
-    // Role is derived from Cognito group membership: admins → ADMIN, moderators → MODERATOR
-    ...(process.env.AUTH_COGNITO_ID && process.env.AUTH_COGNITO_SECRET && process.env.AUTH_COGNITO_ISSUER
-      ? [
-          CognitoProvider({
-            clientId: process.env.AUTH_COGNITO_ID,
-            clientSecret: process.env.AUTH_COGNITO_SECRET,
-            issuer: process.env.AUTH_COGNITO_ISSUER,
-            profile(profile) {
-              const groups: string[] = profile['cognito:groups'] || [];
-              let role: 'MEMBER' | 'MODERATOR' | 'ADMIN' = 'MEMBER';
-              if (groups.includes('admins')) {
-                role = 'ADMIN';
-              } else if (groups.includes('moderators')) {
-                role = 'MODERATOR';
-              }
-
-              return {
-                id: profile.sub,
-                email: profile.email,
-                name: `${profile.given_name || ''} ${profile.family_name || ''}`.trim() || profile.email,
-                role,
-                qrUuid: '',
-                membershipType: null,
-                membershipStatus: null,
-                stripeCustomerId: null,
-              };
-            },
-          }),
-        ]
-      : []),
-
-    // Credentials provider — for imported members with bcrypt password hashes
-    // Dev-only fallback: email-only login when no passwordHash exists
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -96,22 +137,22 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        const emailLower = credentials.email.trim().toLowerCase();
+
         // Rate limiting by email
-        const rateLimitKey = getRateLimitKey('login', credentials.email.toLowerCase());
+        const rateLimitKey = getRateLimitKey('login', emailLower);
         if (!rateLimit(rateLimitKey, RATE_LIMITS.LOGIN.limit, RATE_LIMITS.LOGIN.windowMs)) {
-          console.warn(`[auth] Rate limit exceeded for: ${credentials.email}`);
+          console.warn(`[auth] Rate limit exceeded for: ${emailLower}`);
           throw new Error('Too many login attempts. Please try again later.');
         }
 
+        // --- Path 1: bcrypt (imported members) ---
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
+          where: { email: emailLower },
           include: { membership: true },
         });
 
-        if (!user) return null;
-
-        // Bcrypt login — imported members with hashed passwords
-        if (user.passwordHash) {
+        if (user?.passwordHash) {
           const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
           if (!isValid) return null;
 
@@ -127,8 +168,44 @@ export const authOptions: NextAuthOptions = {
           };
         }
 
-        // Development only: email-only login for local testing (no password check)
-        if (process.env.NODE_ENV === 'development') {
+        // --- Path 2: Cognito direct auth (admins, moderators, non-migrated members) ---
+        const cognitoResult = await authenticateWithCognito(
+          credentials.email.trim(),
+          credentials.password
+        );
+
+        if (cognitoResult) {
+          // Upsert DB record linked to Cognito
+          const dbUser = await prisma.user.upsert({
+            where: { email: emailLower },
+            update: {
+              cognitoId: cognitoResult.cognitoId,
+              role: cognitoResult.role,
+            },
+            create: {
+              email: emailLower,
+              cognitoId: cognitoResult.cognitoId,
+              firstName: emailLower.split('@')[0],
+              lastName: '',
+              role: cognitoResult.role,
+            },
+            include: { membership: true },
+          });
+
+          return {
+            id: dbUser.id,
+            email: dbUser.email,
+            name: `${dbUser.firstName} ${dbUser.lastName}`.trim() || dbUser.email,
+            role: dbUser.role,
+            qrUuid: dbUser.qrUuid,
+            membershipType: dbUser.membership?.type ?? null,
+            membershipStatus: dbUser.membership?.status ?? null,
+            stripeCustomerId: dbUser.stripeCustomerId,
+          };
+        }
+
+        // --- Path 3: dev-only email fallback ---
+        if (process.env.NODE_ENV === 'development' && user) {
           return {
             id: user.id,
             email: user.email,
@@ -147,42 +224,6 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === 'cognito') {
-        // Sync Cognito user into local DB on first sign-in
-        const existingUser = await prisma.user.findFirst({
-          where: { cognitoId: user.id },
-        });
-
-        if (!existingUser) {
-          const emailUser = await prisma.user.findUnique({
-            where: { email: user.email! },
-          });
-
-          if (emailUser) {
-            // Link existing DB user to Cognito
-            await prisma.user.update({
-              where: { id: emailUser.id },
-              data: { cognitoId: user.id },
-            });
-          } else {
-            // Create new DB record for Cognito user
-            const nameParts = (user.name || '').split(' ');
-            await prisma.user.create({
-              data: {
-                cognitoId: user.id,
-                email: user.email!,
-                firstName: nameParts[0] || 'New',
-                lastName: nameParts.slice(1).join(' ') || 'Member',
-                role: (user as { role?: 'MEMBER' | 'MODERATOR' | 'ADMIN' }).role ?? 'MEMBER',
-              },
-            });
-          }
-        }
-      }
-      return true;
-    },
-
     async jwt({ token, user, trigger, session }) {
       if (user) {
         const dbUser = await prisma.user.findUnique({
