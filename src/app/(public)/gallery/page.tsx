@@ -28,8 +28,8 @@ const GradientText = nextDynamic(
   { ssr: false }
 );
 
-const CircularGallery = nextDynamic(
-  () => import('@/components/animated/circular-gallery').then((mod) => mod.CircularGallery),
+const PhotoStrip = nextDynamic(
+  () => import('@/components/gallery/photo-strip').then((mod) => mod.PhotoStrip),
   { ssr: false }
 );
 
@@ -141,19 +141,9 @@ export default async function GalleryPage({
           )}
         </div>
 
-        {/* Featured Gallery Carousel */}
+        {/* Featured Gallery Strip */}
         {featuredPhotos.length >= 3 && (
-          <div className="h-[400px] md:h-[500px] w-full rounded-2xl overflow-hidden bg-slate-900/50 border border-border">
-            <CircularGallery
-              items={featuredPhotos}
-              bend={2}
-              textColor="#ffffff"
-              borderRadius={0.05}
-              font="bold 18px system-ui, sans-serif"
-              scrollSpeed={1.5}
-              scrollEase={0.06}
-            />
-          </div>
+          <PhotoStrip photos={featuredPhotos} height={260} />
         )}
       </section>
 
