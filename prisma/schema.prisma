@@ -101,6 +101,7 @@ model User {
   groupsCreated                     MemberGroup[]
   badges                            UserBadge[]
   remindersCreated                  EventReminder[] @relation("ReminderCreator")
+  automationConfigUpdates           EmailAutomationConfig[] @relation("AutomationConfigUpdates")
 
   @@index([cognitoId])
   @@index([stripeCustomerId])
@@ -138,9 +139,10 @@ model Membership {
   createdAt              DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt              DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   cancelledAt            DateTime?           @map("cancelled_at") @db.Timestamp(6)
-  obsEligible            Boolean?            @default(false) @map("obs_eligible")
-  discountPercent        Int?                @default(0) @map("discount_percent")
-  user                   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  obsEligible               Boolean?            @default(false) @map("obs_eligible")
+  discountPercent           Int?                @default(0) @map("discount_percent")
+  renewalReminderSentAt     DateTime?           @map("renewal_reminder_sent_at") @db.Timestamptz(3)
+  user                      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status])
   @@index([paypalSubscriptionId])
@@ -1377,4 +1379,29 @@ enum BadgeCategory {
   MILESTONE
   SPECIAL
   OBS
+}
+
+// ===================================
+// Email Automation Config
+// ===================================
+
+model EmailAutomationConfig {
+  id          String              @id @default(dbgenerated("(gen_random_uuid())::text"))
+  type        EmailAutomationType @unique
+  enabled     Boolean             @default(true)
+  subject     String
+  bodyHtml    String              @db.Text
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  updatedById String?             @map("updated_by_id")
+  updatedBy   User?               @relation("AutomationConfigUpdates", fields: [updatedById], references: [id])
+
+  @@map("email_automation_configs")
+}
+
+enum EmailAutomationType {
+  WELCOME_REGISTRATION
+  MEMBERSHIP_ACTIVATED
+  EVENT_REGISTRATION
+  OBS_REGISTRATION
+  MEMBERSHIP_RENEWAL_REMINDER
 }

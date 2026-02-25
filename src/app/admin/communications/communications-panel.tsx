@@ -34,7 +34,14 @@ import {
   Search,
   AtSign,
   ArrowLeft,
+  Zap,
+  ChevronDown,
+  ChevronUp,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
+import { RichTextEditor } from '@/components/admin/rich-text-editor';
+import { SocialCrossPostPanel } from '@/components/admin/social-cross-post-panel';
 
 // Types
 type Category = 'GENERAL' | 'WELCOME' | 'MEMBERSHIP' | 'EVENT' | 'NEWSLETTER' | 'ADMIN' | 'SYSTEM';
@@ -102,7 +109,7 @@ interface UserSearchResult {
 }
 
 export function CommunicationsPanel() {
-  const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history' | 'groups'>('compose');
+  const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history' | 'groups' | 'automations'>('compose');
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -172,6 +179,19 @@ export function CommunicationsPanel() {
               <span className="font-medium">Groups</span>
             </div>
           </button>
+          <button
+            onClick={() => setActiveTab('automations')}
+            className={`pb-3 border-b-2 transition-colors ${
+              activeTab === 'automations'
+                ? 'border-indigo-500 text-white'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              <span className="font-medium">Automations</span>
+            </div>
+          </button>
         </nav>
       </div>
 
@@ -180,6 +200,7 @@ export function CommunicationsPanel() {
       {activeTab === 'templates' && <TemplatesTab />}
       {activeTab === 'history' && <HistoryTab />}
       {activeTab === 'groups' && <GroupsTab />}
+      {activeTab === 'automations' && <AutomationsTab />}
     </div>
   );
 }
@@ -524,16 +545,11 @@ function ComposeTab() {
 
       {/* Body */}
       <div className="bg-slate-800/50 border border-white/10 rounded-xl p-6">
-        <label className="block text-sm font-medium text-slate-300 mb-2">Email Body (HTML)</label>
-        <p className="text-xs text-slate-400 mb-2">
-          Available placeholders: {'{'}{'{'} firstName {'}'}{'}'}, {'{'}{'{'} lastName {'}'}{'}'}, {'{'}{'{'} name {'}'}{'}'}, {'{'}{'{'} email {'}'}{'}'}
-        </p>
-        <textarea
+        <label className="block text-sm font-medium text-slate-300 mb-2">Email Body</label>
+        <RichTextEditor
           value={bodyHtml}
-          onChange={(e) => setBodyHtml(e.target.value)}
-          placeholder="Enter email body HTML..."
-          rows={12}
-          className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none font-mono text-sm"
+          onChange={setBodyHtml}
+          placeholder="Compose your email..."
         />
       </div>
 
@@ -550,22 +566,11 @@ function ComposeTab() {
         </label>
       </div>
 
-      {/* Social Media Sharing */}
-      <div className="bg-gradient-to-r from-blue-500/[0.06] to-purple-500/[0.06] border border-blue-500/20 rounded-xl p-4 space-y-2">
-        <p className="text-sm font-medium text-white/70">Also share to social media</p>
-        <div className="flex flex-wrap gap-3">
-          <label className="flex items-center gap-2 cursor-pointer bg-white/[0.04] rounded-lg px-3 py-2">
-            <input type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900/50 text-blue-600 focus:ring-blue-500" />
-            <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            <span className="text-sm text-white/60">Facebook</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer bg-white/[0.04] rounded-lg px-3 py-2">
-            <input type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900/50 text-pink-600 focus:ring-pink-500" />
-            <svg className="w-4 h-4 text-pink-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-            <span className="text-sm text-white/60">Instagram</span>
-          </label>
-        </div>
-      </div>
+      {/* Social Cross-Post */}
+      <SocialCrossPostPanel
+        subject={subject}
+        bodyText={bodyHtml.replace(/<[^>]+>/g, '').slice(0, 2000)}
+      />
 
       {/* Actions */}
       <div className="flex gap-3">
@@ -1614,6 +1619,231 @@ function GroupsTab() {
             </div>
           </form>
         </Modal>
+      )}
+    </div>
+  );
+}
+
+// ========== TAB 5: AUTOMATIONS ==========
+interface AutomationConfig {
+  id: string;
+  type: string;
+  enabled: boolean;
+  subject: string;
+  bodyHtml: string;
+  updatedAt: string;
+}
+
+const AUTOMATION_META: Record<string, { label: string; description: string }> = {
+  WELCOME_REGISTRATION: {
+    label: 'Welcome Email',
+    description: 'Sent when a new member creates an account',
+  },
+  MEMBERSHIP_ACTIVATED: {
+    label: 'Membership Activated',
+    description: "Sent when a member's subscription is activated via PayPal",
+  },
+  EVENT_REGISTRATION: {
+    label: 'Event Registration Confirmation',
+    description: 'Sent after a member pays for and confirms an event',
+  },
+  OBS_REGISTRATION: {
+    label: 'OBS Registration Confirmation',
+    description: 'Sent after OBS event payment is captured',
+  },
+  MEMBERSHIP_RENEWAL_REMINDER: {
+    label: 'Renewal Reminder',
+    description: 'Sent automatically 7 days before membership expires',
+  },
+};
+
+function AutomationsTab() {
+  const [configs, setConfigs] = useState<AutomationConfig[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editState, setEditState] = useState<Record<string, { subject: string; bodyHtml: string }>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  useEffect(() => {
+    loadConfigs();
+  }, []);
+
+  const loadConfigs = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/email-automation');
+      if (res.ok) {
+        const data = await res.json();
+        setConfigs(data);
+        const initialEdit: Record<string, { subject: string; bodyHtml: string }> = {};
+        for (const c of data as AutomationConfig[]) {
+          initialEdit[c.type] = { subject: c.subject, bodyHtml: c.bodyHtml };
+        }
+        setEditState(initialEdit);
+      }
+    } catch (error) {
+      console.error('Failed to load automation configs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleEnabled = async (config: AutomationConfig) => {
+    const newEnabled = !config.enabled;
+    // Optimistic update
+    setConfigs((prev) => prev.map((c) => c.type === config.type ? { ...c, enabled: newEnabled } : c));
+    try {
+      const res = await fetch('/api/admin/email-automation', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: config.type, enabled: newEnabled }),
+      });
+      if (!res.ok) throw new Error('Failed');
+    } catch {
+      // Revert
+      setConfigs((prev) => prev.map((c) => c.type === config.type ? { ...c, enabled: config.enabled } : c));
+      setToast({ type: 'error', message: 'Failed to update automation' });
+      setTimeout(() => setToast(null), 5000);
+    }
+  };
+
+  const handleSave = async (type: string) => {
+    const edit = editState[type];
+    if (!edit) return;
+    setSaving(type);
+    try {
+      const res = await fetch('/api/admin/email-automation', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, subject: edit.subject, bodyHtml: edit.bodyHtml }),
+      });
+      if (res.ok) {
+        const updated = await res.json() as AutomationConfig;
+        setConfigs((prev) => prev.map((c) => c.type === type ? updated : c));
+        setToast({ type: 'success', message: 'Automation saved successfully' });
+      } else {
+        throw new Error('Failed');
+      }
+    } catch {
+      setToast({ type: 'error', message: 'Failed to save automation' });
+    } finally {
+      setSaving(null);
+      setTimeout(() => setToast(null), 5000);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
+          {toast.type === 'success' ? <CheckCircle2 className="h-5 w-5 text-white" /> : <XCircle className="h-5 w-5 text-white" />}
+          <span className="text-white">{toast.message}</span>
+          <button onClick={() => setToast(null)}><X className="h-4 w-4 text-white" /></button>
+        </div>
+      )}
+
+      <div>
+        <h2 className="text-xl font-semibold text-white">Email Automations</h2>
+        <p className="text-sm text-slate-400 mt-1">
+          Configure automated emails sent on key events. Toggle to enable/disable, or expand to edit the template.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="p-8 text-center text-slate-400">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+          Loading automation configs...
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {configs.map((config) => {
+            const meta = AUTOMATION_META[config.type] || { label: config.type, description: '' };
+            const isExpanded = expandedId === config.type;
+            const edit = editState[config.type] || { subject: config.subject, bodyHtml: config.bodyHtml };
+
+            return (
+              <div key={config.type} className="bg-slate-800/50 border border-white/10 rounded-xl overflow-hidden">
+                {/* Card Header */}
+                <div className="flex items-center justify-between p-5">
+                  <div className="flex items-start gap-4 flex-1">
+                    {/* Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEnabled(config)}
+                      title={config.enabled ? 'Click to disable' : 'Click to enable'}
+                    >
+                      {config.enabled ? (
+                        <ToggleRight className="h-7 w-7 text-indigo-400" />
+                      ) : (
+                        <ToggleLeft className="h-7 w-7 text-slate-500" />
+                      )}
+                    </button>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-white">{meta.label}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${config.enabled ? 'bg-green-600/20 text-green-300' : 'bg-slate-700 text-slate-400'}`}>
+                          {config.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-400 mt-0.5">{meta.description}</p>
+                      {!isExpanded && (
+                        <p className="text-xs text-slate-500 mt-1 truncate max-w-lg">Subject: {config.subject}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(isExpanded ? null : config.type)}
+                    className="p-2 hover:bg-slate-700 rounded-lg transition-colors ml-4"
+                    title={isExpanded ? 'Collapse' : 'Expand to edit'}
+                  >
+                    {isExpanded ? (
+                      <ChevronUp className="h-5 w-5 text-slate-400" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-slate-400" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Expanded edit section */}
+                {isExpanded && (
+                  <div className="border-t border-white/10 p-5 space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">Subject</label>
+                      <input
+                        type="text"
+                        value={edit.subject}
+                        onChange={(e) => setEditState((prev) => ({ ...prev, [config.type]: { ...edit, subject: e.target.value } }))}
+                        className="w-full px-4 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Email Body</label>
+                      <RichTextEditor
+                        value={edit.bodyHtml}
+                        onChange={(html) => setEditState((prev) => ({ ...prev, [config.type]: { ...edit, bodyHtml: html } }))}
+                        placeholder="Edit the email body..."
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleSave(config.type)}
+                        disabled={saving === config.type}
+                        className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {saving === config.type ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        {saving === config.type ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db';
+import { triggerAutomationEmail } from '@/lib/automation-email';
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MAX = 5; // max registration attempts per IP per window
@@ -142,6 +143,19 @@ export async function POST(request: Request) {
         lastName: true,
       },
     });
+
+    // Fire-and-forget welcome email
+    triggerAutomationEmail(
+      'WELCOME_REGISTRATION',
+      user.email,
+      {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+      },
+      user.id,
+    ).catch((e) => console.error('[auto-email] welcome:', e));
 
     return NextResponse.json({ user, claimed: false }, { status: 201 });
   } catch (error) {
