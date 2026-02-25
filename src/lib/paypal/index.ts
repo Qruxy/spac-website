@@ -251,6 +251,44 @@ export async function cancelPayPalSubscription(
 }
 
 /**
+ * Refund a PayPal capture (full or partial)
+ */
+export async function refundPayPalCapture(
+  captureId: string,
+  options?: { amount?: number; currency?: string; note?: string }
+): Promise<{ id: string; status: string }> {
+  const accessToken = await getPayPalAccessToken();
+
+  const body: Record<string, unknown> = {};
+  if (options?.amount !== undefined) {
+    body.amount = {
+      value: options.amount.toFixed(2),
+      currency_code: options.currency || 'USD',
+    };
+  }
+  if (options?.note) {
+    body.note_to_payer = options.note.slice(0, 255);
+  }
+
+  const response = await fetch(`${PAYPAL_API_BASE}/v2/payments/captures/${captureId}/refund`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+      'PayPal-Request-Id': `refund-${captureId}-${Date.now()}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`PayPal refund failed: ${error}`);
+  }
+
+  return response.json();
+}
+
+/**
  * Verify PayPal webhook signature
  */
 export async function verifyPayPalWebhook(
