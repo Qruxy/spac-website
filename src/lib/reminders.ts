@@ -7,6 +7,7 @@
 
 import { prisma, NOT_COMPANION } from '@/lib/db';
 import { sendBulkEmail, renderTemplate } from '@/lib/email';
+import { triggerAutomationEmail } from '@/lib/automation-email';
 
 /** Default email template for event reminders */
 function buildGenericReminderEmail(event: {
@@ -277,4 +278,65 @@ export async function processReminders(): Promise<ProcessResult> {
   }
 
   return result;
+}
+
+// ===================================
+// Membership Renewal Reminders
+// ===================================
+
+export async function processRenewalReminders(): Promise<{
+  processed: number;
+  sent: number;
+  failed: number;
+}> {
+  const now = new Date();
+  const windowStart = new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000);
+  const windowEnd = new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000);
+
+  const memberships = await prisma.membership.findMany({
+    where: {
+      status: 'ACTIVE',
+      paypalCurrentPeriodEnd: { gte: windowStart, lte: windowEnd },
+      renewalReminderSentAt: null,
+    },
+    include: {
+      user: { select: { id: true, email: true, firstName: true, name: true } },
+    },
+  });
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const m of memberships) {
+    try {
+      await triggerAutomationEmail(
+        'MEMBERSHIP_RENEWAL_REMINDER',
+        m.user.email,
+        {
+          firstName: m.user.firstName || '',
+          name: m.user.name || '',
+          email: m.user.email,
+          renewalDate: m.paypalCurrentPeriodEnd
+            ? new Date(m.paypalCurrentPeriodEnd).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+            : 'soon',
+        },
+        m.user.id,
+      );
+
+      await prisma.membership.update({
+        where: { id: m.id },
+        data: { renewalReminderSentAt: new Date() },
+      });
+      sent++;
+    } catch (e) {
+      console.error('[renewal-reminder] failed for', m.user.email, e);
+      failed++;
+    }
+  }
+
+  return { processed: memberships.length, sent, failed };
 }

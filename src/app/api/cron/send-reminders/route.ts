@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { processReminders } from '@/lib/reminders';
+import { processReminders, processRenewalReminders } from '@/lib/reminders';
 
 export async function POST(request: Request) {
   // Auth: check cron secret OR admin session
@@ -29,11 +29,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await processReminders();
+    const [result, renewalResult] = await Promise.all([
+      processReminders(),
+      processRenewalReminders(),
+    ]);
 
     return NextResponse.json({
       success: true,
       ...result,
+      renewalReminders: renewalResult,
     });
   } catch (error) {
     console.error('Process reminders error:', error);
@@ -52,11 +56,15 @@ export async function GET() {
   }
 
   try {
-    const result = await processReminders();
+    const [result, renewalResult] = await Promise.all([
+      processReminders(),
+      processRenewalReminders(),
+    ]);
 
     return NextResponse.json({
       success: true,
       ...result,
+      renewalReminders: renewalResult,
     });
   } catch (error) {
     console.error('Process reminders error:', error);

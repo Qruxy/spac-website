@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { getPayPalSubscription } from '@/lib/paypal';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { triggerAutomationEmail } from '@/lib/automation-email';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -92,6 +93,26 @@ export async function GET(request: Request) {
         },
       },
     });
+
+    // Fire-and-forget membership activated email
+    prisma.user
+      .findUnique({ where: { id: userId }, select: { email: true, firstName: true, name: true } })
+      .then((userForEmail) => {
+        if (userForEmail) {
+          triggerAutomationEmail(
+            'MEMBERSHIP_ACTIVATED',
+            userForEmail.email,
+            {
+              firstName: userForEmail.firstName || '',
+              name: userForEmail.name || userForEmail.firstName || '',
+              email: userForEmail.email,
+              membershipType: tier || 'INDIVIDUAL',
+            },
+            userId,
+          ).catch((e) => console.error('[auto-email] membership activated:', e));
+        }
+      })
+      .catch((e) => console.error('[auto-email] user lookup:', e));
 
     return NextResponse.redirect(`${baseUrl}/dashboard?membership=success`);
   } catch (error) {

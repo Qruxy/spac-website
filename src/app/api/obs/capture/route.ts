@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { capturePayPalOrder } from '@/lib/paypal';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { triggerAutomationEmail } from '@/lib/automation-email';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -79,6 +80,26 @@ export async function GET(request: Request) {
           },
         },
       });
+
+      // Fire-and-forget OBS registration confirmation email
+      const obsUserId = session.user.id;
+      prisma.user
+        .findUnique({ where: { id: obsUserId }, select: { email: true, firstName: true, name: true } })
+        .then((obsUser) => {
+          if (obsUser) {
+            triggerAutomationEmail(
+              'OBS_REGISTRATION',
+              obsUser.email,
+              {
+                firstName: obsUser.firstName || '',
+                name: obsUser.name || '',
+                email: obsUser.email,
+              },
+              obsUserId,
+            ).catch((e) => console.error('[auto-email] obs registration:', e));
+          }
+        })
+        .catch((e) => console.error('[auto-email] user lookup:', e));
 
       return NextResponse.redirect(`${baseUrl}/obs/success?registration_id=${registrationId}`);
     } else {

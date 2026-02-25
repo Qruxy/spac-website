@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { capturePayPalOrder } from '@/lib/paypal';
 import { prisma } from '@/lib/db';
+import { triggerAutomationEmail } from '@/lib/automation-email';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
     // Get the registration
     const registration = await prisma.registration.findUnique({
       where: { id: registrationId },
-      include: { event: true },
+      include: { event: { select: { title: true, slug: true, startDate: true } } },
     });
 
     if (!registration) {
@@ -85,6 +86,32 @@ export async function GET(request: Request) {
           },
         },
       });
+
+      // Fire-and-forget event registration confirmation email
+      prisma.user
+        .findUnique({ where: { id: registration.userId }, select: { email: true, firstName: true, name: true } })
+        .then((registeredUser) => {
+          if (registeredUser) {
+            triggerAutomationEmail(
+              'EVENT_REGISTRATION',
+              registeredUser.email,
+              {
+                firstName: registeredUser.firstName || '',
+                name: registeredUser.name || '',
+                email: registeredUser.email,
+                eventTitle: registration.event.title,
+                eventDate: new Date(registration.event.startDate).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                }),
+              },
+              registration.userId,
+            ).catch((e) => console.error('[auto-email] event registration:', e));
+          }
+        })
+        .catch((e) => console.error('[auto-email] user lookup:', e));
 
       return NextResponse.redirect(`${baseUrl}/my-events?registered=${registration.eventId}`);
     } else {
