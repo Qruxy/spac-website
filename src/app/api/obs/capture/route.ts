@@ -62,6 +62,24 @@ export async function GET(request: Request) {
         },
       });
 
+      // Audit log for OBS payment capture
+      await prisma.auditLog.create({
+        data: {
+          user_id: session.user.id,
+          actorId: session.user.id,
+          subjectId: session.user.id,
+          action: 'PAYMENT',
+          entityType: 'OBSRegistration',
+          entityId: registrationId,
+          metadata: {
+            paypalOrderId: captureResult.id,
+            amount: capturedAmount ? parseFloat(capturedAmount.value) : 0,
+            currency: capturedAmount?.currency_code || 'USD',
+            event: 'obs_payment_captured',
+          },
+        },
+      });
+
       return NextResponse.redirect(`${baseUrl}/obs/success?registration_id=${registrationId}`);
     } else {
       // Payment failed - update registration status
