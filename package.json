@@ -32,7 +32,6 @@
     "@hookform/resolvers": "^3.9.1",
     "@mantine/core": "^7.17.8",
     "@mantine/hooks": "^7.17.8",
-    "@mastra/mcp": "^0.14.4",
     "@prisma/client": "^5.22.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
