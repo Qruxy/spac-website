@@ -60,14 +60,16 @@ export function HeroSection() {
 
   useEffect(() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
+    // Use screen width only — touch detection was too aggressive and excluded modern phones
+    const isMobile = window.innerWidth < 768;
 
-    if (isMobile) {
-      // No WebGL on mobile — too expensive; CSS gradient fallback handles the background
-      setGalaxyConfig({ enabled: false, disableAnimation: true, mouseInteraction: false, mouseRepulsion: false, density: 0, glowIntensity: 0 });
-    } else if (reducedMotion) {
-      // Desktop but motion reduced: render a static starfield (single frame, rAF stopped)
-      setGalaxyConfig({ enabled: true, disableAnimation: true, mouseInteraction: false, mouseRepulsion: false, density: 0.8, glowIntensity: 0.3 });
+    if (reducedMotion) {
+      // Motion reduced: static starfield regardless of device
+      setGalaxyConfig({ enabled: true, disableAnimation: true, mouseInteraction: false, mouseRepulsion: false, density: 0.5, glowIntensity: 0.2 });
+    } else if (isMobile) {
+      // Mobile quality tier: Galaxy enabled with reduced density + no mouse tracking
+      // Modern phones handle WebGL fine; this restores the galaxy effect on mobile
+      setGalaxyConfig({ enabled: true, disableAnimation: false, mouseInteraction: false, mouseRepulsion: false, density: 0.35, glowIntensity: 0.15 });
     } else {
       // Full desktop experience
       setGalaxyConfig({ enabled: true, disableAnimation: false, mouseInteraction: true, mouseRepulsion: true, density: 0.8, glowIntensity: 0.3 });
@@ -76,7 +78,7 @@ export function HeroSection() {
 
   return (
     <section className="relative flex min-h-[100vh] flex-col items-center justify-center overflow-hidden bg-slate-950">
-      {/* Background: WebGL Galaxy on desktop, CSS gradient on mobile */}
+      {/* Background: WebGL Galaxy — full quality desktop, reduced quality mobile, static if reduced-motion */}
       <div className="absolute inset-0">
         {galaxyConfig?.enabled ? (
           <Galaxy
