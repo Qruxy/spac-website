@@ -33,7 +33,7 @@ const navItems = [
   { name: 'Media',       href: '/admin/media',             icon: ImageIcon,       exact: false },
   { name: 'Board',       href: '/admin/board',             icon: Award,           exact: false },
   { name: 'Badges',      href: '/admin/badges',            icon: Trophy,          exact: false },
-  { name: 'Email',       href: '/admin/communications',    icon: Mail,            exact: false },
+  { name: 'Club Communications', href: '/admin/communications', icon: Mail, exact: false },
   { name: 'OBS Event',   href: '/admin/obs',               icon: Star,            exact: false },
 ] as const;
 
