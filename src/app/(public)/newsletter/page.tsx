@@ -33,7 +33,8 @@ export const metadata: Metadata = {
     'Browse the complete archive of The Eyepiece, the official newsletter of the St. Petersburg Astronomy Club.',
 };
 
-export const revalidate = 300;
+// Members-only — must be dynamic so the auth check runs on every request (not cached)
+export const dynamic = 'force-dynamic';
 
 const ITEMS_PER_PAGE = 12;
 

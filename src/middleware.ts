@@ -32,6 +32,9 @@ const PROTECTED_PREFIXES = [
   '/leadership',
   '/outreach',
   '/obs-admin',
+  // Members-only public content
+  '/newsletter',
+  '/classifieds',
 ];
 
 export async function middleware(request: NextRequest) {
