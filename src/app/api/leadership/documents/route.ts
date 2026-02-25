@@ -1,8 +1,9 @@
+export const dynamic = 'force-dynamic';
 /**
  * Club Documents API
- * 
- * GET - List all documents
- * POST - Upload new document
+ *
+ * GET  - List all documents (admin/moderator)
+ * POST - Create a document record after client-side S3 upload via presigned URL
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -13,10 +14,7 @@ import { prisma } from '@/lib/db/prisma';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     if (!['ADMIN', 'MODERATOR'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -35,33 +33,21 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     if (!['ADMIN', 'MODERATOR'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const formData = await request.formData();
-    const file = formData.get('file') as File | null;
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const category = formData.get('category') as string;
-    const year = parseInt(formData.get('year') as string) || null;
-    const month = parseInt(formData.get('month') as string) || null;
-    const isPublic = formData.get('isPublic') === 'true';
+    // Accept JSON body — file was already uploaded to S3 via presigned URL on the client
+    const body = await request.json();
+    const { fileUrl, filename, mimeType, size, title, description, category, year, month, isPublic } = body;
 
-    if (!file || !title || !category) {
-      return NextResponse.json({ error: 'File, title, and category are required' }, { status: 400 });
+    if (!fileUrl || !title || !category || !filename) {
+      return NextResponse.json(
+        { error: 'fileUrl, title, category, and filename are required' },
+        { status: 400 }
+      );
     }
-
-    // In production, upload to S3
-    // For now, create a mock URL
-    const fileUrl = `/documents/${Date.now()}-${file.name}`;
-    
-    // TODO: Implement actual file upload to S3
-    // const { url } = await uploadToS3(file, 'documents');
 
     const document = await prisma.clubDocument.create({
       data: {
@@ -69,19 +55,19 @@ export async function POST(request: NextRequest) {
         description: description || null,
         category: category as 'NEWSLETTER' | 'MEETING_MINUTES' | 'BYLAWS' | 'POLICY' | 'FORM' | 'FINANCIAL' | 'OTHER',
         fileUrl,
-        filename: file.name,
-        mimeType: file.type,
-        size: file.size,
-        year,
-        month,
-        isPublic,
+        filename,
+        mimeType: mimeType || 'application/octet-stream',
+        size: size || 0,
+        year: year || null,
+        month: month || null,
+        isPublic: isPublic ?? false,
         uploadedById: session.user.id,
       },
     });
 
     return NextResponse.json(document, { status: 201 });
   } catch (error) {
-    console.error('Failed to upload document:', error);
+    console.error('Failed to create document record:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
