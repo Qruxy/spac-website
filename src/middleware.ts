@@ -57,6 +57,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // OBS admin redirects — consolidated into /admin/obs
+  if (pathname === '/obs-admin' || pathname.startsWith('/obs-admin/')) {
+    return NextResponse.redirect(new URL('/admin/obs', request.url));
+  }
+
   // Admin routes additionally require ADMIN role
   if (
     (pathname === '/admin' || pathname.startsWith('/admin/')) &&
