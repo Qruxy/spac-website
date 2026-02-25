@@ -86,39 +86,71 @@ export default function DocumentsClient({ documentsByCategory, isAdmin }: Props)
 
   const handleUpload = async () => {
     if (!uploadData.file || !uploadData.title) return;
-    
+
     setLoading(true);
     setError(null);
-    
-    try {
-      // Create form data for file upload
-      const formData = new FormData();
-      formData.append('file', uploadData.file);
-      formData.append('title', uploadData.title);
-      formData.append('description', uploadData.description);
-      formData.append('category', uploadData.category);
-      formData.append('year', uploadData.year.toString());
-      formData.append('month', uploadData.month.toString());
-      formData.append('isPublic', uploadData.isPublic.toString());
 
+    try {
+      const file = uploadData.file;
+
+      // Step 1: Get presigned URL from S3
+      const presignRes = await fetch('/api/upload/presigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || 'application/octet-stream',
+          size: file.size,
+          folder: 'documents',
+        }),
+      });
+
+      if (!presignRes.ok) {
+        const e = await presignRes.json();
+        throw new Error(e.error || 'Failed to get upload URL');
+      }
+
+      const { uploadUrl, publicUrl } = await presignRes.json();
+
+      // Step 2: Upload directly to S3
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+
+      if (!s3Res.ok) throw new Error(`S3 upload failed: ${s3Res.status}`);
+
+      // Step 3: Create document record in DB
       const res = await fetch('/api/leadership/documents', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileUrl: publicUrl,
+          filename: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          size: file.size,
+          title: uploadData.title,
+          description: uploadData.description,
+          category: uploadData.category,
+          year: uploadData.year,
+          month: uploadData.month,
+          isPublic: uploadData.isPublic,
+        }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to upload document');
+        throw new Error(data.error || 'Failed to save document record');
       }
 
       const newDoc = await res.json();
-      
-      // Update local state
+
       setDocuments((prev) => ({
         ...prev,
         [newDoc.category]: [...(prev[newDoc.category] || []), newDoc],
       }));
-      
+
       setShowUploadModal(false);
       setUploadData({
         title: '',
