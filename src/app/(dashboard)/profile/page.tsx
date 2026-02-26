@@ -112,7 +112,7 @@ export default function ProfilePage() {
         return;
       }
 
-      const { uploadUrl, publicUrl } = await presignRes.json();
+      const { uploadUrl, key, publicUrl } = await presignRes.json();
 
       // Upload directly to S3
       const uploadRes = await fetch(uploadUrl, {
@@ -122,8 +122,19 @@ export default function ProfilePage() {
       });
 
       if (uploadRes.ok) {
-        setProfile((prev) => prev ? { ...prev, avatarUrl: publicUrl } : prev);
-        showToast('Avatar updated!', 'success');
+        // Confirm the upload with the server so it can verify the file exists
+        // and update the database. This prevents stale avatarUrl on failed uploads.
+        const confirmRes = await fetch('/api/user/avatar', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key }),
+        });
+        if (confirmRes.ok) {
+          setProfile((prev) => prev ? { ...prev, avatarUrl: publicUrl } : prev);
+          showToast('Avatar updated!', 'success');
+        } else {
+          showToast('Upload succeeded but profile update failed', 'error');
+        }
       } else {
         showToast('Upload failed', 'error');
       }

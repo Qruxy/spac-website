@@ -73,23 +73,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check capacity
-    if (event.capacity) {
-      const registrationCount = await prisma.registration.count({
-        where: {
-          eventId,
-          status: { in: ['CONFIRMED', 'PENDING'] },
-        },
-      });
-
-      if (registrationCount >= event.capacity) {
-        return NextResponse.json(
-          { error: 'This event is at full capacity' },
-          { status: 400 }
-        );
-      }
-    }
-
     // Calculate price — query membership fresh (don't trust stale session cache)
     const freshMembership = await prisma.membership.findFirst({
       where: { userId: session.user.id, status: 'ACTIVE' },
@@ -100,15 +83,39 @@ export async function POST(request: Request) {
       : Number(event.guest_price || 0);
     const totalPrice = basePrice * (1 + guestCount);
 
-    // Create pending registration
-    const registration = await prisma.registration.create({
-      data: {
-        eventId,
-        userId: session.user.id,
-        status: 'PENDING',
-        guestCount,
-      },
-    });
+    // Atomically check capacity and create PENDING registration in a transaction.
+    // Lock the event row (SELECT FOR UPDATE) so concurrent checkouts queue up
+    // rather than racing past the capacity check simultaneously.
+    let registration: Awaited<ReturnType<typeof prisma.registration.create>>;
+    try {
+      registration = await prisma.$transaction(async (tx) => {
+        if (event.capacity) {
+          await tx.$queryRaw`SELECT id FROM events WHERE id = ${eventId}::uuid FOR UPDATE`;
+          const count = await tx.registration.count({
+            where: { eventId, status: { in: ['CONFIRMED', 'PENDING'] } },
+          });
+          if (count >= event.capacity) {
+            throw Object.assign(new Error('AT_CAPACITY'), { code: 'AT_CAPACITY' });
+          }
+        }
+        return tx.registration.create({
+          data: {
+            eventId,
+            userId: session.user.id,
+            status: 'PENDING',
+            guestCount,
+          },
+        });
+      });
+    } catch (txErr) {
+      if ((txErr as { code?: string }).code === 'AT_CAPACITY') {
+        return NextResponse.json(
+          { error: 'This event is at full capacity' },
+          { status: 400 }
+        );
+      }
+      throw txErr;
+    }
 
     // Create PayPal order — on failure, cancel the PENDING registration to free capacity
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
