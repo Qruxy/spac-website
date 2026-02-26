@@ -92,6 +92,7 @@ const nextConfig = {
       S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
       S3_REGION: process.env.S3_REGION,
       S3_BUCKET: process.env.S3_BUCKET,
+      CRON_SECRET: process.env.CRON_SECRET,
       CLOUDFRONT_DOMAIN: process.env.CLOUDFRONT_DOMAIN,
       SES_REGION: process.env.SES_REGION,
       EMAIL_FROM: process.env.EMAIL_FROM,
