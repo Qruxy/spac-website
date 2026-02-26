@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check capacity
+    // Fast-path pre-check (non-transactional, avoids lock overhead in the common case)
     if (obsConfig._count.registrations >= obsConfig.capacity) {
       return NextResponse.json(
         { error: 'This event is at full capacity' },
@@ -166,26 +166,49 @@ export async function POST(request: Request) {
     const mealTotal = mealRequested ? Number(obsConfig.mealPrice) : 0;
     const totalAmount = registrationPrice + campingTotal + mealTotal;
 
-    // Create registration with PENDING status
-    const registration = await prisma.oBSRegistration.create({
-      data: {
-        obsConfigId,
-        registrationType,
-        firstName,
-        lastName,
-        email: email.toLowerCase(),
-        phone: phone || null,
-        isMember,
-        userId: userId || null,
-        campingRequested,
-        mealRequested,
-        dietaryRestrictions: dietaryRestrictions || null,
-        tShirtSize: tShirtSize || null,
-        notes: notes || null,
-        amountPaid: 0,
-        paymentStatus: 'PENDING',
-      },
-    });
+    // Atomically re-check capacity and create registration inside a transaction.
+    // Lock the obs_config row (SELECT FOR UPDATE) so concurrent requests queue up
+    // rather than racing past the capacity check simultaneously.
+    let registration: Awaited<ReturnType<typeof prisma.oBSRegistration.create>>;
+    try {
+      registration = await prisma.$transaction(async (tx) => {
+        // Lock obs_config row and get fresh count
+        await tx.$queryRaw`SELECT id FROM obs_configs WHERE id = ${obsConfigId} FOR UPDATE`;
+        const count = await tx.oBSRegistration.count({
+          where: { obsConfigId },
+        });
+        if (count >= obsConfig.capacity) {
+          throw Object.assign(new Error('AT_CAPACITY'), { code: 'AT_CAPACITY' });
+        }
+        return tx.oBSRegistration.create({
+          data: {
+            obsConfigId,
+            registrationType,
+            firstName,
+            lastName,
+            email: email.toLowerCase(),
+            phone: phone || null,
+            isMember,
+            userId: userId || null,
+            campingRequested,
+            mealRequested,
+            dietaryRestrictions: dietaryRestrictions || null,
+            tShirtSize: tShirtSize || null,
+            notes: notes || null,
+            amountPaid: 0,
+            paymentStatus: 'PENDING',
+          },
+        });
+      });
+    } catch (txErr) {
+      if ((txErr as { code?: string }).code === 'AT_CAPACITY') {
+        return NextResponse.json(
+          { error: 'This event is at full capacity' },
+          { status: 400 }
+        );
+      }
+      throw txErr;
+    }
 
     // If free registration, mark as paid immediately
     if (totalAmount === 0) {

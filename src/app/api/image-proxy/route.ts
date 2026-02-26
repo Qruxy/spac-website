@@ -33,15 +33,15 @@ const ALLOWED_DOMAINS = [
   'www.spac.org',
   'stpeteastronomyclub.org',
   'www.stpeteastronomyclub.org',
-  // Common test/placeholder image services
-  'placekitten.com',
+  // Common image hosting
   'placehold.co',
   'picsum.photos',
   'i.imgur.com',
   'imgur.com',
-  'cataas.com',
-  'loremflickr.com',
-  'via.placeholder.com',
+  // Dev/test placeholder services — not allowed in production
+  ...(process.env.NODE_ENV !== 'production'
+    ? ['placekitten.com', 'cataas.com', 'loremflickr.com', 'via.placeholder.com']
+    : []),
   // Supabase storage
   ...(process.env.NEXT_PUBLIC_SUPABASE_URL
     ? [new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname]

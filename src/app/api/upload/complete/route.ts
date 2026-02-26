@@ -9,7 +9,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { getPublicUrl } from '@/lib/s3';
+import { getPublicUrl, getS3Client, getS3Bucket } from '@/lib/s3';
+import { HeadObjectCommand } from '@aws-sdk/client-s3';
 
 // Zod schema for upload completion
 const UploadCompleteSchema = z.object({
@@ -63,6 +64,37 @@ export async function POST(request: Request) {
       category,
       folder,
     } = result.data;
+
+    // Validate key starts with an allowed folder prefix — prevents writes to
+    // sensitive S3 paths (admin/, users/, etc.). Keys are UUID-based so
+    // brute-guessing is practically impossible, but we still enforce structure.
+    const ALLOWED_KEY_PREFIXES = [
+      'uploads/', 'gallery/', 'events/', 'equipment/',
+      'avatars/', 'media/', 'vsa/', 'board-members/',
+      'documents/', 'minutes/', 'sponsors/',
+    ];
+    const hasValidPrefix = ALLOWED_KEY_PREFIXES.some(prefix => key.startsWith(prefix));
+    if (!hasValidPrefix) {
+      return NextResponse.json(
+        { error: 'Invalid key — path not allowed' },
+        { status: 400 }
+      );
+    }
+
+    // Verify the object actually exists in S3 before creating a DB record.
+    // This prevents an authenticated user from registering an arbitrary key
+    // that they didn't upload (the UUID-based key format makes guessing hard,
+    // but HeadObject ensures the file is actually there).
+    try {
+      await getS3Client().send(
+        new HeadObjectCommand({ Bucket: getS3Bucket(), Key: key })
+      );
+    } catch {
+      return NextResponse.json(
+        { error: 'File not found in storage — upload may have failed or key is invalid' },
+        { status: 400 }
+      );
+    }
 
     // Determine media type from mime type
     const type = mimeType.startsWith('video/')

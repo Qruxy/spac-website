@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user is already registered
+    // Check if user is already registered (outside tx — fast-path rejection)
     const existingRegistration = await prisma.registration.findFirst({
       where: {
         eventId,
@@ -76,32 +76,39 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check capacity
-    if (event.capacity) {
-      const registrationCount = await prisma.registration.count({
-        where: {
-          eventId,
-          status: { in: ['CONFIRMED', 'PENDING'] },
-        },
+    // Atomically check capacity and create registration in a transaction.
+    // Lock the event row (SELECT FOR UPDATE) so concurrent requests queue up
+    // rather than racing past the capacity check simultaneously.
+    let registration: Awaited<ReturnType<typeof prisma.registration.create>>;
+    try {
+      registration = await prisma.$transaction(async (tx) => {
+        if (event.capacity) {
+          await tx.$queryRaw`SELECT id FROM events WHERE id = ${eventId}::uuid FOR UPDATE`;
+          const count = await tx.registration.count({
+            where: { eventId, status: { in: ['CONFIRMED', 'PENDING'] } },
+          });
+          if (count >= event.capacity) {
+            throw Object.assign(new Error('AT_CAPACITY'), { code: 'AT_CAPACITY' });
+          }
+        }
+        return tx.registration.create({
+          data: {
+            eventId,
+            userId: session.user.id,
+            status: 'CONFIRMED',
+            guestCount,
+          },
+        });
       });
-
-      if (registrationCount >= event.capacity) {
+    } catch (txErr) {
+      if ((txErr as { code?: string }).code === 'AT_CAPACITY') {
         return NextResponse.json(
           { error: 'This event is at full capacity' },
           { status: 400 }
         );
       }
+      throw txErr;
     }
-
-    // Create registration
-    const registration = await prisma.registration.create({
-      data: {
-        eventId,
-        userId: session.user.id,
-        status: 'CONFIRMED',
-        guestCount,
-      },
-    });
 
     // Log the registration
     await prisma.auditLog.create({
