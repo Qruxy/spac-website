@@ -289,7 +289,7 @@ export default async function ClassifiedsPage({
                             {listing.title}
                           </h3>
                           <span className="text-lg font-bold text-primary whitespace-nowrap">
-                            ${Number(listing.askingPrice).toLocaleString()}
+                            ${Number(listing.price).toLocaleString()}
                           </span>
                         </div>
 

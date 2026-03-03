@@ -2,17 +2,15 @@
 
 /**
  * Client-side content wrapper for About page
- *
- * This component handles all client-side animated components (GradientText, StarBorder, ChromaGrid)
- * to avoid SSR bailout errors when using them in a Server Component context.
  */
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import Image from 'next/image';
+import { motion } from 'motion/react';
+import { Mail, User } from 'lucide-react';
 import { GradientText } from '@/components/animated/gradient-text';
 import { StarBorder } from '@/components/animated/star-border';
-import { ChromaGrid } from '@/components/animated/chroma-grid';
-import type { ChromaGridItem } from '@/components/animated/chroma-grid';
 
 // Dynamic import for WebGL Aurora component to avoid SSR issues
 const Aurora = dynamic(() => import('@/components/animated/aurora'), {
@@ -85,17 +83,76 @@ function getBoardColor(title: string): string {
 }
 
 export function AboutBoardSection({ boardMembers }: AboutClientContentProps) {
-  const items: ChromaGridItem[] = boardMembers.map((member, index) => ({
-    id: `board-${index}`,
-    image: member.imageUrl || undefined,
-    title: member.name,
-    subtitle: member.title,
-    bio: member.bio,
-    email: member.email,
-    color: getBoardColor(member.title),
-  }));
+  return (
+    <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+      {boardMembers.map((member, index) => {
+        const color = getBoardColor(member.title);
+        return (
+          <motion.div
+            key={member.name}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.35, delay: index * 0.04 }}
+            className="group relative rounded-xl border border-border bg-card overflow-hidden hover:border-white/20 transition-all duration-200"
+          >
+            {/* Accent bar */}
+            <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${color}, ${color}55)` }} />
 
-  return <ChromaGrid items={items} columns={3} />;
+            <div className="p-4 flex flex-col gap-3">
+              {/* Avatar */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="relative flex-shrink-0 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center"
+                  style={{ backgroundColor: `${color}20`, border: `1.5px solid ${color}50` }}
+                >
+                  {member.imageUrl ? (
+                    <Image
+                      src={member.imageUrl}
+                      alt={member.name}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
+                  ) : (
+                    <User className="w-4 h-4" style={{ color }} />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate leading-tight">{member.name}</p>
+                  <span
+                    className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: `${color}18`, color }}
+                  >
+                    {member.title}
+                  </span>
+                </div>
+              </div>
+
+              {/* Bio */}
+              {member.bio && (
+                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                  {member.bio}
+                </p>
+              )}
+
+              {/* Email */}
+              {member.email && (
+                <a
+                  href={`mailto:${member.email}`}
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Mail className="w-3 h-3" />
+                  <span className="truncate">{member.email}</span>
+                </a>
+              )}
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
 }
 
 export function AboutCtaButton() {
