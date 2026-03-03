@@ -111,7 +111,7 @@ export function GradientText({
 
   return (
     <motion.span
-      className={`relative inline-flex max-w-fit flex-row items-center justify-center overflow-hidden cursor-pointer ${
+      className={`relative inline-flex max-w-fit flex-row items-center justify-center ${showBorder ? 'overflow-hidden' : 'overflow-visible'} cursor-pointer ${
         showBorder ? 'rounded-[1.25rem] py-1 px-2' : ''
       } ${className}`}
       onMouseEnter={handleMouseEnter}

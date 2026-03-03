@@ -185,7 +185,7 @@ export default async function SoldListingsPage({
                         {listing.title}
                       </h3>
                       <span className="text-lg font-bold text-foreground whitespace-nowrap">
-                        ${Number(listing.askingPrice).toLocaleString()}
+                        ${Number(listing.price).toLocaleString()}
                       </span>
                     </div>
 
