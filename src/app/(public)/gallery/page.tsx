@@ -105,10 +105,10 @@ export default async function GalleryPage({
             <Sparkles className="h-4 w-4" />
             Member Photography
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-4 flex items-center justify-center gap-4 flex-wrap">
+          <h1 className="block text-center font-bold text-foreground mb-4 overflow-visible">
             <GradientText
               colors={['#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4']}
-              className="text-5xl md:text-6xl font-bold"
+              className="text-3xl sm:text-5xl md:text-6xl font-bold"
               animationSpeed={5}
             >
               Astrophotography
