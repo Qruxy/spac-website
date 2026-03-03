@@ -5,9 +5,14 @@
  * managing subscriptions, and handling webhooks.
  */
 
-const PAYPAL_API_BASE = process.env.NODE_ENV === 'production'
-  ? 'https://api-m.paypal.com'
-  : 'https://api-m.sandbox.paypal.com';
+// Use live PayPal unless PAYPAL_SANDBOX=true is explicitly set.
+// This allows sandbox credentials to work in production deployments during testing.
+const PAYPAL_API_BASE =
+  process.env.PAYPAL_SANDBOX === 'true'
+    ? 'https://api-m.sandbox.paypal.com'
+    : process.env.NODE_ENV === 'production'
+      ? 'https://api-m.paypal.com'
+      : 'https://api-m.sandbox.paypal.com';
 
 let cachedAccessToken: { token: string; expiresAt: number } | null = null;
 
