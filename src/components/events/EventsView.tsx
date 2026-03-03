@@ -15,25 +15,26 @@ import { useState } from 'react';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
-  CalendarIcon,
+  CalendarBlank,
   MapPin,
   Clock,
   Users,
-  Moon,
-  Mic2,
-  Tent,
-  Star,
+  MoonStars,
+  Microphone,
+  Campfire,
+  StarFour,
   ArrowRight,
-  Telescope,
-  Sparkles,
-  ChevronRight,
-  DollarSign,
+  Binoculars,
+  Sparkle,
+  CaretRight,
   List,
-  BookOpen,
+  BookOpenText,
   Globe,
-  Zap,
-  PartyPopper,
-} from 'lucide-react';
+  Lightning,
+  Confetti,
+  Atom,
+  ShootingStar,
+} from '@phosphor-icons/react';
 import { format, isSameMonth, startOfMonth } from 'date-fns';
 import { motion } from 'motion/react';
 import type { CalendarEvent } from './EventCalendar';
@@ -41,7 +42,7 @@ import type { CalendarEvent } from './EventCalendar';
 const EventCalendar = nextDynamic(() => import('./EventCalendar'), {
   loading: () => (
     <div className="h-[600px] rounded-xl bg-white/[0.03] animate-pulse flex items-center justify-center">
-      <CalendarIcon className="h-8 w-8 text-muted-foreground" />
+      <CalendarBlank className="h-8 w-8 text-muted-foreground" />
     </div>
   ),
   ssr: false,
@@ -53,29 +54,29 @@ interface EventsViewProps {
 }
 
 const eventTypes = [
-  { id: 'all', label: 'All', icon: Sparkles },
-  { id: 'star_party', label: 'Star Parties', icon: Moon },
-  { id: 'meeting', label: 'Meetings', icon: Mic2 },
-  { id: 'obs_session', label: 'OBS', icon: Tent },
-  { id: 'workshop', label: 'Workshops', icon: Star },
+  { id: 'all', label: 'All', icon: Sparkle },
+  { id: 'star_party', label: 'Star Parties', icon: MoonStars },
+  { id: 'meeting', label: 'Meetings', icon: Microphone },
+  { id: 'obs_session', label: 'OBS', icon: Campfire },
+  { id: 'workshop', label: 'Workshops', icon: StarFour },
   { id: 'outreach', label: 'Outreach', icon: Globe },
-  { id: 'educational', label: 'Educational', icon: BookOpen },
+  { id: 'educational', label: 'Educational', icon: BookOpenText },
 ];
 
 const typeConfig: Record<string, { color: string; bg: string; label: string; Icon: React.ElementType }> = {
-  STAR_PARTY:   { color: '#60a5fa', bg: '#1e3a5f', label: 'Star Party',     Icon: Moon },
-  MEETING:      { color: '#4ade80', bg: '#14532d', label: 'Meeting',         Icon: Mic2 },
-  OBS_SESSION:  { color: '#fb923c', bg: '#431407', label: 'OBS Session',     Icon: Tent },
-  WORKSHOP:     { color: '#c084fc', bg: '#3b0764', label: 'Workshop',        Icon: Star },
+  STAR_PARTY:   { color: '#60a5fa', bg: '#1e3a5f', label: 'Star Party',     Icon: MoonStars },
+  MEETING:      { color: '#4ade80', bg: '#14532d', label: 'Meeting',         Icon: Microphone },
+  OBS_SESSION:  { color: '#fb923c', bg: '#431407', label: 'OBS Session',     Icon: Campfire },
+  WORKSHOP:     { color: '#c084fc', bg: '#3b0764', label: 'Workshop',        Icon: StarFour },
   OUTREACH:     { color: '#f472b6', bg: '#500724', label: 'Outreach',        Icon: Globe },
-  SOCIAL:       { color: '#fbbf24', bg: '#422006', label: 'Social',          Icon: PartyPopper },
-  SPECIAL:      { color: '#f87171', bg: '#450a0a', label: 'Special',         Icon: Zap },
-  EDUCATIONAL:  { color: '#22d3ee', bg: '#082f49', label: 'Educational',     Icon: BookOpen },
+  SOCIAL:       { color: '#fbbf24', bg: '#422006', label: 'Social',          Icon: Confetti },
+  SPECIAL:      { color: '#f87171', bg: '#450a0a', label: 'Special',         Icon: Lightning },
+  EDUCATIONAL:  { color: '#22d3ee', bg: '#082f49', label: 'Educational',     Icon: BookOpenText },
 };
 
 function getTypeConfig(type: string) {
   const key = type.toUpperCase().replace(/\s+/g, '_');
-  return typeConfig[key] || { color: '#818cf8', bg: '#1e1b4b', label: type, Icon: CalendarIcon };
+  return typeConfig[key] || { color: '#818cf8', bg: '#1e1b4b', label: type, Icon: CalendarBlank };
 }
 
 function groupEventsByMonth(events: CalendarEvent[]) {
@@ -284,7 +285,7 @@ function EventCard({ event, index }: { event: CalendarEvent; index: number }) {
             </div>
 
             {/* Arrow */}
-            <ChevronRight className="flex-shrink-0 h-4 w-4 text-slate-600 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-150 self-center" />
+            <CaretRight className="flex-shrink-0 h-4 w-4 text-slate-600 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-150 self-center" />
           </div>
         </div>
       </Link>
@@ -352,7 +353,7 @@ export default function EventsView({ events, initialType = 'all' }: EventsViewPr
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <CalendarIcon className="h-4 w-4" />
+              <CalendarBlank className="h-4 w-4" />
               Calendar
             </button>
           </div>
@@ -370,7 +371,7 @@ export default function EventsView({ events, initialType = 'all' }: EventsViewPr
             className="text-center py-20"
           >
             <div className="w-16 h-16 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
-              <Telescope className="h-7 w-7 text-slate-500" />
+              <Binoculars className="h-7 w-7 text-slate-500" />
             </div>
             <h2 className="text-lg font-semibold text-foreground mb-2">Nothing on the schedule yet</h2>
             <p className="text-sm text-muted-foreground mb-4">No upcoming events match this filter.</p>

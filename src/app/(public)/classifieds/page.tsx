@@ -27,8 +27,8 @@ import {
   Boxes,
   BookOpen,
   Monitor,
-  Rocket,
 } from 'lucide-react';
+import { RocketLaunch } from '@phosphor-icons/react/ssr';
 import { prisma } from '@/lib/db';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -231,7 +231,7 @@ export default async function ClassifiedsPage({
                   <div className="mb-6 relative">
                     <div className="absolute inset-0 rounded-full bg-amber-500/10 blur-2xl scale-150" />
                     <div className="relative p-5 rounded-full bg-amber-500/10 border border-amber-500/20">
-                      <Rocket className="h-12 w-12 text-amber-400" />
+                      <RocketLaunch className="h-12 w-12 text-amber-400" weight="fill" />
                     </div>
                   </div>
                   <h2 className="text-2xl font-bold text-foreground mb-2">

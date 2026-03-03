@@ -19,9 +19,10 @@ interface ChromaGridProps {
   items: ChromaGridItem[];
   className?: string;
   columns?: number;
+  compact?: boolean; // smaller aspect ratio for dense layouts (e.g. board directory)
 }
 
-export function ChromaGrid({ items, className = '', columns = 3 }: ChromaGridProps) {
+export function ChromaGrid({ items, className = '', columns = 3, compact = false }: ChromaGridProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const defaultColors = [
@@ -47,7 +48,7 @@ export function ChromaGrid({ items, className = '', columns = 3 }: ChromaGridPro
         return (
           <motion.div
             key={item.id}
-            className="group relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/[0.08] bg-slate-900/60 cursor-pointer"
+            className={`group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-slate-900/60 cursor-pointer ${compact ? 'aspect-[4/3]' : 'aspect-[3/4]'}`}
             onMouseEnter={() => setHoveredId(item.id)}
             onMouseLeave={() => setHoveredId(null)}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
@@ -85,7 +86,7 @@ export function ChromaGrid({ items, className = '', columns = 3 }: ChromaGridPro
             )}
 
             {/* Content */}
-            <div className="relative z-20 flex h-full flex-col justify-end p-5">
+            <div className={`relative z-20 flex h-full flex-col justify-end ${compact ? 'p-3' : 'p-5'}`}>
               {item.content ? (
                 // Legacy override
                 item.content
@@ -95,7 +96,7 @@ export function ChromaGrid({ items, className = '', columns = 3 }: ChromaGridPro
                   <AnimatePresence>
                     {isHovered && item.bio && (
                       <motion.p
-                        className="mb-3 text-xs leading-relaxed text-slate-300 line-clamp-4"
+                        className={`mb-3 leading-relaxed text-slate-300 ${compact ? 'text-[10px] line-clamp-3' : 'text-xs line-clamp-4'}`}
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 8 }}
@@ -107,12 +108,12 @@ export function ChromaGrid({ items, className = '', columns = 3 }: ChromaGridPro
                   </AnimatePresence>
 
                   {/* Name + role — always visible */}
-                  <h3 className="text-lg font-semibold text-white leading-tight">
+                  <h3 className={`font-semibold text-white leading-tight ${compact ? 'text-sm' : 'text-lg'}`}>
                     {item.title}
                   </h3>
                   {item.subtitle && (
                     <p
-                      className="mt-1 text-sm font-medium transition-colors duration-300"
+                      className={`mt-1 font-medium transition-colors duration-300 ${compact ? 'text-xs' : 'text-sm'}`}
                       style={{ color: isHovered ? color : '#94a3b8' }}
                     >
                       {item.subtitle}
