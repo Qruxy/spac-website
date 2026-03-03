@@ -168,6 +168,37 @@ export async function POST(request: Request) {
   }
 }
 
+// PUT /api/admin/events - Bulk status update
+export async function PUT(request: Request) {
+  const auth = await requireAdmin();
+  if (!auth.authorized) return auth.error;
+
+  try {
+    const body = await request.json();
+    const { ids, status } = body as { ids: string[]; status: string };
+
+    if (!ids || !Array.isArray(ids) || !status) {
+      return NextResponse.json(
+        { error: 'Missing ids array or status' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.event.updateMany({
+      where: { id: { in: ids } },
+      data: { status: status as any },
+    });
+
+    return NextResponse.json({ ids, status });
+  } catch (error) {
+    console.error('Admin events bulk update error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update events' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/admin/events - Bulk delete events
 export async function DELETE(request: Request) {
   const auth = await requireAdmin();

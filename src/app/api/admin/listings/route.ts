@@ -68,6 +68,37 @@ export async function GET(request: Request) {
   }
 }
 
+// PUT /api/admin/listings - Bulk status update
+export async function PUT(request: Request) {
+  const auth = await requireAdmin();
+  if (!auth.authorized) return auth.error;
+
+  try {
+    const body = await request.json();
+    const { ids, status } = body as { ids: string[]; status: string };
+
+    if (!ids || !Array.isArray(ids) || !status) {
+      return NextResponse.json(
+        { error: 'Missing ids array or status' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.listing.updateMany({
+      where: { id: { in: ids } },
+      data: { status: status as any },
+    });
+
+    return NextResponse.json({ ids, status });
+  } catch (error) {
+    console.error('Admin listings bulk update error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update listings' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/admin/listings - Bulk delete listings
 export async function DELETE(request: Request) {
   const auth = await requireAdmin();

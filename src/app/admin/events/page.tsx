@@ -24,6 +24,9 @@ import {
   Loader2,
   Upload,
   ImageIcon,
+  CheckSquare,
+  Square,
+  CheckCheck,
 } from 'lucide-react';
 
 type EventType =
@@ -112,6 +115,9 @@ export default function EventsPage() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reminderEventId, setReminderEventId] = useState<string | null>(null);
+  // Multi-select
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkMode, setBulkMode] = useState(false);
   const perPage = 25;
 
   const fetchEvents = useCallback(async () => {
@@ -150,6 +156,7 @@ export default function EventsPage() {
 
   useEffect(() => {
     const debounce = setTimeout(fetchEvents, 300);
+    setSelectedIds(new Set());
     return () => clearTimeout(debounce);
   }, [fetchEvents]);
 
@@ -186,6 +193,59 @@ export default function EventsPage() {
       setTimeout(() => setDeletingId(null), 3000);
     }
   };
+
+  // ── Multi-select ──────────────────────────────────────────────────────────
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setSelectedIds(next);
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds(
+      selectedIds.size === events.length ? new Set() : new Set(events.map((e) => e.id))
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} event${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
+    try {
+      const res = await fetch('/api/admin/events', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      if (!res.ok) throw new Error();
+      showToast(`${selectedIds.size} event${selectedIds.size > 1 ? 's' : ''} deleted`, 'success');
+      setSelectedIds(new Set());
+      setBulkMode(false);
+      fetchEvents();
+    } catch {
+      showToast('Failed to delete events', 'error');
+    }
+  };
+
+  const handleBulkStatus = async (status: string) => {
+    if (selectedIds.size === 0) return;
+    try {
+      const res = await fetch('/api/admin/events', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ids: Array.from(selectedIds), status }),
+      });
+      if (!res.ok) throw new Error();
+      const label = status.charAt(0) + status.slice(1).toLowerCase();
+      showToast(`${selectedIds.size} event${selectedIds.size > 1 ? 's' : ''} marked ${label}`, 'success');
+      setSelectedIds(new Set());
+      fetchEvents();
+    } catch {
+      showToast('Failed to update events', 'error');
+    }
+  };
+  // ─────────────────────────────────────────────────────────────────────────
 
   const handleFormSubmit = async (formData: EventFormData) => {
     try {
@@ -291,14 +351,60 @@ export default function EventsPage() {
           <h1 className="text-2xl font-bold text-white/90">Events</h1>
           <p className="text-sm text-white/50 mt-1">Manage club events and activities</p>
         </div>
-        <button
-          onClick={handleCreateEvent}
-          className="bg-blue-500 text-white hover:bg-blue-600 rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Create Event
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              bulkMode
+                ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
+                : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
+            }`}
+          >
+            <CheckCheck className="w-4 h-4" />
+            {bulkMode ? 'Exit Select' : 'Select'}
+          </button>
+          <button
+            onClick={handleCreateEvent}
+            className="bg-blue-500 text-white hover:bg-blue-600 rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Create Event
+          </button>
+        </div>
       </div>
+
+      {/* Bulk action bar */}
+      {bulkMode && selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+          <span className="text-sm font-medium text-blue-300">{selectedIds.size} selected</span>
+          <div className="flex flex-wrap gap-2 ml-auto">
+            <button
+              onClick={() => handleBulkStatus('PUBLISHED')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded-lg text-xs font-medium text-green-400 transition-colors"
+            >
+              <CheckCircle className="w-3.5 h-3.5" /> Publish
+            </button>
+            <button
+              onClick={() => handleBulkStatus('DRAFT')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-500/10 hover:bg-gray-500/20 border border-gray-500/20 rounded-lg text-xs font-medium text-gray-400 transition-colors"
+            >
+              Move to Draft
+            </button>
+            <button
+              onClick={() => handleBulkStatus('CANCELLED')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-medium text-yellow-400 transition-colors"
+            >
+              <XCircle className="w-3.5 h-3.5" /> Cancel
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-600/30 rounded-lg text-xs font-medium text-red-300 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 mb-6">
@@ -362,6 +468,15 @@ export default function EventsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/[0.06]">
+                  {bulkMode && (
+                    <th className="pl-4 pr-2 py-4 w-10">
+                      <button onClick={toggleSelectAll} className="text-white/40 hover:text-white transition-colors">
+                        {selectedIds.size === events.length && events.length > 0
+                          ? <CheckSquare className="w-4 h-4 text-blue-400" />
+                          : <Square className="w-4 h-4" />}
+                      </button>
+                    </th>
+                  )}
                   <th className="text-left px-6 py-4 text-xs font-medium text-white/50 uppercase tracking-wider">
                     Event
                   </th>
@@ -383,11 +498,26 @@ export default function EventsPage() {
                 </tr>
               </thead>
               <tbody>
-                {events.map((event) => (
+                {events.map((event) => {
+                  const isSelected = selectedIds.has(event.id);
+                  return (
                   <tr
                     key={event.id}
-                    className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
+                    className={`border-b border-white/[0.04] transition-colors ${
+                      isSelected ? 'bg-blue-500/10' : 'hover:bg-white/[0.02]'
+                    }`}
+                    onClick={bulkMode ? () => toggleSelect(event.id) : undefined}
+                    style={bulkMode ? { cursor: 'pointer' } : undefined}
                   >
+                    {bulkMode && (
+                      <td className="pl-4 pr-2 py-4 w-10" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => toggleSelect(event.id)} className="text-white/40 hover:text-white transition-colors">
+                          {isSelected
+                            ? <CheckSquare className="w-4 h-4 text-blue-400" />
+                            : <Square className="w-4 h-4" />}
+                        </button>
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
                         <div className="text-sm font-medium text-white/80">
@@ -434,7 +564,7 @@ export default function EventsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setReminderEventId(event.id)}
@@ -465,7 +595,8 @@ export default function EventsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
 
