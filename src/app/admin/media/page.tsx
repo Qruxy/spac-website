@@ -55,7 +55,7 @@ export default function AdminMediaPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('PENDING');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState(false);
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({
@@ -278,7 +278,7 @@ export default function AdminMediaPage() {
             <h1 className="text-2xl font-bold text-white/90">Media Management</h1>
             <p className="text-white/50 text-sm mt-1">Review and approve user-uploaded media</p>
           </div>
-          {statusFilter === 'PENDING' && (
+          {(statusFilter === 'PENDING' || statusFilter === 'ALL') && (
             <button
               onClick={() => setBulkMode(!bulkMode)}
               className={`${
