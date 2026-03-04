@@ -40,7 +40,7 @@ PageNotFoundError: Cannot find module for page: /api/admin/events/[id]/route
 ```
 
 **Reproduction Steps:**
-1. Login as admin user (demo/Sp@C2025!)
+1. Login as admin user (demo/[REDACTED])
 2. Call `GET http://localhost:3000/api/admin/events/90cea809-4319-4acf-9de4-d9a42610a8c2`
 3. Returns 404 HTML page instead of JSON
 
@@ -198,7 +198,7 @@ The development server becomes unresponsive after multiple requests, requires re
 ## Authentication Testing
 
 ### ✅ TC-AUTH-001: Admin Login (PASS)
-**Credentials:** demo / Sp@C2025!
+**Credentials:** demo / [REDACTED]
 **Result:** Session established with ADMIN role
 ```json
 {

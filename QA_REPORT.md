@@ -167,7 +167,7 @@ Prisma returns `Date` and `Decimal` objects from the server, but client componen
 ### Authentication
 - JWT strategy with 30-day max age
 - Cognito + Credentials providers
-- **Risk:** Hardcoded demo credentials in source code (`demo/Sp@C2025!`)
+- **Risk:** Hardcoded demo credentials in source code (`demo/[REDACTED]`)
 - **Risk:** Development mode allows passwordless login by email (gated by NODE_ENV)
 
 ### PayPal Integration
