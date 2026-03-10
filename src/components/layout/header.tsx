@@ -31,6 +31,9 @@ import {
   FlaskConical,
   History,
   GraduationCap,
+  Telescope,
+  Mic2,
+  Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import spacLogo from '../../../public/images/spac-logo-hires.png';
@@ -52,6 +55,9 @@ const moreLinks = [
   { name: 'OBS Star Party', href: '/obs', icon: Star, membersOnly: false },
   { name: 'Mirror Lab', href: '/mirror-lab', icon: FlaskConical, membersOnly: false },
   { name: 'History', href: '/history', icon: History, membersOnly: false },
+  { name: 'Star Party', href: '/star-party-request', icon: Telescope, membersOnly: false },
+  { name: 'General Meetings', href: '/general-meetings', icon: Mic2, membersOnly: false },
+  { name: 'Monthly Viewing', href: '/viewing', icon: Moon, membersOnly: false },
 ];
 
 export function Header() {

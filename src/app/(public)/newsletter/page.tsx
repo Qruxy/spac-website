@@ -6,10 +6,9 @@
  */
 
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ExternalLink, LogIn } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { NewsletterClient } from './newsletter-client';
@@ -105,11 +104,8 @@ async function getNewsletters() {
 }
 
 export default async function NewsletterPage() {
-  // Members-only — redirect to login if not authenticated
+  // Auth check for member-gated content (fileUrl), but no redirect — page is public
   const session = await getSession();
-  if (!session?.user) {
-    redirect('/login?callbackUrl=/newsletter');
-  }
 
   const { newsletters, total, totalPages, years } = await getNewsletters();
 
@@ -136,6 +132,17 @@ export default async function NewsletterPage() {
                 member articles, and celestial event previews.
               </p>
 
+              {/* Member download note */}
+              {!session?.user && (
+                <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-border/40 bg-muted/30 px-4 py-2 text-sm text-muted-foreground">
+                  <LogIn className="h-4 w-4" />
+                  <Link href="/login?callbackUrl=/newsletter" className="text-primary hover:underline font-medium">
+                    Sign in
+                  </Link>
+                  &nbsp;to download PDFs directly
+                </div>
+              )}
+
               {total > 0 && (
                 <div className="flex items-center justify-center gap-8 mt-12">
                   <div className="text-center">
@@ -159,6 +166,37 @@ export default async function NewsletterPage() {
               )}
             </div>
           </FadeIn>
+        </div>
+      </section>
+
+      {/* Google Drive Archive Banner */}
+      <section className="container mx-auto px-4 pb-8">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold text-foreground">Complete Archive on Google Drive</h2>
+            <p className="text-sm text-muted-foreground max-w-xl">
+              The complete SPACE newsletter archive is available on Google Drive. Issues are
+              published monthly by Editor Guy Earle.
+            </p>
+            {!session?.user && (
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                Members can download PDFs directly from this page —{' '}
+                <Link href="/login?callbackUrl=/newsletter" className="text-primary hover:underline">
+                  sign in
+                </Link>{' '}
+                to access downloads.
+              </p>
+            )}
+          </div>
+          <Link
+            href="https://drive.google.com/drive/folders/0B9dsr9BUsMaYSnkxZ0E1SFBHbTQ?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-shrink-0 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open Google Drive
+          </Link>
         </div>
       </section>
 

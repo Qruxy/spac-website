@@ -108,6 +108,7 @@ const nextConfig = {
       AUTH_COGNITO_ID: process.env.AUTH_COGNITO_ID,
       AUTH_COGNITO_SECRET: process.env.AUTH_COGNITO_SECRET,
       AUTH_COGNITO_ISSUER: process.env.AUTH_COGNITO_ISSUER,
+      APOD_API_KEY: process.env.APOD_API_KEY,
     },
   }),
   // GitHub Pages static export settings
@@ -182,6 +183,10 @@ const nextConfig = {
       {
         protocol: 'http',
         hostname: 'placekitten.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'apod.nasa.gov',
       },
     ],
   },
