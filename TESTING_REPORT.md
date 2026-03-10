@@ -115,7 +115,7 @@ alt: true,
 
 ### Priority 1: Critical Paths
 - [ ] User registration flow
-- [ ] Login with demo credentials (demo / Sp@C2025!)
+- [ ] Login with demo credentials (demo / [REDACTED])
 - [ ] Membership checkout (Stripe test mode)
 - [ ] Event registration
 

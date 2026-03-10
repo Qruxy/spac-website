@@ -20,6 +20,7 @@ import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import { HeroSection, HomeCtaButton } from './hero-section';
 import { MemberMediaSection } from './member-media-section';
+import { APODSection } from './apod-section';
 import { EventCard, NoEventsCard, type EventData } from './event-card';
 
 // Client-only animation-heavy sections — deferred so they don't block hero paint
@@ -172,6 +173,11 @@ export default function HomePage() {
       {/* Server component — Suspense streams it, won't block above-fold content */}
       <Suspense fallback={<div className="py-24" aria-hidden="true" />}>
         <MemberMediaSection />
+      </Suspense>
+
+      {/* NASA Astronomy Picture of the Day — 24h ISR revalidation */}
+      <Suspense fallback={<div className="py-20" aria-hidden="true" />}>
+        <APODSection />
       </Suspense>
 
       {/* Events — Suspense so slow DB revalidation shows skeleton instead of blocking */}
