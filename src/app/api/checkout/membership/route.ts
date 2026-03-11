@@ -7,7 +7,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { createPayPalSubscription } from '@/lib/paypal';
-import { getMembershipPlanId, type MembershipTier } from '@/lib/paypal/products';
+import { getMembershipPlanId, type MembershipTier, tierRequiresPayment } from '@/lib/paypal/products';
 
 export async function POST(request: Request) {
   try {
@@ -26,14 +26,14 @@ export async function POST(request: Request) {
       interval: 'monthly' | 'annual';
     };
 
-    if (!tier || tier === 'FREE') {
+    if (!tier || tier === 'FREE' || tier === 'STUDENT') {
       return NextResponse.json(
         { error: 'Invalid membership tier' },
         { status: 400 }
       );
     }
 
-    const planId = getMembershipPlanId(tier, interval);
+    const planId = getMembershipPlanId(tier);
 
     if (!planId || planId.startsWith('plan_')) {
       return NextResponse.json(

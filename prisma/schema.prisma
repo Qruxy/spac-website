@@ -562,6 +562,8 @@ enum MembershipType {
   INDIVIDUAL
   FAMILY
   STUDENT
+  PATRON
+  BENEFACTOR
   LIFETIME
 }
 

@@ -191,7 +191,7 @@ export function BillingActions({
 
       {!isActive && (
         <div className="flex gap-2">
-          {currentTier !== 'INDIVIDUAL' && (
+          {currentTier !== 'INDIVIDUAL' && currentTier !== 'FAMILY' && currentTier !== 'PATRON' && currentTier !== 'BENEFACTOR' && (
             <button
               onClick={() => handleUpgrade('INDIVIDUAL')}
               disabled={isLoading}
@@ -201,7 +201,7 @@ export function BillingActions({
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  Upgrade to Individual
+                  Upgrade to Single — $30/yr
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
