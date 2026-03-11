@@ -32,7 +32,8 @@ const PROTECTED_PREFIXES = [
   '/leadership',
   '/outreach',
   '/obs-admin',
-  // Members-only public content (newsletter is public-browsable; classifieds still gated)
+  // Members-only public content
+  '/newsletter',
   '/classifieds',
 ];
 

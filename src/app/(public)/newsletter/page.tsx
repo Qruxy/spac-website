@@ -1,11 +1,12 @@
 /**
  * Newsletter Archive Page
  *
- * Public page for browsing "The Eyepiece" newsletter archive.
+ * Members-only page for browsing "The Eyepiece" newsletter archive.
  * Server Component that fetches initial data, with client component for interactivity.
  */
 
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ArrowRight, ExternalLink, LogIn } from 'lucide-react';
@@ -104,8 +105,11 @@ async function getNewsletters() {
 }
 
 export default async function NewsletterPage() {
-  // Auth check for member-gated content (fileUrl), but no redirect — page is public
+  // Members-only — redirect to login if not authenticated
   const session = await getSession();
+  if (!session?.user) {
+    redirect('/login?callbackUrl=/newsletter');
+  }
 
   const { newsletters, total, totalPages, years } = await getNewsletters();
 
