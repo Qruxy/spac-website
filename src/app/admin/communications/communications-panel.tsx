@@ -39,6 +39,7 @@ import {
   ChevronUp,
   ToggleLeft,
   ToggleRight,
+  ImagePlus,
 } from 'lucide-react';
 import { RichTextEditor } from '@/components/admin/rich-text-editor';
 import { SocialCrossPostPanel } from '@/components/admin/social-cross-post-panel';
@@ -215,7 +216,7 @@ function ComposeTab() {
   const [recipientFilter, setRecipientFilter] = useState<RecipientFilter>({});
   const [manualEmails, setManualEmails] = useState<string[]>([]);
   const [manualEmailInput, setManualEmailInput] = useState('');
-  const [sendNotification, setSendNotification] = useState(false);
+  const [insertingImage, setInsertingImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -280,7 +281,6 @@ function ComposeTab() {
             ? recipientFilter
             : undefined,
           manualEmails: manualEmails.length > 0 ? manualEmails : undefined,
-          sendNotification,
         }),
       });
 
@@ -293,7 +293,6 @@ function ComposeTab() {
         setRecipientFilter({});
         setManualEmails([]);
         setManualEmailInput('');
-        setSendNotification(false);
       } else {
         const error = await res.json();
         setToast({ type: 'error', message: error.error || 'Failed to send email' });
@@ -303,6 +302,26 @@ function ComposeTab() {
     } finally {
       setLoading(false);
       setTimeout(() => setToast(null), 5000);
+    }
+  };
+
+  const handleInsertImage = async (file: File) => {
+    setInsertingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('pageKey', 'email-composer');
+      fd.append('fieldKey', `inline-${Date.now()}`);
+      const res = await fetch('/api/admin/page-builder/upload', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Upload failed');
+      const { url } = await res.json();
+      const imgTag = `<img src="${url}" alt="Inserted image" style="max-width:100%;height:auto;" />`;
+      setBodyHtml(prev => prev + imgTag);
+    } catch {
+      setToast({ type: 'error', message: 'Image upload failed' });
+      setTimeout(() => setToast(null), 4000);
+    } finally {
+      setInsertingImage(false);
     }
   };
 
@@ -545,25 +564,27 @@ function ComposeTab() {
 
       {/* Body */}
       <div className="bg-slate-800/50 border border-white/10 rounded-xl p-6">
-        <label className="block text-sm font-medium text-slate-300 mb-2">Email Body</label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-medium text-slate-300">Email Body</label>
+          <label className="flex items-center gap-2 cursor-pointer px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-xs transition-colors">
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleInsertImage(f); e.target.value = ''; }}
+              disabled={insertingImage}
+            />
+            {insertingImage
+              ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Uploading...</>
+              : <><ImagePlus className="h-3.5 w-3.5" />Insert Image</>
+            }
+          </label>
+        </div>
         <RichTextEditor
           value={bodyHtml}
           onChange={setBodyHtml}
           placeholder="Compose your email..."
         />
-      </div>
-
-      {/* Send Notification */}
-      <div className="bg-slate-800/50 border border-white/10 rounded-xl p-6">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={sendNotification}
-            onChange={(e) => setSendNotification(e.target.checked)}
-            className="w-4 h-4 rounded border-white/10 bg-slate-900/50 text-indigo-600 focus:ring-indigo-500"
-          />
-          <span className="text-white">Also send as in-app notification</span>
-        </label>
       </div>
 
       {/* Social Cross-Post */}
@@ -646,12 +667,6 @@ function ComposeTab() {
                 </p>
               ) : null}
               {manualEmails.length > 0 && <p className="text-sm text-slate-300">Manual emails: {manualEmails.join(', ')}</p>}
-              {sendNotification && (
-                <p className="text-sm text-slate-300">
-                  <AlertCircle className="h-4 w-4 inline mr-1" />
-                  An in-app notification will also be sent.
-                </p>
-              )}
             </div>
           </div>
         </Modal>

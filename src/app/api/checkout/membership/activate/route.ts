@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       update: {
         paypalSubscriptionId: subscriptionId,
         status: 'ACTIVE',
-        type: (tier as 'INDIVIDUAL' | 'FAMILY' | 'STUDENT') || 'INDIVIDUAL',
+        type: (tier as 'INDIVIDUAL' | 'FAMILY' | 'STUDENT' | 'PATRON' | 'BENEFACTOR') || 'INDIVIDUAL',
         interval: interval === 'monthly' ? 'MONTHLY' : 'ANNUAL',
         paypalCurrentPeriodEnd: nextBillingTime,
         startDate: new Date(),
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
         userId,
         paypalSubscriptionId: subscriptionId,
         status: 'ACTIVE',
-        type: (tier as 'INDIVIDUAL' | 'FAMILY' | 'STUDENT') || 'INDIVIDUAL',
+        type: (tier as 'INDIVIDUAL' | 'FAMILY' | 'STUDENT' | 'PATRON' | 'BENEFACTOR') || 'INDIVIDUAL',
         interval: interval === 'monthly' ? 'MONTHLY' : 'ANNUAL',
         paypalCurrentPeriodEnd: nextBillingTime,
         startDate: new Date(),

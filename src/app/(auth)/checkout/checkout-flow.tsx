@@ -3,7 +3,7 @@
 /**
  * Checkout Flow Component
  *
- * Handles the PayPal subscription creation flow.
+ * Handles the PayPal subscription creation flow for paid membership tiers.
  * Shows tier details, then redirects to PayPal for payment.
  */
 
@@ -12,7 +12,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Loader2, AlertCircle, CreditCard, ArrowLeft,
-  Star, Users, GraduationCap, Check,
+  Star, Users, GraduationCap, Check, Heart, Gem,
 } from 'lucide-react';
 
 const tierInfo: Record<string, {
@@ -22,44 +22,88 @@ const tierInfo: Record<string, {
   apiTier: string;
   icon: typeof Star;
   features: string[];
+  description: string;
 }> = {
   individual: {
-    name: 'Individual',
-    price: '$40',
+    name: 'Single',
+    price: '$30',
     period: '/year',
     apiTier: 'INDIVIDUAL',
     icon: Star,
+    description: 'One adult plus any number of minor children',
     features: [
+      'Astronomical League membership',
       'OBS star party access',
       'Equipment borrowing privileges',
       'Voting rights in club matters',
       'Member-only events',
       'Classifieds marketplace',
+      'Digital membership card',
     ],
   },
   family: {
     name: 'Family',
-    price: '$60',
+    price: '$35',
     period: '/year',
     apiTier: 'FAMILY',
     icon: Users,
+    description: 'Two adults plus any number of minor children',
     features: [
-      'All individual benefits',
-      'Up to 5 family members',
-      'Family discount on events',
+      'All Single member benefits',
+      'Two adult members',
+      'Astronomical League membership for all adults',
       'Youth programs access',
     ],
   },
   student: {
     name: 'Student',
-    price: '$20',
-    period: '/year',
+    price: 'Free',
+    period: '',
     apiTier: 'STUDENT',
     icon: GraduationCap,
+    description: 'Full-time students in Pinellas, Pasco, or Hillsborough Counties',
     features: [
-      'All individual benefits',
-      'Valid student ID required',
-      'Special student events',
+      'All member benefits',
+      'Astronomical League membership',
+      'OBS star party access',
+      'Equipment borrowing',
+      'Voting rights',
+      'Member classifieds',
+    ],
+  },
+  patron: {
+    name: 'Patron',
+    price: '$50',
+    period: '/year',
+    apiTier: 'PATRON',
+    icon: Heart,
+    description: 'Please consider Patron membership to help us grow',
+    features: [
+      'All Single member benefits',
+      'Patron recognition in club communications',
+      'Astronomical League membership',
+      'OBS star party access',
+      'Equipment borrowing',
+      'Voting rights',
+      'Member classifieds',
+    ],
+  },
+  benefactor: {
+    name: 'Benefactor',
+    price: '$100',
+    period: '/year',
+    apiTier: 'BENEFACTOR',
+    icon: Gem,
+    description: 'We love our Benefactors — thank you for your generosity',
+    features: [
+      'All Patron member benefits',
+      'Named recognition at OBS star party',
+      'Benefactor recognition in club publications',
+      'Astronomical League membership',
+      'OBS star party access',
+      'Equipment borrowing',
+      'Voting rights',
+      'Member classifieds',
     ],
   },
 };
@@ -73,12 +117,16 @@ export function CheckoutFlow() {
   const plan = searchParams.get('plan');
   const tier = plan ? tierInfo[plan] : null;
 
-  // Auto-redirect if plan is free or missing
+  // Free tiers don't need checkout
   useEffect(() => {
-    if (plan === 'free') {
+    if (plan === 'free' || plan === 'student') {
       router.replace('/dashboard');
     }
   }, [plan, router]);
+
+  if (!tier || plan === 'free' || plan === 'student') {
+    return null;
+  }
 
   if (!tier) {
     return (
@@ -141,9 +189,12 @@ export function CheckoutFlow() {
         <h1 className="text-2xl font-bold text-foreground">
           {tier.name} Membership
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">{tier.description}</p>
+        <p className="mt-2">
           <span className="text-2xl font-bold text-foreground">{tier.price}</span>
-          <span className="text-muted-foreground">{tier.period}</span>
+          {tier.period && (
+            <span className="text-muted-foreground">{tier.period}</span>
+          )}
         </p>
       </div>
 
@@ -204,7 +255,7 @@ export function CheckoutFlow() {
           href="/dashboard"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
-          Skip, stay on free plan
+          Skip for now
         </Link>
       </div>
     </>

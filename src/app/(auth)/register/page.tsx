@@ -5,7 +5,7 @@
  *
  * Signup form with membership tier selection.
  * Creates account via /api/auth/register, auto-signs in,
- * then redirects to dashboard (free) or checkout (paid).
+ * then redirects to dashboard (free/student) or checkout (paid).
  */
 
 import React, { useState } from 'react';
@@ -14,36 +14,64 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   UserPlus, Star, Users, GraduationCap, Check,
-  Loader2, AlertCircle, Eye, EyeOff,
+  Loader2, AlertCircle, Eye, EyeOff, Heart, Gem,
 } from 'lucide-react';
 
 const membershipTiers = [
   {
+    id: 'STUDENT',
+    name: 'Student',
+    price: 'Free',
+    period: '',
+    description: 'Full-time students in Pinellas, Pasco, or Hillsborough Counties',
+    note: 'Valid through expected graduation date',
+    icon: GraduationCap,
+    popular: false,
+    isPaid: false,
+  },
+  {
     id: 'INDIVIDUAL',
-    name: 'Individual',
-    price: '$40',
+    name: 'Single',
+    price: '$30',
     period: '/year',
-    description: 'Full club benefits for one person',
+    description: 'One adult plus any number of minor children',
+    note: 'Includes Astronomical League membership',
     icon: Star,
     popular: true,
+    isPaid: true,
   },
   {
     id: 'FAMILY',
     name: 'Family',
-    price: '$60',
+    price: '$35',
     period: '/year',
-    description: 'For the whole household',
+    description: 'Two adults plus any number of minor children',
+    note: 'Includes Astronomical League membership for all adults',
     icon: Users,
     popular: false,
+    isPaid: true,
   },
   {
-    id: 'STUDENT',
-    name: 'Student',
-    price: '$20',
+    id: 'PATRON',
+    name: 'Patron',
+    price: '$50',
     period: '/year',
-    description: 'For enrolled students',
-    icon: GraduationCap,
+    description: 'Please consider Patron membership to help us grow',
+    note: '',
+    icon: Heart,
     popular: false,
+    isPaid: true,
+  },
+  {
+    id: 'BENEFACTOR',
+    name: 'Benefactor',
+    price: '$100',
+    period: '/year',
+    description: 'We love our Benefactors',
+    note: 'Named recognition at OBS star party',
+    icon: Gem,
+    popular: false,
+    isPaid: true,
   },
 ];
 
@@ -98,8 +126,9 @@ export default function RegisterPage() {
         return;
       }
 
-      // 3. Redirect — claimed accounts go to dashboard, new accounts go to checkout
-      if (registerData.claimed) {
+      // 3. Route: claimed accounts and free/student tiers → dashboard; paid → checkout
+      const tier = membershipTiers.find((t) => t.id === selectedTier);
+      if (registerData.claimed || !tier?.isPaid) {
         router.push('/dashboard');
       } else if (selectedTier) {
         router.push(`/checkout?plan=${selectedTier.toLowerCase()}`);
@@ -115,7 +144,6 @@ export default function RegisterPage() {
   const stepLabels = ['Choose Plan', 'Create Account'];
   const currentStepNum = step === 'tier' ? 1 : 2;
 
-  // Step indicator (visual only)
   const StepIndicator = () => (
     <div className="flex items-center justify-center gap-2 mb-6">
       {stepLabels.map((label, i) => {
@@ -165,7 +193,7 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <div className="space-y-3 mb-6">
+        <div className="space-y-2 mb-6">
           {membershipTiers.map((tier) => (
             <button
               key={tier.id}
@@ -188,10 +216,15 @@ export default function RegisterPage() {
                 </div>
                 <div className="text-right">
                   <span className="text-lg font-bold text-foreground">{tier.price}</span>
-                  <span className="text-sm text-muted-foreground">{tier.period}</span>
+                  {tier.period && (
+                    <span className="text-sm text-muted-foreground">{tier.period}</span>
+                  )}
                 </div>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{tier.description}</p>
+              {tier.note && (
+                <p className="mt-0.5 text-xs text-muted-foreground/70 italic">{tier.note}</p>
+              )}
             </button>
           ))}
         </div>
@@ -220,10 +253,10 @@ export default function RegisterPage() {
           </h2>
           <ul className="space-y-2">
             {[
-              'Access to Orange Blossom Special star parties',
-              'Use of club telescopes and equipment',
+              'Astronomical League membership',
+              'Access to OBS annual star party',
+              'Club telescope and equipment use',
               'Monthly meetings with expert speakers',
-              'Hands-on astronomy workshops',
               'Member classifieds marketplace',
             ].map((benefit) => (
               <li
@@ -350,10 +383,15 @@ export default function RegisterPage() {
         >
           {isLoading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
+          ) : tier?.isPaid ? (
+            <>
+              <UserPlus className="h-5 w-5" />
+              Create Account &amp; Continue to Payment
+            </>
           ) : (
             <>
               <UserPlus className="h-5 w-5" />
-              Create Account & Continue to Payment
+              Create Account
             </>
           )}
         </button>

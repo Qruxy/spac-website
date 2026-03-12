@@ -66,6 +66,16 @@ interface ActivityData {
   listings: ListingItem[];
 }
 
+interface MembershipDetail {
+  id: string;
+  type: string;
+  status: string;
+  interval: string;
+  paypalSubscriptionId: string | null;
+  paypalCurrentPeriodEnd: string | null;
+  startDate: string | null;
+}
+
 export default function AdminMembersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +96,9 @@ export default function AdminMembersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [membershipDetail, setMembershipDetail] = useState<MembershipDetail | null>(null);
+  const [loadingMembership, setLoadingMembership] = useState(false);
+  const [updatingMembership, setUpdatingMembership] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -146,13 +159,28 @@ export default function AdminMembersPage() {
     }
   }, []);
 
+  const fetchMembership = useCallback(async (userId: string) => {
+    setLoadingMembership(true);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/membership`);
+      if (res.ok) setMembershipDetail(await res.json());
+      else setMembershipDetail(null);
+    } catch {
+      setMembershipDetail(null);
+    } finally {
+      setLoadingMembership(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (selectedUser) {
       fetchActivity(selectedUser.id);
+      fetchMembership(selectedUser.id);
     } else {
       setActivity(null);
+      setMembershipDetail(null);
     }
-  }, [selectedUser, fetchActivity]);
+  }, [selectedUser, fetchActivity, fetchMembership]);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -202,6 +230,27 @@ export default function AdminMembersPage() {
       fetchUsers();
     } catch (error) {
       showToast('Failed to delete user', 'error');
+    }
+  };
+
+  const handleUpdateMembershipStatus = async (membershipId: string, newStatus: string) => {
+    setUpdatingMembership(true);
+    try {
+      const res = await fetch(`/api/admin/memberships/${membershipId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok && selectedUser) {
+        fetchMembership(selectedUser.id);
+        showToast('Membership updated', 'success');
+      } else {
+        showToast('Failed to update membership', 'error');
+      }
+    } catch {
+      showToast('Failed to update membership', 'error');
+    } finally {
+      setUpdatingMembership(false);
     }
   };
 
@@ -518,60 +567,105 @@ export default function AdminMembersPage() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Membership Section */}
+              {/* Membership & Subscription Section */}
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
                   <CreditCard className="w-5 h-5 text-blue-400" />
-                  Membership
+                  Membership &amp; Subscription
                 </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-1">Type</label>
-                    <div className="text-sm font-medium">
-                      {selectedUser.membershipType || 'No membership'}
-                    </div>
-                  </div>
-                  {selectedUser.membershipEndDate && (
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">End Date</label>
-                      <div className="text-sm font-medium">
-                        {formatDate(selectedUser.membershipEndDate)}
+                {loadingMembership ? (
+                  <p className="text-sm text-gray-400">Loading...</p>
+                ) : membershipDetail ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-gray-400 block mb-0.5">Type</label>
+                        <p className="text-sm font-medium capitalize">{membershipDetail.type.toLowerCase()}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400 block mb-0.5">Billing</label>
+                        <p className="text-sm font-medium capitalize">{membershipDetail.interval.toLowerCase()}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400 block mb-0.5">Period End</label>
+                        <p className="text-sm font-medium">
+                          {membershipDetail.paypalCurrentPeriodEnd
+                            ? formatDate(membershipDetail.paypalCurrentPeriodEnd)
+                            : '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400 block mb-0.5">Started</label>
+                        <p className="text-sm font-medium">
+                          {membershipDetail.startDate ? formatDate(membershipDetail.startDate) : '—'}
+                        </p>
                       </div>
                     </div>
-                  )}
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-2">Status</label>
-                    <div className="flex flex-wrap gap-2">
-                      {(['ACTIVE', 'EXPIRED', 'CANCELLED'] as const).map((status) => (
+                    {membershipDetail.paypalSubscriptionId && (
+                      <div>
+                        <label className="text-xs text-gray-400 block mb-0.5">PayPal Subscription ID</label>
+                        <p className="text-xs font-mono text-gray-300 break-all">
+                          {membershipDetail.paypalSubscriptionId}
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-2">Status Override</label>
+                      <div className="flex flex-wrap gap-2">
+                        {(['ACTIVE', 'EXPIRED', 'CANCELLED'] as const).map(s => (
+                          <button
+                            key={s}
+                            onClick={() => handleUpdateMembershipStatus(membershipDetail.id, s)}
+                            disabled={updatingMembership || membershipDetail.status === s}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 ${
+                              membershipDetail.status === s
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-400">No active membership record.</p>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-2">Account Status</label>
+                      <div className="flex flex-wrap gap-2">
+                        {(['ACTIVE', 'EXPIRED', 'CANCELLED'] as const).map(status => (
+                          <button
+                            key={status}
+                            onClick={() =>
+                              setSelectedUser({ ...selectedUser!, membershipStatus: status })
+                            }
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                              selectedUser?.membershipStatus === status
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        ))}
                         <button
-                          key={status}
                           onClick={() =>
-                            setSelectedUser({ ...selectedUser, membershipStatus: status })
+                            setSelectedUser({ ...selectedUser!, membershipStatus: null })
                           }
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                            selectedUser.membershipStatus === status
+                            selectedUser?.membershipStatus === null
                               ? 'bg-blue-500 text-white'
                               : 'bg-white/5 border border-white/10 hover:bg-white/10'
                           }`}
                         >
-                          {status}
+                          None
                         </button>
-                      ))}
-                      <button
-                        onClick={() =>
-                          setSelectedUser({ ...selectedUser, membershipStatus: null })
-                        }
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                          selectedUser.membershipStatus === null
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-white/5 border border-white/10 hover:bg-white/10'
-                        }`}
-                      >
-                        None
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Role Management */}

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 type MembershipStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING';
-type MembershipType = 'INDIVIDUAL' | 'FAMILY' | 'STUDENT';
+type MembershipType = 'INDIVIDUAL' | 'FAMILY' | 'STUDENT' | 'PATRON' | 'BENEFACTOR';
 type MembershipInterval = 'MONTHLY' | 'ANNUAL';
 
 interface MembershipRecord {
@@ -193,9 +193,11 @@ export default function AdminMembershipsPage() {
             className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
           >
             <option value="ALL">All Types</option>
-            <option value="INDIVIDUAL">Individual</option>
-            <option value="FAMILY">Family</option>
             <option value="STUDENT">Student</option>
+            <option value="INDIVIDUAL">Single</option>
+            <option value="FAMILY">Family</option>
+            <option value="PATRON">Patron</option>
+            <option value="BENEFACTOR">Benefactor</option>
           </select>
         </div>
       </div>

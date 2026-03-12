@@ -18,6 +18,8 @@ import {
   GraduationCap,
   ArrowRight,
   Receipt,
+  Heart,
+  Gem,
 } from 'lucide-react';
 import { BillingActions } from './billing-actions';
 
@@ -50,6 +52,8 @@ export default async function BillingPage() {
     INDIVIDUAL: Star,
     FAMILY: Users,
     STUDENT: GraduationCap,
+    PATRON: Heart,
+    BENEFACTOR: Gem,
     LIFETIME: Star,
   };
   const TierIcon = tierIcons[currentTier as keyof typeof tierIcons] || Star;
@@ -83,7 +87,7 @@ export default async function BillingPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-xl font-bold text-foreground">
-                    {currentProduct?.name || 'Free'} Membership
+                    {currentProduct?.displayName || 'Free'} Membership
                   </h3>
                   {isActive ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-medium text-green-400">
@@ -161,10 +165,9 @@ export default async function BillingPage() {
             </h2>
             <div className="grid gap-4 sm:grid-cols-3">
               {Object.values(membershipProducts)
-                .filter((p) => p.tier !== 'FREE')
+                .filter((p) => p.tier !== 'FREE' && p.tier !== 'STUDENT' && p.annualAmountCents > 0)
                 .map((product) => {
-                  const Icon =
-                    tierIcons[product.tier as keyof typeof tierIcons];
+                  const Icon = tierIcons[product.tier as keyof typeof tierIcons] || Star;
                   return (
                     <div
                       key={product.tier}
@@ -182,14 +185,16 @@ export default async function BillingPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <Icon className="h-5 w-5 text-muted-foreground" />
                         <h3 className="font-semibold text-foreground">
-                          {product.name}
+                          {product.displayName}
                         </h3>
                       </div>
                       <p className="text-2xl font-bold text-foreground">
-                        {formatPrice(product.prices.annual.amount)}
-                        <span className="text-sm font-normal text-muted-foreground">
-                          /year
-                        </span>
+                        {product.annualAmountCents === 0 ? 'Free' : formatPrice(product.annualAmountCents)}
+                        {product.annualAmountCents > 0 && (
+                          <span className="text-sm font-normal text-muted-foreground">
+                            /year
+                          </span>
+                        )}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
                         {product.description}

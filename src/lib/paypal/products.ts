@@ -1,145 +1,152 @@
 /**
  * PayPal Products Configuration
  *
- * Defines membership tiers and their associated PayPal plan IDs.
- * These IDs should be configured in your PayPal Dashboard.
+ * Membership tiers match the current SPAC site 1:1:
+ *   Student   — Free (full-time students in Pinellas/Pasco/Hillsborough)
+ *   Single    — $30/yr  (1 adult + minor children)
+ *   Family    — $35/yr  (2 adults + minor children)
+ *   Patron    — $50/yr
+ *   Benefactor — $100/yr
  */
 
-export type MembershipTier = 'FREE' | 'INDIVIDUAL' | 'FAMILY' | 'STUDENT';
+export type MembershipTier = 'FREE' | 'INDIVIDUAL' | 'FAMILY' | 'STUDENT' | 'PATRON' | 'BENEFACTOR';
 
 export interface MembershipProduct {
   tier: MembershipTier;
-  name: string;
+  /** Display name shown in the UI */
+  displayName: string;
   description: string;
   features: string[];
-  prices: {
-    monthly?: {
-      planId: string;
-      amount: number;
-    };
-    annual: {
-      planId: string;
-      amount: number;
-    };
-  };
+  /** Annual price in USD cents. 0 = free. */
+  annualAmountCents: number;
+  paypalPlanId: string | null;
 }
 
-/**
- * Membership products configuration
- *
- * Note: Plan IDs should be set in environment variables or
- * created in PayPal Dashboard. These are placeholders.
- */
 export const membershipProducts: Record<MembershipTier, MembershipProduct> = {
   FREE: {
     tier: 'FREE',
-    name: 'Free',
-    description: 'Perfect for curious beginners',
+    displayName: 'Free',
+    description: 'Browse public events and newsletters',
     features: [
       'Access to public events',
       'Monthly newsletter',
-      'Online community access',
+      'SPAC community access',
     ],
-    prices: {
-      annual: {
-        planId: '', // Free tier doesn't need PayPal
-        amount: 0,
-      },
-    },
+    annualAmountCents: 0,
+    paypalPlanId: null,
+  },
+  STUDENT: {
+    tier: 'STUDENT',
+    displayName: 'Student',
+    description: 'Full-time students in Pinellas, Pasco, or Hillsborough Counties — free!',
+    features: [
+      'All member benefits',
+      'Astronomical League membership',
+      'OBS star party access',
+      'Equipment borrowing',
+      'Voting rights',
+      'Member classifieds',
+      'Valid through expected graduation date',
+    ],
+    annualAmountCents: 0,
+    paypalPlanId: null, // Free — no PayPal required
   },
   INDIVIDUAL: {
     tier: 'INDIVIDUAL',
-    name: 'Individual',
-    description: 'Full club benefits for one person',
+    displayName: 'Single',
+    description: 'One adult plus any number of minor children',
     features: [
-      'All free benefits',
+      'Astronomical League membership',
       'OBS star party access',
       'Equipment borrowing',
       'Voting rights',
       'Member-only events',
-      'Classifieds marketplace',
+      'Member classifieds marketplace',
+      'Digital membership card',
     ],
-    prices: {
-      monthly: {
-        planId: process.env.PAYPAL_PLAN_INDIVIDUAL_MONTHLY || 'plan_individual_monthly',
-        amount: 500, // $5.00/month
-      },
-      annual: {
-        planId: process.env.PAYPAL_PLAN_INDIVIDUAL_ANNUAL || 'plan_individual_annual',
-        amount: 4000, // $40.00/year
-      },
-    },
+    annualAmountCents: 3000, // $30/yr
+    paypalPlanId: process.env.PAYPAL_PLAN_INDIVIDUAL_ANNUAL || null,
   },
   FAMILY: {
     tier: 'FAMILY',
-    name: 'Family',
-    description: 'For the whole household',
+    displayName: 'Family',
+    description: 'Two adults plus any number of minor children',
     features: [
-      'All individual benefits',
-      'Up to 5 family members',
-      'Family discount on events',
+      'All Single member benefits',
+      'Two adult members',
+      'Astronomical League membership for all adults',
       'Youth programs access',
     ],
-    prices: {
-      monthly: {
-        planId: process.env.PAYPAL_PLAN_FAMILY_MONTHLY || 'plan_family_monthly',
-        amount: 700, // $7.00/month
-      },
-      annual: {
-        planId: process.env.PAYPAL_PLAN_FAMILY_ANNUAL || 'plan_family_annual',
-        amount: 6000, // $60.00/year
-      },
-    },
+    annualAmountCents: 3500, // $35/yr
+    paypalPlanId: process.env.PAYPAL_PLAN_FAMILY_ANNUAL || null,
   },
-  STUDENT: {
-    tier: 'STUDENT',
-    name: 'Student',
-    description: 'For enrolled students',
+  PATRON: {
+    tier: 'PATRON',
+    displayName: 'Patron',
+    description: 'Help us grow — please consider Patron membership',
     features: [
-      'All individual benefits',
-      'Valid student ID required',
-      'Special student events',
+      'All Single member benefits',
+      'Patron recognition in club communications',
+      'Astronomical League membership',
+      'OBS star party access',
+      'Equipment borrowing',
+      'Voting rights',
+      'Member classifieds',
     ],
-    prices: {
-      annual: {
-        planId: process.env.PAYPAL_PLAN_STUDENT_ANNUAL || 'plan_student_annual',
-        amount: 2000, // $20.00/year
-      },
-    },
+    annualAmountCents: 5000, // $50/yr
+    paypalPlanId: process.env.PAYPAL_PLAN_PATRON_ANNUAL || null,
+  },
+  BENEFACTOR: {
+    tier: 'BENEFACTOR',
+    displayName: 'Benefactor',
+    description: 'We love our Benefactors — thank you for your generosity',
+    features: [
+      'All Patron member benefits',
+      'Benefactor recognition in club publications',
+      'Named recognition at OBS star party',
+      'Astronomical League membership',
+      'OBS star party access',
+      'Equipment borrowing',
+      'Voting rights',
+      'Member classifieds',
+    ],
+    annualAmountCents: 10000, // $100/yr
+    paypalPlanId: process.env.PAYPAL_PLAN_BENEFACTOR_ANNUAL || null,
   },
 };
 
-/**
- * Get membership product by tier
- */
+/** Tiers shown on the registration/join page, in display order */
+export const PUBLIC_TIERS: MembershipTier[] = [
+  'STUDENT',
+  'INDIVIDUAL',
+  'FAMILY',
+  'PATRON',
+  'BENEFACTOR',
+];
+
 export function getMembershipProduct(tier: MembershipTier): MembershipProduct {
   return membershipProducts[tier];
 }
 
-/**
- * Get PayPal plan ID for a membership tier and billing interval
- */
-export function getMembershipPlanId(
-  tier: MembershipTier,
-  interval: 'monthly' | 'annual'
-): string | null {
-  const product = membershipProducts[tier];
-  if (interval === 'monthly' && product.prices.monthly) {
-    return product.prices.monthly.planId;
-  }
-  return product.prices.annual.planId || null;
+export function getMembershipPlanId(tier: MembershipTier): string | null {
+  return membershipProducts[tier]?.paypalPlanId ?? null;
 }
 
-/**
- * Format price for display
- */
-export function formatPrice(amount: number): string {
+export function formatPrice(amountCents: number): string {
+  if (amountCents === 0) return 'Free';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(amount / 100);
+    maximumFractionDigits: 0,
+  }).format(amountCents / 100);
+}
+
+/**
+ * Returns true if this tier requires PayPal payment.
+ */
+export function tierRequiresPayment(tier: MembershipTier): boolean {
+  return membershipProducts[tier].annualAmountCents > 0;
 }
 
 /**
@@ -151,9 +158,6 @@ export interface EventPricing {
   familyDiscount?: number;
 }
 
-/**
- * Calculate event registration price
- */
 export function calculateEventPrice({
   basePricing,
   isMember,
@@ -166,10 +170,8 @@ export function calculateEventPrice({
   quantity?: number;
 }): number {
   let unitPrice = isMember ? basePricing.memberPrice : basePricing.nonMemberPrice;
-
   if (isFamilyMember && basePricing.familyDiscount) {
     unitPrice = Math.round(unitPrice * (1 - basePricing.familyDiscount / 100));
   }
-
   return unitPrice * quantity;
 }
