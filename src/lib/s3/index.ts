@@ -14,13 +14,21 @@ let _s3Client: S3Client | null = null;
  */
 export function getS3Client(): S3Client {
   if (!_s3Client) {
-    const region = process.env.AWS_REGION || process.env.S3_REGION || 'us-east-1';
+    const region = process.env.S3_REGION || process.env.AWS_REGION || 'us-east-1';
 
     _s3Client = new S3Client({
       region,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || process.env.S3_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY || '',
+        accessKeyId:
+          process.env.S3_ACCESS_KEY_ID ||
+          process.env.SPAC_S3_ACCESS_KEY_ID ||
+          process.env.AWS_ACCESS_KEY_ID ||
+          '',
+        secretAccessKey:
+          process.env.S3_SECRET_ACCESS_KEY ||
+          process.env.SPAC_S3_SECRET_ACCESS_KEY ||
+          process.env.AWS_SECRET_ACCESS_KEY ||
+          '',
       },
     });
   }
@@ -31,9 +39,10 @@ export function getS3Client(): S3Client {
  * Get S3 bucket name from environment
  */
 export function getS3Bucket(): string {
-  const bucket = process.env.AWS_S3_BUCKET || process.env.S3_BUCKET;
+  const bucket = process.env.S3_BUCKET || process.env.AWS_S3_BUCKET;
   if (!bucket) {
-    throw new Error('AWS_S3_BUCKET or S3_BUCKET is not set in environment variables');
+    // Fallback to known bucket name — should be set in env vars
+    return 'spac-astronomy-media-132498934035';
   }
   return bucket;
 }
@@ -42,7 +51,16 @@ export function getS3Bucket(): string {
  * Get CloudFront domain for CDN URLs
  */
 export function getCloudFrontDomain(): string | null {
-  return process.env.CLOUDFRONT_DOMAIN || null;
+  // Check direct domain first, then parse from full URL
+  const domain = process.env.CLOUDFRONT_DOMAIN;
+  if (domain) return domain;
+
+  const url = process.env.CLOUDFRONT_URL;
+  if (url) {
+    // Strip protocol: "https://d2gbp2i1j2c26l.cloudfront.net" → "d2gbp2i1j2c26l.cloudfront.net"
+    return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  }
+  return null;
 }
 
 /**

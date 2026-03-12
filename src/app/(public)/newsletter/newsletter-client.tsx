@@ -310,7 +310,7 @@ export function NewsletterClient({
               </div>
               <div className="flex items-center gap-2">
                 <a
-                  href={viewingNewsletter.fileUrl!}
+                  href={`/api/newsletter/${viewingNewsletter.id}/view`}
                   download
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-colors"
                 >
@@ -328,7 +328,7 @@ export function NewsletterClient({
             {/* iframe */}
             <div className="flex-1 relative">
               <iframe
-                src={`${viewingNewsletter.fileUrl}#toolbar=1&view=FitH`}
+                src={`/api/newsletter/${viewingNewsletter.id}/view`}
                 className="w-full h-full border-0"
                 title={viewingNewsletter.title}
               />
