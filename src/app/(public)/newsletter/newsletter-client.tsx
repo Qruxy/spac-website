@@ -20,6 +20,7 @@ import {
   Loader2,
   ChevronDown,
   Lock,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import SpotlightCard from '@/components/SpotlightCard';
@@ -56,6 +57,7 @@ export function NewsletterClient({
   const [total, setTotal] = useState(initialTotal);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewingNewsletter, setViewingNewsletter] = useState<Newsletter | null>(null);
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedYear, setSelectedYear] = useState<string>('all');
@@ -63,6 +65,13 @@ export function NewsletterClient({
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setViewingNewsletter(null); };
+    if (viewingNewsletter) document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [viewingNewsletter]);
 
   // Debounce search input
   useEffect(() => {
@@ -238,7 +247,7 @@ export function NewsletterClient({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <NewsletterCard newsletter={newsletter} formatSize={formatSize} getMonthColor={getMonthColor} />
+                <NewsletterCard newsletter={newsletter} formatSize={formatSize} getMonthColor={getMonthColor} onView={setViewingNewsletter} />
               </motion.div>
             ))}
           </motion.div>
@@ -286,6 +295,47 @@ export function NewsletterClient({
           </button>
         </div>
       )}
+
+      {/* PDF Viewer Modal */}
+      {viewingNewsletter && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="relative w-full max-w-5xl h-[90vh] bg-background border border-border rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/30 shrink-0">
+              <div>
+                <h3 className="font-semibold text-foreground text-sm truncate max-w-lg">{viewingNewsletter.title}</h3>
+                {viewingNewsletter.monthName && viewingNewsletter.year && (
+                  <p className="text-xs text-muted-foreground">{viewingNewsletter.monthName} {viewingNewsletter.year}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={viewingNewsletter.fileUrl!}
+                  download
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download
+                </a>
+                <button
+                  onClick={() => setViewingNewsletter(null)}
+                  className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            {/* iframe */}
+            <div className="flex-1 relative">
+              <iframe
+                src={`${viewingNewsletter.fileUrl}#toolbar=1&view=FitH`}
+                className="w-full h-full border-0"
+                title={viewingNewsletter.title}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -295,15 +345,19 @@ interface NewsletterCardProps {
   newsletter: Newsletter;
   formatSize: (bytes: number) => string;
   getMonthColor: (month: number | null) => string;
+  onView: (newsletter: Newsletter) => void;
 }
 
-function NewsletterCard({ newsletter, formatSize, getMonthColor }: NewsletterCardProps) {
+function NewsletterCard({ newsletter, formatSize, getMonthColor, onView }: NewsletterCardProps) {
   return (
     <SpotlightCard
-      className="h-full"
+      className="h-full cursor-pointer"
       spotlightColor="rgba(59, 130, 246, 0.15)"
     >
-      <div className="p-4 flex flex-col h-full">
+      <div
+        className="p-4 flex flex-col h-full"
+        onClick={() => { if (newsletter.fileUrl) onView(newsletter); }}
+      >
         {/* PDF Thumbnail/Placeholder */}
         <div className={`aspect-[3/4] rounded-lg bg-gradient-to-br ${getMonthColor(newsletter.month)} mb-4 flex flex-col items-center justify-center relative overflow-hidden group`}>
           {/* Decorative stars */}
@@ -332,18 +386,17 @@ function NewsletterCard({ newsletter, formatSize, getMonthColor }: NewsletterCar
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
             {newsletter.fileUrl ? (
               <>
-                <a
-                  href={newsletter.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={(e) => { e.stopPropagation(); onView(newsletter); }}
                   className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
                   aria-label="View PDF"
                 >
                   <ExternalLink className="h-5 w-5 text-white" />
-                </a>
+                </button>
                 <a
                   href={newsletter.fileUrl}
                   download={newsletter.filename}
+                  onClick={(e) => e.stopPropagation()}
                   className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
                   aria-label="Download PDF"
                 >
@@ -354,6 +407,7 @@ function NewsletterCard({ newsletter, formatSize, getMonthColor }: NewsletterCar
               <Link
                 href="/login"
                 className="flex flex-col items-center gap-2 text-white"
+                onClick={(e) => e.stopPropagation()}
               >
                 <Lock className="h-6 w-6" />
                 <span className="text-sm font-medium">Members Only</span>
