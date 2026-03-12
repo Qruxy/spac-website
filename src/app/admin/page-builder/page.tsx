@@ -20,6 +20,7 @@ interface FieldDef {
   placeholder?: string;
   maxLength?: number;
   section?: string;       // group label
+  defaultValue?: string;  // site's hardcoded default (shown when no DB value is saved)
 }
 
 interface PageDef {
@@ -39,12 +40,12 @@ const PAGES: PageDef[] = [
     description: 'The first page visitors see when they come to the site.',
     icon: Home,
     fields: [
-      { key: 'hero_title', label: 'Main Headline', hint: 'The big bold text front and center — the first thing everyone reads.', type: 'text', placeholder: 'e.g. St. Petersburg Astronomy Club', maxLength: 80, section: 'Hero Section (Top of Page)' },
-      { key: 'hero_subtitle', label: 'Tagline / Subheading', hint: 'A short sentence below the headline that describes the club.', type: 'textarea', placeholder: 'e.g. Exploring the universe together since 1975', maxLength: 200, section: 'Hero Section (Top of Page)' },
+      { key: 'hero_title', label: 'Main Headline', hint: 'The big bold text front and center — the first thing everyone reads.', type: 'text', placeholder: 'e.g. St. Petersburg Astronomy Club', maxLength: 80, section: 'Hero Section (Top of Page)', defaultValue: 'St. Petersburg Astronomy Club' },
+      { key: 'hero_subtitle', label: 'Tagline / Subheading', hint: 'A short sentence below the headline that describes the club.', type: 'textarea', placeholder: 'e.g. Exploring the universe together since 1975', maxLength: 200, section: 'Hero Section (Top of Page)', defaultValue: "Tampa Bay's home for stargazers, educators, and night sky enthusiasts since 1927." },
       { key: 'hero_image', label: 'Hero Background Photo', hint: 'The full-width background image behind the headline. Use a high-quality astronomy or night sky photo.', type: 'image', section: 'Hero Section (Top of Page)' },
-      { key: 'cta_primary_text', label: 'Join Button Text', hint: 'The text on the main call-to-action button (usually "Join the Club" or "Become a Member").', type: 'text', placeholder: 'Join the Club', maxLength: 40, section: 'Buttons' },
-      { key: 'cta_secondary_text', label: 'Secondary Button Text', hint: 'The text on the second button (usually something like "Learn More" or "View Events").', type: 'text', placeholder: 'View Events', maxLength: 40, section: 'Buttons' },
-      { key: 'intro_text', label: 'Welcome Paragraph', hint: 'A short welcome message shown below the hero section introducing the club.', type: 'textarea', placeholder: 'Welcome to the St. Petersburg Astronomy Club...', maxLength: 500, section: 'Welcome Section' },
+      { key: 'cta_primary_text', label: 'Join Button Text', hint: 'The text on the main call-to-action button (usually "Join the Club" or "Become a Member").', type: 'text', placeholder: 'Join the Club', maxLength: 40, section: 'Buttons', defaultValue: 'Join Today' },
+      { key: 'cta_secondary_text', label: 'Secondary Button Text', hint: 'The text on the second button (usually something like "Learn More" or "View Events").', type: 'text', placeholder: 'View Events', maxLength: 40, section: 'Buttons', defaultValue: 'View Events' },
+      { key: 'intro_text', label: 'Welcome Paragraph', hint: 'A short welcome message shown below the hero section introducing the club.', type: 'textarea', placeholder: 'Welcome to the St. Petersburg Astronomy Club...', maxLength: 500, section: 'Welcome Section', defaultValue: 'We are a nonprofit organization dedicated to astronomy education, outreach, and community observing.' },
     ],
   },
   {
@@ -54,8 +55,8 @@ const PAGES: PageDef[] = [
     description: 'Tells visitors who the club is, its history, and its mission.',
     icon: Users,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The large heading at the top of the About page.', type: 'text', placeholder: 'About SPAC', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description shown just below the title.', type: 'textarea', placeholder: 'Dedicated to astronomy education and stargazing...', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The large heading at the top of the About page.', type: 'text', placeholder: 'About SPAC', maxLength: 60, section: 'Page Header', defaultValue: 'About SPAC' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description shown just below the title.', type: 'textarea', placeholder: 'Dedicated to astronomy education and stargazing...', maxLength: 200, section: 'Page Header', defaultValue: 'St. Petersburg Astronomy Club has been serving the Tampa Bay area since 1927.' },
       { key: 'hero_image', label: 'Header Photo', hint: 'Optional: a photo used at the top of the About page.', type: 'image', section: 'Page Header' },
       { key: 'about_body', label: 'About Us Text', hint: 'The main body of the About page — who you are, what you do, why you exist. You can include paragraphs, headings, and bullet points.', type: 'richtext', section: 'Page Content' },
       { key: 'history_snippet', label: 'History Summary', hint: "A short 1-2 sentence summary of the club's history (shown in a callout or sidebar).", type: 'textarea', placeholder: 'Founded in 1975, SPAC has been serving the Tampa Bay area for over 45 years...', maxLength: 300, section: 'Page Content' },
@@ -68,9 +69,9 @@ const PAGES: PageDef[] = [
     description: 'Lists all upcoming club events and star parties.',
     icon: Calendar,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Events page.', type: 'text', placeholder: 'Upcoming Events', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description shown below the title.', type: 'textarea', placeholder: 'Join us for star parties, meetings, and more...', maxLength: 200, section: 'Page Header' },
-      { key: 'empty_state_text', label: '"No Events" Message', hint: 'Text shown when there are no upcoming events listed. Example: "Check back soon — new events are coming!"', type: 'text', placeholder: 'No upcoming events at this time. Check back soon!', maxLength: 150, section: 'Page Content' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Events page.', type: 'text', placeholder: 'Upcoming Events', maxLength: 60, section: 'Page Header', defaultValue: 'Upcoming Events' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description shown below the title.', type: 'textarea', placeholder: 'Join us for star parties, meetings, and more...', maxLength: 200, section: 'Page Header', defaultValue: 'Star parties, general meetings, and special events for members and the public.' },
+      { key: 'empty_state_text', label: '"No Events" Message', hint: 'Text shown when there are no upcoming events listed. Example: "Check back soon — new events are coming!"', type: 'text', placeholder: 'No upcoming events at this time. Check back soon!', maxLength: 150, section: 'Page Content', defaultValue: 'No upcoming events at this time. Check back soon!' },
     ],
   },
   {
@@ -80,8 +81,8 @@ const PAGES: PageDef[] = [
     description: 'Showcases member-submitted astrophotography.',
     icon: ImageIcon,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Gallery page.', type: 'text', placeholder: 'Member Gallery', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description below the title.', type: 'textarea', placeholder: 'Beautiful astrophotography by our members...', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Gallery page.', type: 'text', placeholder: 'Member Gallery', maxLength: 60, section: 'Page Header', defaultValue: 'Member Gallery' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description below the title.', type: 'textarea', placeholder: 'Beautiful astrophotography by our members...', maxLength: 200, section: 'Page Header', defaultValue: 'Astrophotography submitted by our members.' },
     ],
   },
   {
@@ -91,8 +92,8 @@ const PAGES: PageDef[] = [
     description: 'Where visitors sign up and choose a membership plan.',
     icon: CreditCard,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Membership page.', type: 'text', placeholder: 'Join SPAC', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short pitch shown below the title.', type: 'textarea', placeholder: 'Become a member and start exploring the stars with us.', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Membership page.', type: 'text', placeholder: 'Join SPAC', maxLength: 60, section: 'Page Header', defaultValue: 'Join SPAC' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short pitch shown below the title.', type: 'textarea', placeholder: 'Become a member and start exploring the stars with us.', maxLength: 200, section: 'Page Header', defaultValue: 'Become a member and start exploring the universe with us.' },
       { key: 'intro_text', label: 'Introduction / Benefits Overview', hint: 'A brief intro explaining what membership includes. This appears before the pricing cards.', type: 'richtext', section: 'Page Content' },
       { key: 'student_price_monthly', label: 'Student — Monthly Price', hint: 'Just the dollar amount, e.g. "5.00"', type: 'text', placeholder: '5.00', maxLength: 10, section: 'Pricing' },
       { key: 'student_price_annual', label: 'Student — Annual Price', hint: 'Just the dollar amount, e.g. "50.00"', type: 'text', placeholder: '50.00', maxLength: 10, section: 'Pricing' },
@@ -114,8 +115,8 @@ const PAGES: PageDef[] = [
     description: 'Archive of the club newsletter (The Eyepiece).',
     icon: Mail,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Newsletter page.', type: 'text', placeholder: 'The Eyepiece Newsletter', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description shown below the title.', type: 'textarea', placeholder: 'Monthly newsletter for SPAC members...', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Newsletter page.', type: 'text', placeholder: 'The Eyepiece Newsletter', maxLength: 60, section: 'Page Header', defaultValue: 'The Eyepiece' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description shown below the title.', type: 'textarea', placeholder: 'Monthly newsletter for SPAC members...', maxLength: 200, section: 'Page Header', defaultValue: 'The official monthly newsletter of the St. Petersburg Astronomy Club.' },
     ],
   },
   {
@@ -125,9 +126,9 @@ const PAGES: PageDef[] = [
     description: 'How visitors can get in touch with the club.',
     icon: Phone,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Contact page.', type: 'text', placeholder: 'Contact Us', maxLength: 60, section: 'Page Header' },
-      { key: 'intro_text', label: 'Introduction', hint: "A friendly opening paragraph inviting visitors to reach out.", type: 'textarea', placeholder: "Have questions? We'd love to hear from you...", maxLength: 300, section: 'Contact Info' },
-      { key: 'email', label: 'Contact Email Address', hint: 'The main email address people should use to contact the club.', type: 'text', placeholder: 'info@stpeteastro.org', maxLength: 100, section: 'Contact Info' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Contact page.', type: 'text', placeholder: 'Contact Us', maxLength: 60, section: 'Page Header', defaultValue: 'Contact Us' },
+      { key: 'intro_text', label: 'Introduction', hint: "A friendly opening paragraph inviting visitors to reach out.", type: 'textarea', placeholder: "Have questions? We'd love to hear from you...", maxLength: 300, section: 'Contact Info', defaultValue: "Have questions? We'd love to hear from you." },
+      { key: 'email', label: 'Contact Email Address', hint: 'The main email address people should use to contact the club.', type: 'text', placeholder: 'info@stpeteastro.org', maxLength: 100, section: 'Contact Info', defaultValue: 'info@stpeteastro.org' },
       { key: 'phone', label: 'Phone Number', hint: 'Club phone number (leave blank if none).', type: 'text', placeholder: '(727) 555-0000', maxLength: 30, section: 'Contact Info' },
       { key: 'address', label: 'Mailing Address', hint: "The club's mailing address (shown on the contact page).", type: 'textarea', placeholder: 'P.O. Box 12345\nSt. Petersburg, FL 33701', maxLength: 200, section: 'Contact Info' },
     ],
@@ -139,8 +140,8 @@ const PAGES: PageDef[] = [
     description: 'The history and story of the club.',
     icon: BookOpen,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the History page.', type: 'text', placeholder: 'Our History', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short phrase shown below the title.', type: 'textarea', placeholder: 'Over 45 years of exploring the night sky...', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the History page.', type: 'text', placeholder: 'Our History', maxLength: 60, section: 'Page Header', defaultValue: 'Our History' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short phrase shown below the title.', type: 'textarea', placeholder: 'Over 45 years of exploring the night sky...', maxLength: 200, section: 'Page Header', defaultValue: 'Over 45 years of exploring the night sky together.' },
       { key: 'body', label: 'History Content', hint: 'The full history of the club. You can use headings to break it into time periods, and add photos with the image insert button.', type: 'richtext', section: 'Page Content' },
     ],
   },
@@ -151,8 +152,8 @@ const PAGES: PageDef[] = [
     description: "Information about the club's telescope mirror-making lab.",
     icon: Telescope,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Mirror Lab page.', type: 'text', placeholder: 'Mirror Lab', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short tagline for the mirror lab.', type: 'textarea', placeholder: 'Build your own telescope mirror with guidance from expert club members.', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Mirror Lab page.', type: 'text', placeholder: 'Mirror Lab', maxLength: 60, section: 'Page Header', defaultValue: 'Mirror Lab' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short tagline for the mirror lab.', type: 'textarea', placeholder: 'Build your own telescope mirror with guidance from expert club members.', maxLength: 200, section: 'Page Header', defaultValue: 'Build your own telescope mirror with expert guidance from club members.' },
       { key: 'hero_image', label: 'Header Photo', hint: 'A photo for the top of the Mirror Lab page (e.g., someone grinding a mirror).', type: 'image', section: 'Page Header' },
       { key: 'body', label: 'Mirror Lab Content', hint: 'All the details about the mirror lab — how it works, how to participate, schedule, etc.', type: 'richtext', section: 'Page Content' },
     ],
@@ -164,8 +165,8 @@ const PAGES: PageDef[] = [
     description: 'List of dark sky viewing locations used by the club.',
     icon: Eye,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Viewing Sites page.', type: 'text', placeholder: 'Viewing Sites', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description of the viewing sites.', type: 'textarea', placeholder: 'Discover the best dark sky locations in the Tampa Bay area.', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Viewing Sites page.', type: 'text', placeholder: 'Viewing Sites', maxLength: 60, section: 'Page Header', defaultValue: 'Viewing Sites' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description of the viewing sites.', type: 'textarea', placeholder: 'Discover the best dark sky locations in the Tampa Bay area.', maxLength: 200, section: 'Page Header', defaultValue: 'The best dark sky locations in the Tampa Bay area.' },
       { key: 'body', label: 'Viewing Sites Content', hint: 'Details about each viewing location — name, address, directions, what to expect, rules, etc.', type: 'richtext', section: 'Page Content' },
     ],
   },
@@ -176,8 +177,8 @@ const PAGES: PageDef[] = [
     description: "Information about the club's regular monthly meetings.",
     icon: MessageSquare,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the General Meetings page.', type: 'text', placeholder: 'General Meetings', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description of when and where meetings are held.', type: 'textarea', placeholder: 'Join us every third Friday of the month...', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the General Meetings page.', type: 'text', placeholder: 'General Meetings', maxLength: 60, section: 'Page Header', defaultValue: 'General Meetings' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description of when and where meetings are held.', type: 'textarea', placeholder: 'Join us every third Friday of the month...', maxLength: 200, section: 'Page Header', defaultValue: 'Join us every third Friday for presentations, Q&A, and community.' },
       { key: 'body', label: 'Meetings Content', hint: 'Full details about general meetings — day, time, location, parking, what happens at a meeting, etc.', type: 'richtext', section: 'Page Content' },
     ],
   },
@@ -188,8 +189,8 @@ const PAGES: PageDef[] = [
     description: 'Member telescope and equipment buy/sell listings.',
     icon: ShoppingBag,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Classifieds page.', type: 'text', placeholder: 'Member Classifieds', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description of the classifieds section.', type: 'textarea', placeholder: 'Buy and sell telescopes, eyepieces, and astronomy gear...', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Classifieds page.', type: 'text', placeholder: 'Member Classifieds', maxLength: 60, section: 'Page Header', defaultValue: 'Member Classifieds' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description of the classifieds section.', type: 'textarea', placeholder: 'Buy and sell telescopes, eyepieces, and astronomy gear...', maxLength: 200, section: 'Page Header', defaultValue: 'Buy and sell telescopes, eyepieces, and astronomy gear.' },
       { key: 'rules_text', label: 'Classifieds Rules & Policy', hint: 'The rules and guidelines for posting classifieds ads. Members will read this before posting.', type: 'richtext', section: 'Page Content' },
     ],
   },
@@ -200,8 +201,8 @@ const PAGES: PageDef[] = [
     description: 'Page where visitors can make donations to the club.',
     icon: Heart,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Donations page.', type: 'text', placeholder: 'Support SPAC', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short tagline encouraging donations.', type: 'textarea', placeholder: 'Help us keep the stars accessible to everyone.', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Donations page.', type: 'text', placeholder: 'Support SPAC', maxLength: 60, section: 'Page Header', defaultValue: 'Support SPAC' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short tagline encouraging donations.', type: 'textarea', placeholder: 'Help us keep the stars accessible to everyone.', maxLength: 200, section: 'Page Header', defaultValue: 'Help us keep the stars accessible to everyone.' },
       { key: 'body', label: 'Donation Appeal', hint: 'A heartfelt message about why donations matter and what the money funds (equipment, events, outreach programs, etc.).', type: 'richtext', section: 'Page Content' },
     ],
   },
@@ -212,8 +213,8 @@ const PAGES: PageDef[] = [
     description: 'The public page for the annual Observing Skills event.',
     icon: Star,
     fields: [
-      { key: 'hero_title', label: 'Event Title', hint: 'The name of the OBS event shown at the top of the page.', type: 'text', placeholder: 'Observing Skills Event', maxLength: 80, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Event Tagline', hint: 'A short description of the event shown below the title.', type: 'textarea', placeholder: 'An annual celebration of astronomical observation...', maxLength: 200, section: 'Page Header' },
+      { key: 'hero_title', label: 'Event Title', hint: 'The name of the OBS event shown at the top of the page.', type: 'text', placeholder: 'Observing Skills Event', maxLength: 80, section: 'Page Header', defaultValue: 'Orange Blossom Special' },
+      { key: 'hero_subtitle', label: 'Event Tagline', hint: 'A short description of the event shown below the title.', type: 'textarea', placeholder: 'An annual celebration of astronomical observation...', maxLength: 200, section: 'Page Header', defaultValue: "SPAC's annual multi-day star party featuring camping, observing, and community." },
       { key: 'hero_image', label: 'Event Banner Photo', hint: 'A large photo used as the banner for the OBS event page.', type: 'image', section: 'Page Header' },
       { key: 'description', label: 'Event Description', hint: 'Full details about the event — what it is, who can attend, schedule, what to bring, registration info, etc.', type: 'richtext', section: 'Page Content' },
     ],
@@ -225,9 +226,9 @@ const PAGES: PageDef[] = [
     description: 'Form page where schools and groups can request a star party.',
     icon: Zap,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Star Party Request page.', type: 'text', placeholder: 'Request a Star Party', maxLength: 60, section: 'Page Header' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description of the program.', type: 'textarea', placeholder: 'Bring the wonders of the universe to your school or group.', maxLength: 200, section: 'Page Header' },
-      { key: 'intro_text', label: 'Introduction Text', hint: "An explanation of the star party program — what it is, who it's for, what's involved, how to fill out the form.", type: 'textarea', placeholder: 'Our club members love sharing astronomy with the community...', maxLength: 600, section: 'Page Content' },
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Star Party Request page.', type: 'text', placeholder: 'Request a Star Party', maxLength: 60, section: 'Page Header', defaultValue: 'Request a Star Party' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description of the program.', type: 'textarea', placeholder: 'Bring the wonders of the universe to your school or group.', maxLength: 200, section: 'Page Header', defaultValue: 'Bring the wonders of the universe to your school or group.' },
+      { key: 'intro_text', label: 'Introduction Text', hint: "An explanation of the star party program — what it is, who it's for, what's involved, how to fill out the form.", type: 'textarea', placeholder: 'Our club members love sharing astronomy with the community...', maxLength: 600, section: 'Page Content', defaultValue: "Our club members love sharing astronomy with schools, scout troops, and community organizations. Fill out the form below and we'll be in touch." },
     ],
   },
 ];
@@ -258,7 +259,12 @@ export default function PageBuilderPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const val = (fieldKey: string) => contentMap[selectedPage.key]?.[fieldKey] ?? '';
+  const val = (fieldKey: string) => {
+    const dbValue = contentMap[selectedPage.key]?.[fieldKey];
+    if (dbValue !== undefined && dbValue !== '') return dbValue;
+    const field = selectedPage.fields.find(f => f.key === fieldKey);
+    return field?.defaultValue ?? '';
+  };
 
   const save = useCallback((fieldKey: string, value: string) => {
     const pageKey = selectedPage.key;
@@ -345,7 +351,7 @@ export default function PageBuilderPage() {
             Loading page content...
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto px-6 py-6 pb-16 space-y-8">
+          <div className="max-w-5xl mx-auto px-6 py-6 pb-16 space-y-8">
             {/* Page header banner */}
             <div className="bg-gradient-to-r from-indigo-600/10 to-purple-600/10 border border-indigo-500/20 rounded-2xl p-5">
               <div className="flex items-start justify-between gap-4">
@@ -375,13 +381,16 @@ export default function PageBuilderPage() {
             </div>
 
             {/* Sections */}
-            {Object.entries(sections).map(([sectionName, fields]) => (
+            {Object.entries(sections).map(([sectionName, fields]) => {
+              // Use 2-column grid when all fields in the section are short text (maxLength <= 10)
+              const useGrid = fields.every(f => f.type === 'text' && (f.maxLength ?? 999) <= 10);
+              return (
               <div key={sectionName}>
                 <div className="flex items-center gap-3 mb-4">
                   <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider">{sectionName}</h3>
                   <div className="flex-1 h-px bg-white/[0.06]" />
                 </div>
-                <div className="space-y-4">
+                <div className={useGrid ? 'grid grid-cols-2 gap-4' : 'space-y-4'}>
                   {fields.map(field => {
                     const typeMeta = FIELD_TYPE_META[field.type];
                     const TypeIcon = typeMeta.icon;
@@ -389,6 +398,10 @@ export default function PageBuilderPage() {
                     const statusKey = `${selectedPage.key}:${field.key}`;
                     const status = saveStatus[statusKey] || 'idle';
                     const isUploading = uploadingField === statusKey;
+                    const isDefault = (field.type === 'text' || field.type === 'textarea') &&
+                      field.defaultValue !== undefined &&
+                      fieldVal === field.defaultValue &&
+                      !contentMap[selectedPage.key]?.[field.key];
 
                     return (
                       <div key={field.key} className="bg-slate-800/40 border border-white/[0.07] rounded-xl overflow-hidden hover:border-white/[0.12] transition-colors">
@@ -404,7 +417,8 @@ export default function PageBuilderPage() {
                             </div>
                           </div>
                           {/* Save status */}
-                          <div className="shrink-0 text-xs">
+                          <div className="shrink-0 text-xs flex items-center gap-2">
+                            {isDefault && status === 'idle' && <span className="text-slate-500 px-1.5 py-0.5 rounded bg-slate-700/60 font-medium">Default</span>}
                             {status === 'saving' && <span className="text-slate-400 flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Saving</span>}
                             {status === 'saved' && <span className="text-emerald-400 flex items-center gap-1"><Check className="h-3 w-3" />Saved</span>}
                             {status === 'error' && <span className="text-red-400 flex items-center gap-1"><AlertCircle className="h-3 w-3" />Error</span>}
@@ -517,7 +531,8 @@ export default function PageBuilderPage() {
                   })}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

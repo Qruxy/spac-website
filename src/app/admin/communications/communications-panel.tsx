@@ -40,6 +40,7 @@ import {
   ToggleLeft,
   ToggleRight,
   ImagePlus,
+  BarChart2,
 } from 'lucide-react';
 import { RichTextEditor } from '@/components/admin/rich-text-editor';
 import { SocialCrossPostPanel } from '@/components/admin/social-cross-post-panel';
@@ -110,7 +111,7 @@ interface UserSearchResult {
 }
 
 export function CommunicationsPanel() {
-  const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history' | 'groups' | 'automations'>('compose');
+  const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history' | 'groups' | 'automations' | 'deliverability'>('compose');
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -193,6 +194,19 @@ export function CommunicationsPanel() {
               <span className="font-medium">Automations</span>
             </div>
           </button>
+          <button
+            onClick={() => setActiveTab('deliverability')}
+            className={`pb-3 border-b-2 transition-colors ${
+              activeTab === 'deliverability'
+                ? 'border-indigo-500 text-white'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <BarChart2 className="h-5 w-5" />
+              <span className="font-medium">Deliverability</span>
+            </div>
+          </button>
         </nav>
       </div>
 
@@ -202,6 +216,7 @@ export function CommunicationsPanel() {
       {activeTab === 'history' && <HistoryTab />}
       {activeTab === 'groups' && <GroupsTab />}
       {activeTab === 'automations' && <AutomationsTab />}
+      {activeTab === 'deliverability' && <DeliverabilityTab />}
     </div>
   );
 }
@@ -1858,6 +1873,141 @@ function AutomationsTab() {
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== DELIVERABILITY TAB ==========
+function DeliverabilityTab() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/ses-stats')
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) setError(d.error);
+        else setData(d);
+      })
+      .catch(() => setError('Failed to load SES stats'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="flex items-center justify-center py-16 text-slate-400"><Loader2 className="h-8 w-8 animate-spin mr-3" />Loading SES stats...</div>;
+
+  if (error) return (
+    <div className="bg-red-600/10 border border-red-600/20 rounded-xl p-6 text-center">
+      <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
+      <p className="text-red-300 text-sm">{error}</p>
+      <p className="text-slate-400 text-xs mt-2">Make sure SES credentials are configured and have ses:GetSendStatistics and ses:GetSendQuota permissions.</p>
+    </div>
+  );
+
+  const bounceRate = parseFloat(data?.totals?.bounceRate || '0');
+  const complaintRate = parseFloat(data?.totals?.complaintRate || '0');
+
+  const getBounceColor = (rate: number) => rate > 5 ? 'text-red-400' : rate > 2 ? 'text-yellow-400' : 'text-green-400';
+  const getComplaintColor = (rate: number) => rate > 0.1 ? 'text-red-400' : rate > 0.05 ? 'text-yellow-400' : 'text-green-400';
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold text-white">SES Deliverability</h2>
+        <p className="text-sm text-slate-400 mt-1">Amazon SES sending statistics for the last 14 days. AWS SES requires bounce rate &lt; 5% and complaint rate &lt; 0.1%.</p>
+      </div>
+
+      {/* Quota card */}
+      {data?.quota && (
+        <div className="bg-slate-800/50 border border-white/10 rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-4">Sending Quota (24 hours)</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-white">{data.quota.sentLast24Hours?.toLocaleString() || 0}</p>
+              <p className="text-xs text-slate-400 mt-1">Sent (last 24h)</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-white">{data.quota.max24HourSend?.toLocaleString() || '—'}</p>
+              <p className="text-xs text-slate-400 mt-1">Daily Limit</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-white">{data.quota.maxSendRate || '—'}/sec</p>
+              <p className="text-xs text-slate-400 mt-1">Send Rate</p>
+            </div>
+          </div>
+          {data.quota.max24HourSend && (
+            <div className="mt-4">
+              <div className="flex justify-between text-xs text-slate-400 mb-1">
+                <span>Quota used</span>
+                <span>{((data.quota.sentLast24Hours / data.quota.max24HourSend) * 100).toFixed(1)}%</span>
+              </div>
+              <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-indigo-500 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, (data.quota.sentLast24Hours / data.quota.max24HourSend) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Health metrics */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-slate-800/50 border border-white/10 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-slate-300">Bounce Rate</h3>
+            <span className="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-400">{bounceRate > 5 ? '🔴 Critical' : bounceRate > 2 ? '🟡 Warning' : '🟢 Healthy'}</span>
+          </div>
+          <p className={`text-3xl font-bold ${getBounceColor(bounceRate)}`}>{bounceRate.toFixed(2)}%</p>
+          <p className="text-xs text-slate-500 mt-1">{data?.totals?.bounced || 0} bounces out of {data?.totals?.sent || 0} sent</p>
+          <p className="text-xs text-slate-500 mt-2">AWS limit: &lt; 5% — exceeding this risks account suspension</p>
+        </div>
+        <div className="bg-slate-800/50 border border-white/10 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-slate-300">Complaint Rate</h3>
+            <span className="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-400">{complaintRate > 0.1 ? '🔴 Critical' : complaintRate > 0.05 ? '🟡 Warning' : '🟢 Healthy'}</span>
+          </div>
+          <p className={`text-3xl font-bold ${getComplaintColor(complaintRate)}`}>{complaintRate.toFixed(3)}%</p>
+          <p className="text-xs text-slate-500 mt-1">{data?.totals?.complaints || 0} complaints out of {data?.totals?.sent || 0} sent</p>
+          <p className="text-xs text-slate-500 mt-2">AWS limit: &lt; 0.1% — spam complaints from recipients</p>
+        </div>
+      </div>
+
+      {/* Daily stats table */}
+      {data?.dailyStats?.length > 0 && (
+        <div className="bg-slate-800/50 border border-white/10 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10">
+            <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Daily Breakdown (Last 14 Days)</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-900/50">
+                <tr>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Date</th>
+                  <th className="text-right px-5 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Sent</th>
+                  <th className="text-right px-5 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Bounced</th>
+                  <th className="text-right px-5 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Bounce %</th>
+                  <th className="text-right px-5 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Complaints</th>
+                  <th className="text-right px-5 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Complaint %</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {data.dailyStats.slice().reverse().map((day: any) => (
+                  <tr key={day.date} className="hover:bg-slate-900/30">
+                    <td className="px-5 py-3 text-slate-300">{new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                    <td className="px-5 py-3 text-right text-slate-200">{day.sent.toLocaleString()}</td>
+                    <td className="px-5 py-3 text-right text-slate-300">{day.bounced}</td>
+                    <td className={`px-5 py-3 text-right font-medium ${getBounceColor(day.bounceRate)}`}>{day.bounceRate.toFixed(2)}%</td>
+                    <td className="px-5 py-3 text-right text-slate-300">{day.complaints}</td>
+                    <td className={`px-5 py-3 text-right font-medium ${getComplaintColor(day.complaintRate)}`}>{day.complaintRate.toFixed(3)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

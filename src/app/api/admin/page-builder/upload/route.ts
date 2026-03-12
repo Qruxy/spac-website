@@ -10,8 +10,8 @@ const s3 = new S3Client({
   },
 });
 
-const BUCKET = 'spac-astronomy-media-132498934035';
-const CF_BASE = 'https://d2gbp2i1j2c26l.cloudfront.net';
+const BUCKET = process.env.S3_BUCKET || 'spac-astronomy-media-132498934035';
+const CF_BASE = process.env.CLOUDFRONT_URL || 'https://d2gbp2i1j2c26l.cloudfront.net';
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
