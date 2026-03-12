@@ -1407,3 +1407,14 @@ enum EmailAutomationType {
   OBS_REGISTRATION
   MEMBERSHIP_RENEWAL_REMINDER
 }
+
+model SiteContent {
+  id        String   @id @default(cuid())
+  pageKey   String   @map("page_key")
+  fieldKey  String   @map("field_key")
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([pageKey, fieldKey])
+  @@map("site_content")
+}

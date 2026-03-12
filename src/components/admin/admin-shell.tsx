@@ -21,12 +21,12 @@ import {
   Trophy,
   CreditCard,
   DollarSign,
+  Palette,
 } from 'lucide-react';
 
 const navItems = [
   { name: 'Dashboard',   href: '/admin',                  icon: LayoutDashboard, exact: true  },
   { name: 'Members',     href: '/admin/members',           icon: Users,           exact: false },
-  { name: 'Memberships', href: '/admin/memberships',       icon: CreditCard,      exact: false },
   { name: 'Payments',    href: '/admin/payments',          icon: DollarSign,      exact: false },
   { name: 'Events',      href: '/admin/events',            icon: Calendar,        exact: false },
   { name: 'Listings',    href: '/admin/listings',          icon: ShoppingBag,     exact: false },
@@ -34,6 +34,7 @@ const navItems = [
   { name: 'Board',       href: '/admin/board',             icon: Award,           exact: false },
   { name: 'Badges',      href: '/admin/badges',            icon: Trophy,          exact: false },
   { name: 'Club Communications', href: '/admin/communications', icon: Mail, exact: false },
+  { name: 'Page Builder', href: '/admin/page-builder',     icon: Palette,         exact: false },
   { name: 'OBS Event',   href: '/admin/obs',               icon: Star,            exact: false },
 ] as const;
 
