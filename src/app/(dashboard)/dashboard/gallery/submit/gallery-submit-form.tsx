@@ -2,11 +2,12 @@
  * Gallery Submit Form Component
  *
  * Client component for uploading photos to the gallery.
+ * Supports event tagging to link photos to a specific event album.
  */
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Upload,
@@ -15,22 +16,43 @@ import {
   CheckCircle2,
   AlertCircle,
   Image as ImageIcon,
+  CalendarDays,
+  Telescope,
 } from 'lucide-react';
 
-const categories = [
+// ─── Category definitions ─────────────────────────────────────────────────────
+
+const ASTRO_CATEGORIES = [
   { id: 'DEEP_SKY', label: 'Deep Sky', description: 'Nebulae, galaxies, star clusters' },
   { id: 'PLANETS', label: 'Planets', description: 'Planets and their moons' },
   { id: 'MOON', label: 'Moon', description: 'Lunar photography' },
   { id: 'SUN', label: 'Sun', description: 'Solar photography' },
   { id: 'NIGHTSCAPE', label: 'Nightscape', description: 'Milky Way, star trails, landscapes' },
-  { id: 'EVENTS', label: 'Events', description: 'Club events and meetups' },
+] as const;
+
+const COMMUNITY_CATEGORIES = [
+  { id: 'EVENTS', label: 'Event/Meeting', description: 'Club events, meetings, star parties' },
   { id: 'EQUIPMENT', label: 'Equipment', description: 'Telescopes, mounts, accessories' },
   { id: 'OTHER', label: 'Other', description: 'Other astronomy-related photos' },
 ] as const;
 
-type CategoryId = typeof categories[number]['id'];
+const ALL_CATEGORIES = [...ASTRO_CATEGORIES, ...COMMUNITY_CATEGORIES];
+type CategoryId = (typeof ALL_CATEGORIES)[number]['id'];
+
+const ASTRO_ID_LIST = ASTRO_CATEGORIES.map((c) => c.id) as string[];
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
+
+interface Event {
+  id: string;
+  title: string;
+  startDate: string;
+  type: string;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function GallerySubmitForm() {
   const router = useRouter();
@@ -40,31 +62,52 @@ export function GallerySubmitForm() {
   const [preview, setPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  // Form fields
   const [category, setCategory] = useState<CategoryId | ''>('');
   const [caption, setCaption] = useState('');
-  const [altText, setAltText] = useState('');
+  const [description, setDescription] = useState('');
+  const [equipment, setEquipment] = useState('');
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+
+  // Events list for the event-tag picker
+  const [events, setEvents] = useState<Event[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+
+  const isAstro = !!category && ASTRO_ID_LIST.includes(category);
 
   const maxSize = 10; // MB
   const accept = 'image/jpeg,image/png,image/webp';
 
+  // Fetch events on mount (past + upcoming)
+  useEffect(() => {
+    setEventsLoading(true);
+    fetch('/api/events')
+      .then((r) => r.json())
+      .then((data: Event[] | { error?: string }) => {
+        if (Array.isArray(data)) {
+          // Sort most recent first so it's easier to find the right event
+          const sorted = [...data].sort(
+            (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+          );
+          setEvents(sorted);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setEventsLoading(false));
+  }, []);
+
   const handleFileSelect = useCallback((file: File) => {
-    // Validate file size
     if (file.size > maxSize * 1024 * 1024) {
       setError(`File size exceeds ${maxSize}MB limit`);
       return;
     }
-
-    // Validate file type
     if (!accept.split(',').includes(file.type)) {
       setError(`File type ${file.type} is not allowed`);
       return;
     }
-
-    // Set preview
     const reader = new FileReader();
     reader.onload = (e) => setPreview(e.target?.result as string);
     reader.readAsDataURL(file);
-
     setSelectedFile(file);
     setError(null);
   }, []);
@@ -73,9 +116,7 @@ export function GallerySubmitForm() {
     (e: React.DragEvent) => {
       e.preventDefault();
       const file = e.dataTransfer.files[0];
-      if (file) {
-        handleFileSelect(file);
-      }
+      if (file) handleFileSelect(file);
     },
     [handleFileSelect]
   );
@@ -87,9 +128,7 @@ export function GallerySubmitForm() {
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) {
-        handleFileSelect(file);
-      }
+      if (file) handleFileSelect(file);
     },
     [handleFileSelect]
   );
@@ -107,12 +146,10 @@ export function GallerySubmitForm() {
       setError('Please select a photo to upload');
       return;
     }
-
     if (!category) {
       setError('Please select a category');
       return;
     }
-
     if (!caption.trim()) {
       setError('Please add a caption for your photo');
       return;
@@ -123,7 +160,7 @@ export function GallerySubmitForm() {
     setError(null);
 
     try {
-      // Step 1: Get presigned URL
+      // Step 1: Presigned URL
       setProgress(10);
       const presignedRes = await fetch('/api/upload/presigned', {
         method: 'POST',
@@ -141,37 +178,42 @@ export function GallerySubmitForm() {
         throw new Error(data.error || 'Failed to get upload URL');
       }
 
-      const { uploadUrl, key, publicUrl } = await presignedRes.json();
+      const { uploadUrl, key } = await presignedRes.json();
       setProgress(30);
 
       // Step 2: Upload to S3
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
         body: selectedFile,
-        headers: {
-          'Content-Type': selectedFile.type,
-        },
+        headers: { 'Content-Type': selectedFile.type },
       });
 
-      if (!uploadRes.ok) {
-        throw new Error('Failed to upload to storage');
-      }
-
+      if (!uploadRes.ok) throw new Error('Failed to upload to storage');
       setProgress(70);
 
-      // Step 3: Record upload in database with gallery metadata
+      // Step 3: Record in DB
+      const body: Record<string, unknown> = {
+        key,
+        originalName: selectedFile.name,
+        mimeType: selectedFile.type,
+        size: selectedFile.size,
+        category,
+        caption: caption.trim(),
+        altText: description.trim() || caption.trim(),
+        folder: 'gallery',
+      };
+
+      if (selectedEventId) body.eventId = selectedEventId;
+      // Store equipment in the folder field isn't ideal; pass as altText note for now.
+      // The API stores altText → media.alt; equipment is surfaced in the modal via alt.
+      if (equipment.trim()) {
+        body.altText = [description.trim(), `Equipment: ${equipment.trim()}`].filter(Boolean).join(' | ');
+      }
+
       const completeRes = await fetch('/api/upload/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          key,
-          originalName: selectedFile.name,
-          mimeType: selectedFile.type,
-          size: selectedFile.size,
-          category,
-          caption: caption.trim(),
-          altText: altText.trim() || caption.trim(),
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!completeRes.ok) {
@@ -182,7 +224,6 @@ export function GallerySubmitForm() {
       setProgress(100);
       setStatus('success');
 
-      // Redirect after success
       setTimeout(() => {
         router.push('/gallery');
         router.refresh();
@@ -198,23 +239,18 @@ export function GallerySubmitForm() {
     return (
       <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-8 text-center">
         <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-foreground mb-2">
-          Photo Submitted!
-        </h2>
+        <h2 className="text-xl font-semibold text-foreground mb-2">Photo Submitted!</h2>
         <p className="text-muted-foreground mb-4">
-          Your photo has been submitted for review. It will appear in the gallery
-          once approved by a moderator.
+          Your photo has been submitted for review. It will appear in the gallery once approved.
         </p>
-        <p className="text-sm text-muted-foreground">
-          Redirecting to gallery...
-        </p>
+        <p className="text-sm text-muted-foreground">Redirecting to gallery…</p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Error Message */}
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {/* Error */}
       {error && (
         <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
           <div className="flex items-center gap-2 text-destructive">
@@ -224,7 +260,7 @@ export function GallerySubmitForm() {
         </div>
       )}
 
-      {/* Photo Upload */}
+      {/* ── Photo Upload ── */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
           Photo <span className="text-destructive">*</span>
@@ -241,36 +277,23 @@ export function GallerySubmitForm() {
               <p className="mb-2 text-sm text-muted-foreground">
                 <span className="font-semibold">Click to upload</span> or drag and drop
               </p>
-              <p className="text-xs text-muted-foreground">
-                JPG, PNG or WebP (max {maxSize}MB)
-              </p>
+              <p className="text-xs text-muted-foreground">JPG, PNG or WebP (max {maxSize}MB)</p>
             </div>
-            <input
-              type="file"
-              className="hidden"
-              accept={accept}
-              onChange={handleInputChange}
-            />
+            <input type="file" className="hidden" accept={accept} onChange={handleInputChange} />
           </label>
         ) : (
           <div className="relative rounded-xl border border-border bg-card overflow-hidden">
             {preview && (
               <div className="aspect-[16/9] bg-black">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-full h-full object-contain"
-                />
+                <img src={preview} alt="Preview" className="w-full h-full object-contain" />
               </div>
             )}
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <ImageIcon className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-medium text-foreground line-clamp-1">
-                    {selectedFile.name}
-                  </p>
+                  <p className="text-sm font-medium text-foreground line-clamp-1">{selectedFile.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
@@ -288,76 +311,165 @@ export function GallerySubmitForm() {
         )}
       </div>
 
-      {/* Category */}
+      {/* ── Category ── */}
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
+        <label className="block text-sm font-medium text-foreground mb-3">
           Category <span className="text-destructive">*</span>
         </label>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {categories.map((cat) => (
-            <label
-              key={cat.id}
-              className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                category === cat.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <input
-                type="radio"
-                name="category"
-                value={cat.id}
-                checked={category === cat.id}
-                onChange={(e) => setCategory(e.target.value as CategoryId)}
-                className="mt-1"
-              />
-              <div>
-                <p className="font-medium text-foreground text-sm">{cat.label}</p>
-                <p className="text-xs text-muted-foreground">{cat.description}</p>
-              </div>
-            </label>
-          ))}
+
+        {/* Astrophotography */}
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Telescope className="h-4 w-4 text-cyan-400" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Astrophotography</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {ASTRO_CATEGORIES.map((cat) => (
+              <label
+                key={cat.id}
+                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  category === cat.id
+                    ? 'border-cyan-400/60 bg-cyan-400/5'
+                    : 'border-border hover:border-cyan-400/30'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="category"
+                  value={cat.id}
+                  checked={category === cat.id}
+                  onChange={(e) => setCategory(e.target.value as CategoryId)}
+                  className="mt-1"
+                />
+                <div>
+                  <p className="font-medium text-foreground text-sm">{cat.label}</p>
+                  <p className="text-xs text-muted-foreground">{cat.description}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Community */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Community</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {COMMUNITY_CATEGORIES.map((cat) => (
+              <label
+                key={cat.id}
+                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  category === cat.id
+                    ? 'border-emerald-400/60 bg-emerald-400/5'
+                    : 'border-border hover:border-emerald-400/30'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="category"
+                  value={cat.id}
+                  checked={category === cat.id}
+                  onChange={(e) => setCategory(e.target.value as CategoryId)}
+                  className="mt-1"
+                />
+                <div>
+                  <p className="font-medium text-foreground text-sm">{cat.label}</p>
+                  <p className="text-xs text-muted-foreground">{cat.description}</p>
+                </div>
+              </label>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Caption */}
+      {/* ── Caption ── */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          Caption <span className="text-destructive">*</span>
+          Caption / Title <span className="text-destructive">*</span>
         </label>
         <input
           type="text"
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
-          placeholder="e.g., Orion Nebula captured on a cold December night"
+          placeholder={
+            isAstro
+              ? 'e.g., Orion Nebula — December 2024'
+              : 'e.g., Star party setup at SPAC dark site'
+          }
           className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           maxLength={200}
         />
-        <p className="mt-1 text-xs text-muted-foreground">
-          {caption.length}/200 characters
-        </p>
+        <p className="mt-1 text-xs text-muted-foreground">{caption.length}/200 characters</p>
       </div>
 
-      {/* Alt Text */}
+      {/* ── Description ── */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
           Description (optional)
         </label>
         <textarea
-          value={altText}
-          onChange={(e) => setAltText(e.target.value)}
-          placeholder="Describe what's in the photo for accessibility..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Describe what&apos;s in the photo, imaging details, or the moment captured…"
           rows={3}
           className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
           maxLength={500}
         />
-        <p className="mt-1 text-xs text-muted-foreground">
-          {altText.length}/500 characters - helps with accessibility
-        </p>
+        <p className="mt-1 text-xs text-muted-foreground">{description.length}/500 characters</p>
       </div>
 
-      {/* Submit Button */}
-      <div className="flex items-center gap-4 pt-4">
+      {/* ── Equipment (astrophotography only) ── */}
+      {isAstro && (
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Equipment (optional)
+          </label>
+          <input
+            type="text"
+            value={equipment}
+            onChange={(e) => setEquipment(e.target.value)}
+            placeholder="e.g., Celestron C11, ZWO ASI294MC, 120 min total exposure"
+            className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            maxLength={200}
+          />
+        </div>
+      )}
+
+      {/* ── Event Tag ── */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          <span className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-violet-400" />
+            Tag to an Event (optional)
+          </span>
+        </label>
+        <p className="text-xs text-muted-foreground mb-3">
+          Tag this photo to a SPAC event to include it in that event&apos;s album. Perfect for
+          photos taken at star parties, meetings, or outreach events.
+        </p>
+        <select
+          value={selectedEventId}
+          onChange={(e) => setSelectedEventId(e.target.value)}
+          disabled={eventsLoading}
+          className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+        >
+          <option value="">— No event —</option>
+          {events.map((ev) => (
+            <option key={ev.id} value={ev.id}>
+              {ev.title} ({new Date(ev.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })})
+            </option>
+          ))}
+        </select>
+        {eventsLoading && (
+          <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+            <Loader2 className="h-3 w-3 animate-spin" /> Loading events…
+          </p>
+        )}
+      </div>
+
+      {/* ── Submit ── */}
+      <div className="flex items-center gap-4 pt-2">
         <button
           type="submit"
           disabled={status === 'uploading'}
@@ -366,7 +478,7 @@ export function GallerySubmitForm() {
           {status === 'uploading' ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              Uploading... {progress}%
+              Uploading… {progress}%
             </>
           ) : (
             <>
@@ -377,7 +489,6 @@ export function GallerySubmitForm() {
         </button>
       </div>
 
-      {/* Progress Bar */}
       {status === 'uploading' && (
         <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
           <div

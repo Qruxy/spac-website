@@ -20,6 +20,7 @@ interface PhotoData {
   equipment?: string | null;
   location?: string | null;
   exposureTime?: string | null;
+  eventId?: string | null;
   users: {
     id: string;
     name: string | null;
