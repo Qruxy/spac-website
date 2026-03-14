@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        createdById: auth.userId,
+        createdById: auth.userId!,
         members: memberIds?.length
           ? { createMany: { data: memberIds.map((userId) => ({ userId })) } }
           : undefined,

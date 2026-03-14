@@ -137,22 +137,26 @@ export async function GET(request: Request) {
       const capturedAmount = captureResult.purchase_units?.[0]?.payments?.captures?.[0]?.amount;
       const session = await getSession();
 
-      // Record the donation in the DB for audit trail and financial reconciliation
-      await prisma.payment.create({
-        data: {
-          userId: session?.user?.id ?? null,
-          type: 'DONATION',
-          amount: capturedAmount ? parseFloat(capturedAmount.value) : 0,
-          currency: capturedAmount?.currency_code?.toLowerCase() || 'usd',
-          status: 'SUCCEEDED',
-          paypalOrderId: captureResult.id,
-          paidAt: new Date(),
-          description: 'One-time donation',
-        },
-      }).catch(dbErr => {
-        // Log but don't fail the redirect — payment already captured
-        console.error('Failed to record donation payment in DB:', dbErr);
-      });
+      // Record the donation in the DB for audit trail and financial reconciliation.
+      // userId is required on Payment; only persist if the donor is logged in.
+      // Anonymous donations are still captured by PayPal — order_id in the redirect URL provides traceability.
+      if (session?.user?.id) {
+        await prisma.payment.create({
+          data: {
+            userId: session.user.id,
+            type: 'DONATION',
+            amount: capturedAmount ? parseFloat(capturedAmount.value) : 0,
+            currency: capturedAmount?.currency_code?.toLowerCase() || 'usd',
+            status: 'SUCCEEDED',
+            paypalOrderId: captureResult.id,
+            paidAt: new Date(),
+            description: 'One-time donation',
+          },
+        }).catch(dbErr => {
+          // Log but don't fail the redirect — payment already captured
+          console.error('Failed to record donation payment in DB:', dbErr);
+        });
+      }
 
       return NextResponse.redirect(`${baseUrl}/donations/thank-you?order_id=${captureResult.id}`);
     } else {
