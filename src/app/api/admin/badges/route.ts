@@ -78,7 +78,7 @@ export async function POST(request: Request) {
         description,
         icon,
         category: category as 'ATTENDANCE' | 'MILESTONE' | 'SPECIAL' | 'OBS',
-        criteria: criteria ?? undefined,
+        criteria: (criteria ?? undefined) as import('@prisma/client').Prisma.InputJsonValue | undefined,
         sortOrder: sortOrder ?? 0,
       },
     });

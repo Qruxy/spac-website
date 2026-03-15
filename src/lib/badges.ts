@@ -530,7 +530,7 @@ export async function seedDefaultBadges(): Promise<void> {
         description: badge.description,
         icon: badge.icon,
         category: badge.category,
-        criteria: badge.criteria as unknown as Record<string, unknown>,
+        criteria: badge.criteria as unknown as import('@prisma/client').Prisma.InputJsonValue,
         isActive: true,
         sortOrder: badge.sortOrder,
       },

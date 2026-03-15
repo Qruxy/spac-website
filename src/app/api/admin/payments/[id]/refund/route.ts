@@ -105,7 +105,7 @@ export async function POST(request: Request, { params }: RouteParams) {
         user_id:    session.user.id,
         actorId:    session.user.id,
         subjectId:  payment.userId,
-        action:     'REFUND',
+        action:     'PAYMENT', // Refund sub-type recorded in metadata
         entityType: 'Payment',
         entityId:   id,
         metadata: {
