@@ -33,7 +33,8 @@ export async function GET(_request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Template not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ template });
+    const { body, ...rest } = template;
+    return NextResponse.json({ template: { ...rest, bodyHtml: body } });
   } catch (error) {
     console.error('Template fetch error:', error);
     return NextResponse.json({ error: 'Failed to fetch template' }, { status: 500 });
@@ -60,12 +61,13 @@ export async function PUT(request: Request, { params }: RouteParams) {
     if (variables !== undefined) data.variables = variables;
     if (isActive !== undefined) data.isActive = isActive;
 
-    const template = await prisma.emailTemplate.update({
+    const updated = await prisma.emailTemplate.update({
       where: { id },
       data,
     });
 
-    return NextResponse.json({ template });
+    const { body, ...rest } = updated;
+    return NextResponse.json({ template: { ...rest, bodyHtml: body } });
   } catch (error) {
     console.error('Template update error:', error);
     return NextResponse.json({ error: 'Failed to update template' }, { status: 500 });

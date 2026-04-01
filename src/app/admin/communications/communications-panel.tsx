@@ -276,8 +276,8 @@ function ComposeTab() {
     setSelectedTemplate(templateId);
     const template = templates.find((t) => t.id === templateId);
     if (template) {
-      setSubject(template.subject);
-      setBodyHtml(template.bodyHtml);
+      setSubject(template.subject || '');
+      setBodyHtml(template.bodyHtml || '');
     }
   };
 
@@ -605,7 +605,7 @@ function ComposeTab() {
       {/* Social Cross-Post */}
       <SocialCrossPostPanel
         subject={subject}
-        bodyText={bodyHtml.replace(/<[^>]+>/g, '').slice(0, 2000)}
+        bodyText={(bodyHtml || '').replace(/<[^>]+>/g, '').slice(0, 2000)}
       />
 
       {/* Actions */}
@@ -641,7 +641,7 @@ function ComposeTab() {
               {/* Safe to use dangerouslySetInnerHTML here - content is from trusted admin input */}
               <div
                 className="bg-white text-black p-4 rounded-lg"
-                dangerouslySetInnerHTML={{ __html: bodyHtml }}
+                dangerouslySetInnerHTML={{ __html: bodyHtml || '' }}
               />
             </div>
           </div>

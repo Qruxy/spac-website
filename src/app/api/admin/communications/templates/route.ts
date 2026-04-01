@@ -24,7 +24,9 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ templates });
+    // Map DB field `body` → `bodyHtml` for frontend consistency
+    const mapped = templates.map(({ body, ...t }) => ({ ...t, bodyHtml: body }));
+    return NextResponse.json({ templates: mapped });
   } catch (error) {
     console.error('Templates list error:', error);
     return NextResponse.json({ error: 'Failed to fetch templates' }, { status: 500 });
