@@ -146,15 +146,18 @@ export function LoginForm() {
         </button>
       </form>
 
-      {/* Existing member notice */}
-      <div className="mt-6 rounded-lg border border-primary/30 bg-primary/5 p-3">
-        <p className="text-xs text-muted-foreground text-center">
-          <span className="font-medium text-foreground">Existing SPAC member?</span>{' '}
-          If this is your first time logging into the new website,{' '}
-          <Link href="/register" className="text-primary hover:underline font-medium">
-            set up your password here
-          </Link>.
+      {/* Existing member / first-time setup notice */}
+      <div className="mt-6 rounded-lg border border-primary/30 bg-primary/5 p-4">
+        <p className="text-xs font-semibold text-foreground mb-1">Existing SPAC member?</p>
+        <p className="text-xs text-muted-foreground mb-2">
+          If this is your first time logging into the new site, your account is already here — you just need to set a password.
         </p>
+        <Link
+          href="/claim-account"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+        >
+          Set up my account →
+        </Link>
       </div>
 
       {/* Sign Up Link */}
