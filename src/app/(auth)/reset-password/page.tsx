@@ -1,22 +1,27 @@
 'use client';
 
 /**
- * Reset Password Page
+ * Reset Password / Account Setup Page
  *
- * Validates the token from the URL and lets the user set a new password.
- * Token and email are passed as query params from the reset email link.
+ * Handles two flows:
+ * 1. Password reset  — ?token=...&email=...
+ * 2. First-time setup — ?token=...&email=...&setup=1 (from claim-account flow)
+ *
+ * After success, auto-logs the user in instead of redirecting to /login.
  */
 
 import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
-import { Lock, Loader2, ArrowLeft, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { Lock, Loader2, ArrowLeft, Eye, EyeOff, CheckCircle, AlertCircle, Telescope } from 'lucide-react';
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token') || '';
   const email = searchParams.get('email') || '';
+  const isSetup = searchParams.get('setup') === '1';
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,6 +29,7 @@ function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
 
   const isValidLink = token && email;
 
@@ -51,10 +57,26 @@ function ResetPasswordForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Failed to reset password. Please try again.');
+        setError(data.error || 'Something went wrong. Please try again.');
+        return;
+      }
+
+      // Password set — auto sign in
+      setSuccess(true);
+      setSigningIn(true);
+
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        router.push('/dashboard');
       } else {
-        setSuccess(true);
-        setTimeout(() => router.push('/login'), 3000);
+        // Sign-in failed for some reason — fall back to login page
+        setSigningIn(false);
+        setTimeout(() => router.push('/login'), 2500);
       }
     } catch {
       setError('Network error. Please check your connection and try again.');
@@ -67,18 +89,28 @@ function ResetPasswordForm() {
     return (
       <div className="text-center">
         <div className="flex justify-center mb-4">
-          <CheckCircle className="h-12 w-12 text-green-400" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10">
+            <CheckCircle className="h-8 w-8 text-green-400" />
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">Password Updated!</h1>
-        <p className="text-muted-foreground mb-6">
-          Your password has been reset successfully. Redirecting you to sign in…
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          {isSetup ? 'Welcome to SPAC! 🎉' : 'Password Updated!'}
+        </h1>
+        <p className="text-muted-foreground mb-2">
+          {isSetup
+            ? 'Your account is all set. Signing you in now…'
+            : 'Your password has been updated. Signing you in…'}
         </p>
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-        >
-          Sign in now
-        </Link>
+        {signingIn && (
+          <div className="flex justify-center mt-4">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          </div>
+        )}
+        {!signingIn && (
+          <Link href="/login" className="text-sm text-primary hover:underline mt-4 inline-block">
+            Sign in manually
+          </Link>
+        )}
       </div>
     );
   }
@@ -89,16 +121,24 @@ function ResetPasswordForm() {
         <div className="flex justify-center mb-4">
           <AlertCircle className="h-12 w-12 text-destructive" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">Invalid Reset Link</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2">Invalid Link</h1>
         <p className="text-muted-foreground mb-6">
-          This password reset link is missing required information. Please request a new one.
+          This link is missing required information or has already been used. Request a new one below.
         </p>
-        <Link
-          href="/forgot-password"
-          className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-        >
-          Request new reset link
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Link
+            href="/claim-account"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            First time setup
+          </Link>
+          <Link
+            href="/forgot-password"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+          >
+            Forgot password
+          </Link>
+        </div>
       </div>
     );
   }
@@ -106,15 +146,23 @@ function ResetPasswordForm() {
   return (
     <>
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Set New Password</h1>
+        {isSetup && (
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
+            <Telescope className="h-7 w-7 text-primary" />
+          </div>
+        )}
+        <h1 className="text-2xl font-bold text-foreground">
+          {isSetup ? 'Set Up Your Account' : 'Set New Password'}
+        </h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          Resetting password for{' '}
-          <span className="text-foreground font-medium">{email}</span>
+          {isSetup
+            ? 'Choose a password for your SPAC membership account.'
+            : <>Resetting password for <span className="text-foreground font-medium">{email}</span></>}
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-destructive text-sm">
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-destructive text-sm">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
@@ -122,11 +170,11 @@ function ResetPasswordForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
-            New Password
+          <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1.5">
+            {isSetup ? 'Create Password' : 'New Password'}
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -135,13 +183,15 @@ function ResetPasswordForm() {
               placeholder="At least 8 characters"
               required
               minLength={8}
+              autoFocus
               autoComplete="new-password"
-              className="w-full rounded-md border border-input bg-background pl-10 pr-10 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-lg border border-border bg-background pl-10 pr-10 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -149,20 +199,20 @@ function ResetPasswordForm() {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-1">
-            Confirm New Password
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-1.5">
+            Confirm Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <input
               id="confirmPassword"
               type={showPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repeat your new password"
+              placeholder="Repeat your password"
               required
               autoComplete="new-password"
-              className="w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-lg border border-border bg-background pl-10 pr-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
             />
           </div>
         </div>
@@ -170,23 +220,26 @@ function ResetPasswordForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {isSetup ? 'Setting up…' : 'Updating…'}
+            </>
           ) : (
-            'Reset Password'
+            isSetup ? 'Set Password & Sign In' : 'Update Password'
           )}
         </button>
       </form>
 
-      <div className="mt-6 text-center">
+      <div className="mt-5 text-center">
         <Link
           href="/login"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Sign In
+          Back to sign in
         </Link>
       </div>
     </>
@@ -195,12 +248,18 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-card border border-border rounded-2xl p-8 shadow-lg">
+        <Suspense
+          fallback={
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          }
+        >
+          <ResetPasswordForm />
+        </Suspense>
       </div>
-    }>
-      <ResetPasswordForm />
-    </Suspense>
+    </div>
   );
 }
