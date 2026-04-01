@@ -33,8 +33,8 @@ export async function GET(_request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Template not found' }, { status: 404 });
     }
 
-    const { body, ...rest } = template;
-    return NextResponse.json({ template: { ...rest, bodyHtml: body } });
+    const { body: templateBody, ...templateRest } = template;
+    return NextResponse.json({ template: { ...templateRest, bodyHtml: templateBody } });
   } catch (error) {
     console.error('Template fetch error:', error);
     return NextResponse.json({ error: 'Failed to fetch template' }, { status: 500 });
@@ -66,8 +66,8 @@ export async function PUT(request: Request, { params }: RouteParams) {
       data,
     });
 
-    const { body, ...rest } = updated;
-    return NextResponse.json({ template: { ...rest, bodyHtml: body } });
+    const { body: updatedBody, ...updatedRest } = updated;
+    return NextResponse.json({ template: { ...updatedRest, bodyHtml: updatedBody } });
   } catch (error) {
     console.error('Template update error:', error);
     return NextResponse.json({ error: 'Failed to update template' }, { status: 500 });
