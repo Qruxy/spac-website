@@ -30,14 +30,9 @@ let sesClient: SESClient | null = null;
 let smtpTransporter: Transporter | null = null;
 let activeProvider: EmailProvider = 'none';
 
-if (accessKeyId && secretAccessKey) {
-  sesClient = new SESClient({
-    region: SES_REGION,
-    credentials: { accessKeyId, secretAccessKey },
-  });
-  activeProvider = 'ses';
-  console.log(`[EMAIL] Using Amazon SES (${SES_REGION})`);
-} else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+// SMTP takes priority when configured — allows routing through a different SES account
+// or any SMTP relay (e.g. jaygoadmin's production SES) without touching S3 credentials
+if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
   smtpTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || '587', 10),
@@ -46,8 +41,15 @@ if (accessKeyId && secretAccessKey) {
   });
   activeProvider = 'smtp';
   console.log('[EMAIL] Using SMTP transport');
+} else if (accessKeyId && secretAccessKey) {
+  sesClient = new SESClient({
+    region: SES_REGION,
+    credentials: { accessKeyId, secretAccessKey },
+  });
+  activeProvider = 'ses';
+  console.log(`[EMAIL] Using Amazon SES (${SES_REGION})`);
 } else {
-  console.warn('[EMAIL] No email provider configured. Set AWS credentials for SES or SMTP_* vars.');
+  console.warn('[EMAIL] No email provider configured. Set SMTP_* vars or AWS credentials for SES.');
 }
 
 /** Replace {{variable}} placeholders in a template string */
