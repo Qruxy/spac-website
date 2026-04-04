@@ -5,7 +5,7 @@
  * Uses ISR with 1-hour revalidation for upcoming events.
  *
  * PERF FIXES:
- * - Client-only sections (FeaturesSection, TestimonialsSection, StatsSection) loaded with
+ * - Client-only sections (FeaturesSection, StatsSection) loaded with
  *   dynamic({ssr:false}) — removes them from the critical bundle, defers animation JS
  *   until after hydration so they don't compete with hero paint.
  * - Server components (MemberMediaSection) wrapped in Suspense for streaming.
@@ -27,11 +27,6 @@ import { EventCard, NoEventsCard, type EventData } from './event-card';
 const FeaturesSection = dynamic(
   () => import('./features-section').then((m) => m.FeaturesSection),
   { ssr: false, loading: () => <div className="py-24" aria-hidden="true" /> }
-);
-
-const TestimonialsSection = dynamic(
-  () => import('./testimonials-section').then((m) => m.TestimonialsSection),
-  { ssr: false, loading: () => <div className="py-16" aria-hidden="true" /> }
 );
 
 const StatsSection = dynamic(
@@ -224,8 +219,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <TestimonialsSection />
 
       <StatsSection stats={stats} />
 
