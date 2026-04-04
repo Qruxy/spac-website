@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Upload,
   X,
@@ -56,6 +56,7 @@ interface Event {
 
 export function GallerySubmitForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState<UploadStatus>('idle');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +69,9 @@ export function GallerySubmitForm() {
   const [caption, setCaption] = useState('');
   const [description, setDescription] = useState('');
   const [equipment, setEquipment] = useState('');
-  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [selectedEventId, setSelectedEventId] = useState<string>(
+    searchParams.get('eventId') ?? ''
+  );
 
   // Events list for the event-tag picker
   const [events, setEvents] = useState<Event[]>([]);
