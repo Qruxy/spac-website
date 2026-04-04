@@ -7,6 +7,7 @@
 
 import type { ReactNode } from 'react';
 import { Header, Footer } from '@/components/layout';
+import { BetaBanner } from '@/components/layout/beta-banner';
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -19,7 +20,10 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
       <Header />
 
       {/* Top padding for fixed header */}
-      <main className="flex-1 pt-16">{children}</main>
+      <main className="flex-1 pt-16">
+        <BetaBanner />
+        {children}
+      </main>
       <Footer />
     </div>
   );

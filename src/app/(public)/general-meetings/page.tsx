@@ -9,8 +9,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
 import { MapPin, Clock, Calendar, Mail, Video, FileText, ExternalLink, ArrowRight } from 'lucide-react';
+import { prisma } from '@/lib/db';
 
-export const revalidate = 3600;
+export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'General Meetings | SPAC',
@@ -91,7 +93,18 @@ const presentations: Presentation[] = [
   },
 ];
 
-export default function GeneralMeetingsPage() {
+export default async function GeneralMeetingsPage() {
+  // Fetch page builder content — admins edit this via /admin/page-builder
+  const contentRows = await prisma.siteContent.findMany({
+    where: { pageKey: 'general-meetings' },
+  });
+  const content: Record<string, string> = {};
+  for (const row of contentRows) content[row.fieldKey] = row.value;
+
+  const heroTitle = content['hero_title'];
+  const heroSubtitle = content['hero_subtitle'];
+  const body = content['body'];
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
@@ -111,13 +124,26 @@ export default function GeneralMeetingsPage() {
                 </GradientText>
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Join fellow astronomers for presentations, discussions, and club news.
-                Free and open to the public.
+                {heroSubtitle || 'Join fellow astronomers for presentations, discussions, and club news. Free and open to the public.'}
               </p>
             </div>
           </FadeIn>
         </div>
       </section>
+
+      {/* Page Builder Content — edited via Admin > Page Builder */}
+      {body && (
+        <section className="pb-8">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <div
+              className="prose prose-invert max-w-none rounded-2xl border border-primary/20 bg-primary/5 p-6 md:p-10
+                         prose-headings:text-foreground prose-p:text-muted-foreground
+                         prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: body }}
+            />
+          </div>
+        </section>
+      )}
 
       {/* Schedule */}
       <section className="pb-20">
