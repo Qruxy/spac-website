@@ -185,6 +185,69 @@ export function EventCard({ event, featured = false }: { event: EventData; featu
   );
 }
 
+// ─── Past Event Card — greyed out, lifts to full colour on hover ──────────────
+
+function timeAgo(dateString: string): string {
+  const diff = Date.now() - new Date(dateString).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+export function PastEventCard({ event }: { event: EventData }) {
+  const typeStyle = eventTypeStyles[event.type] || eventTypeStyles.MEETING;
+
+  return (
+    <Link
+      href={`/events/${event.slug}`}
+      className={cn(
+        'group relative block rounded-xl border border-border bg-card p-5 transition-all duration-500',
+        'grayscale opacity-50',
+        'hover:grayscale-0 hover:opacity-100 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1'
+      )}
+    >
+      {/* Past label */}
+      <span className="absolute top-3 right-3 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground tracking-wide uppercase">
+        {timeAgo(event.startDate)}
+      </span>
+
+      {/* Type badge */}
+      <span
+        className={cn(
+          'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium mb-3',
+          typeStyle.bg, typeStyle.text, typeStyle.border
+        )}
+      >
+        {formatEventType(event.type)}
+      </span>
+
+      {/* Title */}
+      <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2">
+        {event.title}
+      </h3>
+
+      {/* Date + Location */}
+      <div className="space-y-1 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <Calendar className="h-3 w-3 text-primary/60 flex-shrink-0" />
+          <span>{formatDate(event.startDate)}</span>
+        </div>
+        {event.locationName && (
+          <div className="flex items-center gap-1.5">
+            <MapPin className="h-3 w-3 text-primary/60 flex-shrink-0" />
+            <span className="truncate">{event.locationName}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Hover colour wash */}
+      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
+    </Link>
+  );
+}
+
 // Empty state component for when there are no events
 export function NoEventsCard() {
   return (

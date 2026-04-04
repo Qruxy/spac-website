@@ -21,7 +21,7 @@ import { prisma } from '@/lib/db';
 import { HeroSection, HomeCtaButton } from './hero-section';
 import { MemberMediaSection } from './member-media-section';
 import { APODSection } from './apod-section';
-import { EventCard, NoEventsCard, type EventData } from './event-card';
+import { EventCard, PastEventCard, NoEventsCard, type EventData } from './event-card';
 
 // Client-only animation-heavy sections — deferred so they don't block hero paint
 const FeaturesSection = dynamic(
@@ -137,6 +137,38 @@ async function getUpcomingEvents(): Promise<EventData[]> {
   }
 }
 
+async function getPastEvents(): Promise<EventData[]> {
+  try {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const events = await prisma.event.findMany({
+      where: {
+        status: 'PUBLISHED',
+        startDate: { lt: new Date(), gte: sixMonthsAgo },
+      },
+      orderBy: { startDate: 'desc' },
+      take: 6,
+      select: {
+        id: true, slug: true, title: true, description: true, type: true,
+        startDate: true, endDate: true, locationName: true, locationAddress: true,
+        capacity: true, memberPrice: true, guest_price: true,
+        _count: { select: { registrations: true } },
+      },
+    });
+    return events.map((event) => ({
+      id: event.id, slug: event.slug, title: event.title,
+      description: event.description, type: event.type,
+      startDate: event.startDate.toISOString(),
+      endDate: event.endDate?.toISOString() ?? event.startDate.toISOString(),
+      locationName: event.locationName, locationAddress: event.locationAddress,
+      memberPrice: Number(event.memberPrice), guestPrice: Number(event.guest_price),
+      spotsAvailable: null, capacity: event.capacity,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 function EventsSkeleton() {
   return (
     <>
@@ -161,6 +193,33 @@ async function UpcomingEvents() {
         : <NoEventsCard />
       }
     </>
+  );
+}
+
+async function PastEventsSection() {
+  const pastEvents = await getPastEvents();
+  if (pastEvents.length === 0) return null;
+  return (
+    <section className="py-16 bg-background/30">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Recent Past Events</h2>
+            <p className="text-sm text-muted-foreground mt-1">Hover to see details</p>
+          </div>
+          <Link
+            href="/events"
+            className="hidden sm:flex items-center gap-1 text-sm text-primary hover:underline font-medium"
+          >
+            Full archive
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {pastEvents.map((event) => <PastEventCard key={event.id} event={event} />)}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -219,6 +278,11 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Past Events — greyed out, hover to reveal */}
+      <Suspense fallback={null}>
+        <PastEventsSection />
+      </Suspense>
 
       <StatsSection stats={stats} />
 
