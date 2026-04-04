@@ -73,7 +73,12 @@ const milestones = [
 
 export default async function AboutPage() {
   const session = await getSession();
-  const boardMembers = await getBoardMembers(!!session?.user);
+  const [boardMembers, contentRows] = await Promise.all([
+    getBoardMembers(!!session?.user),
+    prisma.siteContent.findMany({ where: { pageKey: 'about' } }),
+  ]);
+  const content: Record<string, string> = {};
+  for (const r of contentRows) content[r.fieldKey] = r.value;
   return (
     <div className="py-12">
       {/* Hero with Aurora Background */}
@@ -81,12 +86,24 @@ export default async function AboutPage() {
         <div className="py-8">
           <AboutHeroTitle />
           <p className="text-xl text-muted-foreground max-w-3xl">
-            For nearly a century, SPAC has been bringing the wonders of the night
-            sky to Tampa Bay. We&apos;re a community of amateur astronomers,
-            educators, and stargazers united by our passion for exploring the cosmos.
+            {content['hero_subtitle'] || "For nearly a century, SPAC has been bringing the wonders of the night sky to Tampa Bay. We're a community of amateur astronomers, educators, and stargazers united by our passion for exploring the cosmos."}
           </p>
         </div>
       </AboutHeroWithAurora>
+
+      {/* Page Builder Body Content */}
+      {content['about_body'] && (
+        <section className="py-8">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <div
+              className="prose prose-invert max-w-none rounded-2xl border border-primary/20 bg-primary/5 p-6 md:p-10
+                         prose-headings:text-foreground prose-p:text-muted-foreground
+                         prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: content['about_body'] }}
+            />
+          </div>
+        </section>
+      )}
 
       {/* Mission */}
       <section id="mission" className="bg-muted/30 py-16">
