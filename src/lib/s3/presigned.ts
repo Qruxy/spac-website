@@ -38,7 +38,7 @@ export const ALLOWED_DOCUMENT_TYPES = [
   'application/pdf',
 ];
 
-export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
 export const MAX_DOCUMENT_SIZE = 25 * 1024 * 1024; // 25MB
 
 /**

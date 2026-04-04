@@ -75,7 +75,7 @@ export function GallerySubmitForm() {
 
   const isAstro = !!category && ASTRO_ID_LIST.includes(category);
 
-  const maxSize = 10; // MB
+  const maxSize = 50; // MB
   const accept = 'image/jpeg,image/png,image/webp';
 
   // Fetch events on mount (past + upcoming)
