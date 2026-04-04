@@ -59,6 +59,7 @@ export function GallerySubmitForm() {
   const [status, setStatus] = useState<UploadStatus>('idle');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [uploadedMediaId, setUploadedMediaId] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -221,11 +222,14 @@ export function GallerySubmitForm() {
         throw new Error(data.error || 'Failed to record upload');
       }
 
+      const completeData = await completeRes.json();
+      const mediaId = completeData?.media?.id ?? null;
+      setUploadedMediaId(mediaId);
       setProgress(100);
       setStatus('success');
 
       setTimeout(() => {
-        router.push('/dashboard/my-photos');
+        router.push(mediaId ? `/gallery/${mediaId}` : '/gallery');
         router.refresh();
       }, 3000);
     } catch (err) {
@@ -241,10 +245,9 @@ export function GallerySubmitForm() {
         <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-foreground mb-2">Photo Submitted!</h2>
         <p className="text-muted-foreground mb-4">
-          Your photo has been submitted for review. It will appear in the public gallery once an
-          admin approves it. You can track the status in <strong>My Photos</strong>.
+          Your photo has been added to the gallery.
         </p>
-        <p className="text-sm text-muted-foreground">Redirecting to My Photos…</p>
+        <p className="text-sm text-muted-foreground">Redirecting to your photo…</p>
       </div>
     );
   }

@@ -27,6 +27,8 @@ import { getCachedPhoto, getCachedRelatedPhotos, getCachedPhotoIds } from '@/lib
 
 // Enable ISR with 60-second revalidation
 export const revalidate = 60;
+// Always allow dynamic rendering for IDs not pre-generated at build time
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   if (process.env.GITHUB_PAGES === 'true') return [];
