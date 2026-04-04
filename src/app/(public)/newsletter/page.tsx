@@ -33,7 +33,6 @@ export const metadata: Metadata = {
     'Browse the complete archive of S.P.A.C.E. (St. Petersburg Astronomy Club Examiner), the official newsletter of the St. Petersburg Astronomy Club.',
 };
 
-// Members-only — must be dynamic so the auth check runs on every request (not cached)
 export const dynamic = 'force-dynamic';
 
 const ITEMS_PER_PAGE = 12;
@@ -105,13 +104,17 @@ async function getNewsletters() {
 }
 
 export default async function NewsletterPage() {
-  // Members-only — redirect to login if not authenticated
   const session = await getSession();
   if (!session?.user) {
     redirect('/login?callbackUrl=/newsletter');
   }
 
-  const { newsletters, total, totalPages, years } = await getNewsletters();
+  const [{ newsletters, total, totalPages, years }, contentRows] = await Promise.all([
+    getNewsletters(),
+    prisma.siteContent.findMany({ where: { pageKey: 'newsletter' } }),
+  ]);
+  const content: Record<string, string> = {};
+  for (const r of contentRows) content[r.fieldKey] = r.value;
 
   return (
     <div className="min-h-screen">
@@ -134,8 +137,7 @@ export default async function NewsletterPage() {
                 St. Petersburg Astronomy Club Examiner
               </p>
               <p className="mt-8 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Explore our archive of monthly newsletters featuring club news, observing reports,
-                member articles, and celestial event previews.
+                {content['hero_subtitle'] || 'Explore our archive of monthly newsletters featuring club news, observing reports, member articles, and celestial event previews.'}
               </p>
 
               {/* Member download note */}

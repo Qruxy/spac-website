@@ -11,6 +11,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
+import { prisma } from '@/lib/db';
 import {
   HistoryHero,
   Timeline,
@@ -30,6 +31,8 @@ const CountUp = nextDynamic(
   () => import('@/components/animated/count-up').then((mod) => mod.CountUp),
   { ssr: false }
 );
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Our History',
@@ -146,11 +149,29 @@ const historicalPhotos = [
   { src: 'https://picsum.photos/seed/modern3/800/600', caption: 'Recent OBS gathering', era: 'Now' as const },
 ];
 
-export default function HistoryPage() {
+export default async function HistoryPage() {
+  const rows = await prisma.siteContent.findMany({ where: { pageKey: 'history' } });
+  const content: Record<string, string> = {};
+  for (const r of rows) content[r.fieldKey] = r.value;
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
       <HistoryHero />
+
+      {/* Page Builder Content */}
+      {content['body'] && (
+        <section className="pt-0 pb-8">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <div
+              className="prose prose-invert max-w-none rounded-2xl border border-primary/20 bg-primary/5 p-6 md:p-10
+                         prose-headings:text-foreground prose-p:text-muted-foreground
+                         prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: content['body'] }}
+            />
+          </div>
+        </section>
+      )}
 
       {/* Intro */}
       <section className="py-24 lg:py-32 bg-muted/20">

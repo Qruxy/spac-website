@@ -51,10 +51,13 @@ async function getEquipment() {
 }
 
 export default async function VSAPage() {
-  const [targets, equipment] = await Promise.all([
+  const [targets, equipment, contentRows] = await Promise.all([
     getCurrentTargets(),
     getEquipment(),
+    prisma.siteContent.findMany({ where: { pageKey: 'vsa' } }),
   ]);
+  const content: Record<string, string> = {};
+  for (const r of contentRows) content[r.fieldKey] = r.value;
 
   return (
     <div className="min-h-screen">
@@ -79,8 +82,7 @@ export default async function VSAPage() {
             </FadeIn>
             <FadeIn delay={0.2}>
               <p className="mt-8 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Smart telescopes that make deep-sky imaging accessible to everyone.
-                Point. Capture. Discover.
+                {content['hero_subtitle'] || 'Smart telescopes that make deep-sky imaging accessible to everyone. Point. Capture. Discover.'}
               </p>
             </FadeIn>
             <FadeIn delay={0.35}>
@@ -98,6 +100,20 @@ export default async function VSAPage() {
           </div>
         </div>
       </section>
+
+      {/* Page Builder Content */}
+      {content['body'] && (
+        <section className="py-8">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <div
+              className="prose prose-invert max-w-none rounded-2xl border border-primary/20 bg-primary/5 p-6 md:p-10
+                         prose-headings:text-foreground prose-p:text-muted-foreground
+                         prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: content['body'] }}
+            />
+          </div>
+        </section>
+      )}
 
       {/* Current Targets */}
       <section className="py-24 lg:py-32">
