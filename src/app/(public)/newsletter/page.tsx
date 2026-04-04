@@ -28,9 +28,9 @@ const CountUp = nextDynamic(
 );
 
 export const metadata: Metadata = {
-  title: 'The Eyepiece Newsletter Archive',
+  title: 'S.P.A.C.E. Newsletter Archive',
   description:
-    'Browse the complete archive of The Eyepiece, the official newsletter of the St. Petersburg Astronomy Club.',
+    'Browse the complete archive of S.P.A.C.E. (St. Petersburg Astronomy Club Examiner), the official newsletter of the St. Petersburg Astronomy Club.',
 };
 
 // Members-only — must be dynamic so the auth check runs on every request (not cached)
@@ -122,15 +122,17 @@ export default async function NewsletterPage() {
             <div className="text-center max-w-4xl mx-auto">
               <p className="text-lg text-muted-foreground mb-4">Official Newsletter of SPAC</p>
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-foreground tracking-tight">
-                The{' '}
                 <GradientText
                   colors={['#818cf8', '#a78bfa', '#818cf8']}
                   className="text-5xl md:text-7xl lg:text-8xl font-bold"
                   animationSpeed={8}
                 >
-                  Eyepiece
+                  S.P.A.C.E.
                 </GradientText>
               </h1>
+              <p className="text-base text-muted-foreground mt-2">
+                St. Petersburg Astronomy Club Examiner
+              </p>
               <p className="mt-8 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                 Explore our archive of monthly newsletters featuring club news, observing reports,
                 member articles, and celestial event previews.
@@ -225,7 +227,7 @@ export default async function NewsletterPage() {
                 Never miss an issue
               </h2>
               <p className="text-lg text-muted-foreground mb-10">
-                Join SPAC to receive The Eyepiece directly in your inbox each month,
+                Join SPAC to receive S.P.A.C.E. directly in your inbox each month,
                 plus get access to member-exclusive content and events.
               </p>
               <Link

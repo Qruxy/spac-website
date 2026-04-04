@@ -8,6 +8,7 @@
 import type { Metadata } from 'next';
 import { Users, History, Target, Award } from 'lucide-react';
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
 import {
   AboutHeroTitle,
   AboutHeroWithAurora,
@@ -21,10 +22,10 @@ export const metadata: Metadata = {
     'Learn about the St. Petersburg Astronomy Club, Tampa Bay\'s oldest astronomy organization founded in 1927.',
 };
 
-// ISR with 1-hour revalidation - board members rarely change
-export const revalidate = 3600;
+// Force dynamic so session check runs on every request (board email gating)
+export const dynamic = 'force-dynamic';
 
-// Fallback board members if database is empty
+// Fallback board members if database is empty (uses functional role emails — safe to show publicly)
 const fallbackBoardMembers = [
   { name: 'John Smith', title: 'Club President', email: 'president@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/president/400/400', bio: null },
   { name: 'Sarah Johnson', title: 'Vice President', email: 'vp@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/vicepresident/400/400', bio: null },
@@ -34,7 +35,7 @@ const fallbackBoardMembers = [
   { name: 'Guy Earle', title: 'Newsletter Editor', email: 'newsletter@stpeteastronomyclub.org', imageUrl: 'https://picsum.photos/seed/newsletter/400/400', bio: null },
 ];
 
-async function getBoardMembers() {
+async function getBoardMembers(showEmail: boolean) {
   try {
     const members = await prisma.boardMember.findMany({
       where: { isActive: true },
@@ -47,8 +48,16 @@ async function getBoardMembers() {
         bio: true,
       },
     });
-    return members.length > 0 ? members : fallbackBoardMembers;
+    const list = members.length > 0 ? members : fallbackBoardMembers;
+    // Scrub personal emails for unauthenticated visitors to prevent harvesting
+    if (!showEmail) {
+      return list.map((m) => ({ ...m, email: null }));
+    }
+    return list;
   } catch {
+    if (!showEmail) {
+      return fallbackBoardMembers.map((m) => ({ ...m, email: null }));
+    }
     return fallbackBoardMembers;
   }
 }
@@ -63,7 +72,8 @@ const milestones = [
 ];
 
 export default async function AboutPage() {
-  const boardMembers = await getBoardMembers();
+  const session = await getSession();
+  const boardMembers = await getBoardMembers(!!session?.user);
   return (
     <div className="py-12">
       {/* Hero with Aurora Background */}

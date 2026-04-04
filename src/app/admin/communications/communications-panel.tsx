@@ -47,7 +47,7 @@ import { SocialCrossPostPanel } from '@/components/admin/social-cross-post-panel
 
 // Types
 type Category = 'GENERAL' | 'WELCOME' | 'MEMBERSHIP' | 'EVENT' | 'NEWSLETTER' | 'ADMIN' | 'SYSTEM';
-type MembershipType = 'INDIVIDUAL' | 'FAMILY' | 'STUDENT' | 'LIFETIME';
+type MembershipType = 'INDIVIDUAL' | 'FAMILY' | 'STUDENT' | 'PATRON' | 'BENEFACTOR' | 'LIFETIME';
 type MembershipStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING';
 type Role = 'ADMIN' | 'MODERATOR' | 'MEMBER';
 type EmailStatus = 'SENDING' | 'SENT' | 'FAILED';
@@ -448,7 +448,7 @@ function ComposeTab() {
         <div className="mb-4">
           <label className="block text-sm font-medium text-slate-300 mb-2">By Membership Type</label>
           <div className="flex flex-wrap gap-2">
-            {(['INDIVIDUAL', 'FAMILY', 'STUDENT', 'LIFETIME'] as MembershipType[]).map((type) => (
+            {(['INDIVIDUAL', 'FAMILY', 'STUDENT', 'PATRON', 'BENEFACTOR', 'LIFETIME'] as MembershipType[]).map((type) => (
               <button
                 key={type}
                 onClick={() => toggleMembershipType(type)}

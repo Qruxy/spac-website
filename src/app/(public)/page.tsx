@@ -80,11 +80,13 @@ const features = [
   },
 ];
 
+const SPAC_YEARS = new Date().getFullYear() - 1927;
+
 const stats = [
   { value: 1927, label: 'Founded', suffix: '' },
   { value: 300, label: 'Members', suffix: '+' },
   { value: 12, label: 'Events/Year', suffix: '' },
-  { value: 97, label: 'Years Strong', suffix: '' },
+  { value: SPAC_YEARS, label: 'Years Strong', suffix: '' },
 ];
 
 async function getUpcomingEvents(): Promise<EventData[]> {

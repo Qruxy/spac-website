@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   description: 'Your digital SPAC membership card',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function MembershipCardPage() {
   const session = await getSession();
   const user = session!.user;
@@ -38,8 +40,25 @@ export default async function MembershipCardPage() {
   const membershipType = membership?.type || 'NONE';
   const TierIcon = tierIcons[membershipType as keyof typeof tierIcons] || Star;
 
+  // Ensure user has a QR UUID (should always be set, but guard against legacy accounts)
+  if (!user.qrUuid) {
+    // Trigger a background re-generation — for now, show a friendly message
+    return (
+      <div className="max-w-md mx-auto text-center py-16">
+        <h1 className="text-2xl font-bold text-foreground mb-4">Membership Card</h1>
+        <p className="text-muted-foreground mb-6">
+          Your membership card is being generated. Please refresh the page or contact{' '}
+          <a href="mailto:membership@stpeteastronomyclub.org" className="text-primary underline">
+            membership@stpeteastronomyclub.org
+          </a>{' '}
+          if this persists.
+        </p>
+      </div>
+    );
+  }
+
   // QR code verification URL
-  const verificationUrl = `${process.env.NEXTAUTH_URL || 'https://spac.org'}/verify/${user.qrUuid}`;
+  const verificationUrl = `${process.env.NEXTAUTH_URL || 'https://stpeteastronomyclub.org'}/verify/${user.qrUuid}`;
 
   return (
     <div className="max-w-md mx-auto">
