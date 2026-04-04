@@ -6,6 +6,7 @@
  * Displays club features with spotlight card effects and fade-in animations.
  */
 
+import Link from 'next/link';
 import {
   Moon,
   Mic2,
@@ -13,6 +14,7 @@ import {
   Telescope,
   School,
   ShoppingBag,
+  ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
 // Direct imports to avoid barrel export bundle bloat
@@ -34,6 +36,7 @@ interface Feature {
   title: string;
   description: string;
   iconName: string;
+  href?: string;
 }
 
 interface FeaturesSectionProps {
@@ -61,17 +64,32 @@ export function FeaturesSection({ features }: FeaturesSectionProps) {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => {
             const Icon = iconMap[feature.iconName] || Star;
+            const card = (
+              <SpotlightCard className="h-full rounded-xl border border-border bg-card p-6 transition-colors hover:border-primary/50">
+                <Icon className="mb-4 h-10 w-10 text-primary" />
+                <h3 className="mb-2 text-lg font-semibold text-foreground">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {feature.description}
+                </p>
+                {feature.href && (
+                  <div className="mt-4 flex items-center gap-1 text-xs font-medium text-primary">
+                    Learn more <ArrowRight className="h-3 w-3" />
+                  </div>
+                )}
+              </SpotlightCard>
+            );
+
             return (
               <FadeIn key={feature.title} delay={index * 0.1}>
-                <SpotlightCard className="h-full rounded-xl border border-border bg-card p-6">
-                  <Icon className="mb-4 h-10 w-10 text-primary" />
-                  <h3 className="mb-2 text-lg font-semibold text-foreground">
-                    {feature.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {feature.description}
-                  </p>
-                </SpotlightCard>
+                {feature.href ? (
+                  <Link href={feature.href} className="block h-full">
+                    {card}
+                  </Link>
+                ) : (
+                  card
+                )}
               </FadeIn>
             );
           })}
