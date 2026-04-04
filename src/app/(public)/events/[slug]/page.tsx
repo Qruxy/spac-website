@@ -17,6 +17,8 @@ import {
   Moon,
   Tent,
   Info,
+  Camera,
+  ImageIcon,
 } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
@@ -60,6 +62,9 @@ export default async function EventPage({ params }: EventPageProps) {
           registrations: {
             where: { status: { in: ['CONFIRMED', 'PENDING'] } },
           },
+          media: {
+            where: { status: 'APPROVED', type: 'IMAGE' },
+          },
         },
       },
     },
@@ -82,6 +87,8 @@ export default async function EventPage({ params }: EventPageProps) {
   }
 
   const isMember = session?.user?.membershipStatus === 'ACTIVE';
+  const isAdminOrMod = session?.user?.role === 'ADMIN' || session?.user?.role === 'MODERATOR';
+  const canUploadPhotos = isAdminOrMod || session?.user?.isValidated;
   const registrationCount = event._count.registrations;
   const spotsLeft = event.capacity ? event.capacity - registrationCount : null;
   const isFull = spotsLeft !== null && spotsLeft <= 0;
@@ -328,6 +335,26 @@ export default async function EventPage({ params }: EventPageProps) {
               registrationStatus={userRegistration?.status}
               isLoggedIn={!!session?.user}
             />
+
+            {/* Photo Album Actions */}
+            {event._count.media > 0 && (
+              <Link
+                href={`/gallery/event/${event.id}`}
+                className="flex items-center justify-center gap-2 w-full rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                <ImageIcon className="h-4 w-4 text-primary" />
+                View Photo Album ({event._count.media} {event._count.media === 1 ? 'photo' : 'photos'})
+              </Link>
+            )}
+            {canUploadPhotos && (
+              <Link
+                href={`/dashboard/gallery/submit?eventId=${event.id}`}
+                className="flex items-center justify-center gap-2 w-full rounded-lg border border-dashed border-primary/40 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/5 transition-colors"
+              >
+                <Camera className="h-4 w-4" />
+                Add Photos to This Event
+              </Link>
+            )}
 
             {/* Additional Info */}
             {!session?.user && (

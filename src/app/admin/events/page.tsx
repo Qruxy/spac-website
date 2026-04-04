@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import {
   Search,
   Plus,
@@ -24,6 +25,7 @@ import {
   Loader2,
   Upload,
   ImageIcon,
+  Camera,
   CheckSquare,
   Square,
   CheckCheck,
@@ -574,6 +576,13 @@ export default function EventsPage() {
                           <Bell className="w-3 h-3" />
                           Reminders
                         </button>
+                        <Link
+                          href={`/dashboard/gallery/submit?eventId=${event.id}`}
+                          className="bg-violet-500/15 text-violet-400 hover:bg-violet-500/25 rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                        >
+                          <Camera className="w-3 h-3" />
+                          Add Photos
+                        </Link>
                         <button
                           onClick={() => handleEditEvent(event)}
                           className="bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 rounded-lg px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors"
