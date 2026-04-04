@@ -231,6 +231,18 @@ const PAGES: PageDef[] = [
       { key: 'intro_text', label: 'Introduction Text', hint: "An explanation of the star party program — what it is, who it's for, what's involved, how to fill out the form.", type: 'textarea', placeholder: 'Our club members love sharing astronomy with the community...', maxLength: 600, section: 'Page Content', defaultValue: "Our club members love sharing astronomy with schools, scout troops, and community organizations. Fill out the form below and we'll be in touch." },
     ],
   },
+  {
+    key: 'vsa',
+    label: 'VSA (Very Small Array)',
+    href: '/vsa',
+    description: "SPAC's smart telescope loaner program — current targets, how to participate, and program details.",
+    icon: Telescope,
+    fields: [
+      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the VSA page.', type: 'text', placeholder: 'Very Small Array', maxLength: 60, section: 'Page Header', defaultValue: 'Very Small Array' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short tagline describing the VSA program.', type: 'textarea', placeholder: "SPAC's smart telescope loaner program...", maxLength: 200, section: 'Page Header', defaultValue: "SPAC's smart telescope loaner program for members." },
+      { key: 'body', label: 'Program Description', hint: 'Full details about the VSA program — what it is, how it works, who can participate, current targets, and how to sign up.', type: 'richtext', section: 'Page Content' },
+    ],
+  },
 ];
 
 // Field type icons and colors

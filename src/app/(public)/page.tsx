@@ -47,36 +47,42 @@ const features = [
     description:
       'Join us at our dark sky site at Withlacoochee River Park for new moon observing sessions.',
     iconName: 'Moon',
+    href: '/events?type=STAR_PARTY',
   },
   {
     title: 'General Meetings',
     description:
       'Learn from expert speakers and fellow astronomers at our monthly meetings.',
     iconName: 'Mic2',
+    href: '/general-meetings',
   },
   {
     title: 'Orange Blossom Special',
     description:
       'Our annual multi-day star party featuring camping, observing, and community.',
     iconName: 'Star',
+    href: '/obs',
   },
   {
     title: 'Mirror Lab',
     description:
       'Learn to grind your own telescope mirror with hands-on instruction from experts.',
     iconName: 'Telescope',
+    href: '/mirror-lab',
   },
   {
     title: 'Public Outreach',
     description:
       'We bring the stars to schools, scout troops, and community organizations.',
     iconName: 'School',
+    href: '/star-party-request',
   },
   {
     title: 'Equipment Classifieds',
     description:
       'Buy, sell, and trade astronomy equipment with fellow club members.',
     iconName: 'ShoppingBag',
+    href: '/classifieds',
   },
 ];
 
