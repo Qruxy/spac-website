@@ -678,8 +678,8 @@ function EventFormPanel({ event, onClose, onSubmit }: EventFormPanelProps) {
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleImageUpload = async (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError('File size exceeds 10MB limit');
+    if (file.size > 25 * 1024 * 1024) {
+      setUploadError('File size exceeds 25MB limit');
       return;
     }
     if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
@@ -847,7 +847,7 @@ function EventFormPanel({ event, onClose, onSubmit }: EventFormPanelProps) {
                       Click to upload or drag and drop
                     </span>
                     <span className="text-xs text-white/30">
-                      JPG, PNG, GIF or WebP (max 10MB)
+                      JPG, PNG, GIF or WebP (max 25MB)
                     </span>
                   </div>
                 )}
