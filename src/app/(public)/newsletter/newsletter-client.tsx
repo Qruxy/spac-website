@@ -226,11 +226,21 @@ export function NewsletterClient({
             <h3 className="text-lg font-semibold text-foreground mb-2">
               No newsletters found
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-4">
               {debouncedSearch
                 ? 'Try adjusting your search terms.'
-                : 'No newsletters are available for this selection.'}
+                : 'The newsletter archive hasn\'t been uploaded to the site yet.'}
             </p>
+            {!debouncedSearch && (
+              <a
+                href="https://drive.google.com/drive/folders/0B9dsr9BUsMaYSnkxZ0E1SFBHbTQ?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Browse Full Archive on Google Drive
+              </a>
+            )}
           </motion.div>
         ) : viewMode === 'grid' ? (
           <motion.div

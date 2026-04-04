@@ -1,9 +1,11 @@
 /**
  * History/Timeline Page
  *
- * Celebrating 97 years of stargazing at SPAC.
+ * Celebrating the history of stargazing at SPAC since 1927.
  * Clean Apple-like design with interactive timeline.
  */
+
+const SPAC_YEARS = new Date().getFullYear() - 1927;
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -32,7 +34,7 @@ const CountUp = nextDynamic(
 export const metadata: Metadata = {
   title: 'Our History',
   description:
-    'Discover the 97-year history of the St. Petersburg Astronomy Club, founded in 1927. Explore our milestones, notable members, and astronomical achievements.',
+    `Discover the ${SPAC_YEARS}-year history of the St. Petersburg Astronomy Club, founded in 1927. Explore our milestones, notable members, and astronomical achievements.`,
 };
 
 const milestones = [
@@ -233,7 +235,7 @@ export default function HistoryPage() {
             </FadeIn>
             <FadeIn delay={0.1}>
               <div className="text-5xl font-bold text-foreground mb-2 tabular-nums">
-                <CountUp to={97} duration={2} /><span className="text-primary">+</span>
+                <CountUp to={SPAC_YEARS} duration={2} /><span className="text-primary">+</span>
               </div>
               <div className="text-muted-foreground">Years of Stargazing</div>
             </FadeIn>

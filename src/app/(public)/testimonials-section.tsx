@@ -31,24 +31,6 @@ const testimonials: Testimonial[] = [
     stars: 5,
   },
   {
-    id: '2',
-    name: 'Dr. Sarah K.',
-    role: 'Lifetime Member',
-    content:
-      'The mirror lab is an incredible resource. I ground my first 8-inch mirror there, and the mentorship from experienced members was invaluable. Truly a hidden gem in Tampa Bay.',
-    memberSince: '2012',
-    stars: 5,
-  },
-  {
-    id: '3',
-    name: 'James T.',
-    role: 'Active Member',
-    content:
-      'Best astronomy club in Florida! The Orange Blossom Special is the highlight of my year. Dark skies, great people, and incredible views of the cosmos.',
-    memberSince: '2020',
-    stars: 5,
-  },
-  {
     id: '4',
     name: 'Linda M.',
     role: 'Outreach Volunteer',
