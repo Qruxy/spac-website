@@ -43,7 +43,7 @@ export default function GallerySubmitPage() {
             <p className="font-medium text-blue-400 mb-1">Submission Guidelines</p>
             <ul className="text-muted-foreground space-y-1">
               <li>Photos must be your own original work</li>
-              <li>Maximum file size: 10MB (JPG, PNG, or WebP)</li>
+              <li>Maximum file size: 50MB (JPG, PNG, or WebP)</li>
               <li>Provide a descriptive caption for best results</li>
               <li>Photos are reviewed before appearing in the gallery</li>
             </ul>
