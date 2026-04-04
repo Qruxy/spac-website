@@ -88,7 +88,7 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const isMember = session?.user?.membershipStatus === 'ACTIVE';
   const isAdminOrMod = session?.user?.role === 'ADMIN' || session?.user?.role === 'MODERATOR';
-  const canUploadPhotos = isAdminOrMod || session?.user?.isValidated;
+  const canUploadPhotos = isAdminOrMod || isMember;
   const registrationCount = event._count.registrations;
   const spotsLeft = event.capacity ? event.capacity - registrationCount : null;
   const isFull = spotsLeft !== null && spotsLeft <= 0;
