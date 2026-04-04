@@ -688,6 +688,7 @@ enum AuditAction {
   REJECTION
   CHECK_IN
   BADGE_AWARD
+  REFUND
 }
 
 enum PaymentType {
