@@ -314,7 +314,8 @@ export default function MembershipPage() {
       </section>
 
       {/* ── Benefits Grid ── */}
-      <section className="border-t border-border/40 py-24">
+      <div aria-hidden="true" className="gradient-sep" />
+      <section className="py-24">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">Everything That Comes With Membership</h2>
@@ -363,7 +364,8 @@ export default function MembershipPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section className="border-t border-border/40 py-24">
+      <div aria-hidden="true" className="gradient-sep" />
+      <section className="py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto">
             <h2 className="text-3xl font-bold text-foreground text-center mb-10">FAQ</h2>

@@ -60,7 +60,7 @@ export async function APODSection() {
   });
 
   return (
-    <section className="py-20 bg-slate-950/50 border-y border-border/30">
+    <section className="py-20 bg-gradient-to-b from-transparent via-slate-950/50 to-transparent section-fade-in">
       <div className="container mx-auto px-4 max-w-5xl">
         {/* Section label */}
         <div className="flex items-center gap-2 mb-6">

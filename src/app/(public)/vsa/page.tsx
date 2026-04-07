@@ -74,7 +74,7 @@ export default async function VSAPage() {
               aria-hidden="true"
               className="absolute inset-0 w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-background/80 to-background" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-background/60 to-background" />
           </>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/40 via-background to-background" />
@@ -121,7 +121,7 @@ export default async function VSAPage() {
         <section className="py-8">
           <div className="container mx-auto px-4 max-w-4xl">
             <div
-              className="prose prose-invert max-w-none rounded-2xl border border-primary/20 bg-primary/5 p-6 md:p-10
+              className="prose prose-invert max-w-none rounded-2xl border-l-2 border-primary/30 bg-gradient-to-r from-primary/5 to-transparent p-6 md:p-10
                          prose-headings:text-foreground prose-p:text-muted-foreground
                          prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
               dangerouslySetInnerHTML={{ __html: content['body'] }}
@@ -205,7 +205,7 @@ export default async function VSAPage() {
 
       {/* Equipment */}
       {equipment.length > 0 && (
-        <section className="py-24 lg:py-32 bg-muted/20">
+        <section className="py-24 lg:py-32 bg-gradient-to-b from-transparent via-slate-950/40 to-transparent">
           <div className="container mx-auto px-4">
             <FadeIn>
               <div className="max-w-3xl mx-auto text-center mb-16">
@@ -319,7 +319,7 @@ export default async function VSAPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 lg:py-32 bg-muted/20">
+      <section className="py-24 lg:py-32 bg-gradient-to-b from-transparent via-primary/8 to-transparent">
         <div className="container mx-auto px-4 text-center">
           <FadeIn>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight mb-6">

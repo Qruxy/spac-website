@@ -213,3 +213,35 @@ select option {
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
 }
+
+/* Seamless section transition — fades in from transparent */
+.section-fade-in {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+/* Soft atmospheric glow behind section headings */
+.section-glow {
+  position: relative;
+}
+.section-glow::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  max-width: 100%;
+  height: 200px;
+  background: radial-gradient(ellipse at center, hsl(210 100% 52% / 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Gradient separator — replaces hard borders */
+.gradient-sep {
+  height: 1px;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.08) 0%, transparent 70%);
+  border: none;
+  margin: 0;
+}

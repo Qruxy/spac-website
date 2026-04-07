@@ -200,7 +200,7 @@ async function PastEventsSection() {
   const pastEvents = await getPastEvents();
   if (pastEvents.length === 0) return null;
   return (
-    <section className="py-16 bg-background/30">
+    <section className="py-16">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -255,7 +255,8 @@ export default async function HomePage() {
       <HeroSection />
 
       {/* Dark Sky Forecast — Clear Sky Chart for Withlacoochee River Park */}
-      <section className="bg-background/70 border-y border-white/5 py-10">
+      <div aria-hidden="true" className="gradient-sep" />
+      <section className="bg-gradient-to-b from-transparent via-slate-950/60 to-transparent py-12 section-fade-in">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="shrink-0">
@@ -308,11 +309,12 @@ export default async function HomePage() {
       </Suspense>
 
       {/* Events — Suspense so slow DB revalidation shows skeleton instead of blocking */}
-      <section className="py-24 bg-background/50">
+      <div aria-hidden="true" className="gradient-sep" />
+      <section className="py-24">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground">
+            <div className="section-glow">
+              <h2 className="text-3xl font-bold text-foreground relative z-10">
                 {content['events_heading'] || 'Upcoming Events'}
               </h2>
               <p className="text-muted-foreground mt-2">
@@ -354,7 +356,8 @@ export default async function HomePage() {
       <StatsSection stats={mergedStats} />
 
       {/* CTA */}
-      <section className="bg-primary/5 py-24">
+      <div aria-hidden="true" className="gradient-sep" />
+      <section className="bg-gradient-to-b from-transparent via-primary/8 to-transparent py-24">
         <div className="container mx-auto max-w-3xl px-4 text-center">
           <h2 className="mb-4 text-3xl font-bold text-foreground">
             {ctaHeading}
