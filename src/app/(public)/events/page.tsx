@@ -57,6 +57,7 @@ async function getPublishedEvents() {
         guest_price: true,
         campingAvailable: true,
         camping_price: true,
+        imageUrl: true,
         _count: {
           select: { registrations: true },
         },
@@ -78,6 +79,7 @@ async function getPublishedEvents() {
         ? event.capacity - event._count.registrations
         : null,
       capacity: event.capacity,
+      imageUrl: event.imageUrl,
     }));
   } catch (error) {
     console.error('Failed to fetch events:', error);

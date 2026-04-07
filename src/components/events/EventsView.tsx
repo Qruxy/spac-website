@@ -108,6 +108,21 @@ function FeaturedEventCard({ event }: { event: CalendarEvent }) {
         className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 hover:border-white/20 transition-all duration-300"
         style={{ boxShadow: `0 0 60px 0 ${cfg.color}18` }}
       >
+        {/* Event photo backdrop — only when imageUrl is provided */}
+        {event.imageUrl && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={event.imageUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover opacity-[0.18] blur-sm scale-105 pointer-events-none"
+            />
+            {/* Gradient scrim: left side stays dark and readable, fades to image on right */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-900/30 pointer-events-none" />
+          </>
+        )}
+
         {/* Background gradient orb */}
         <div
           className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-10 blur-3xl pointer-events-none"
@@ -224,6 +239,20 @@ function EventCard({ event, index }: { event: CalendarEvent; index: number }) {
         <div
           className="relative rounded-xl border border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.12] transition-all duration-200 overflow-hidden"
         >
+          {/* Event photo backdrop — right-side fade, only when imageUrl provided */}
+          {event.imageUrl && (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={event.imageUrl}
+                alt=""
+                aria-hidden="true"
+                className="absolute right-0 top-0 h-full w-48 object-cover opacity-[0.22] blur-[2px] pointer-events-none"
+                style={{ maskImage: 'linear-gradient(to left, black 0%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to left, black 0%, transparent 100%)' }}
+              />
+            </>
+          )}
+
           {/* Left accent */}
           <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl" style={{ backgroundColor: cfg.color }} />
 

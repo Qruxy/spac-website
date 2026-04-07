@@ -41,6 +41,7 @@ export interface CalendarEvent {
   guestPrice: number;
   spotsAvailable: number | null;
   capacity: number | null;
+  imageUrl: string | null;
 }
 
 interface EventCalendarProps {
