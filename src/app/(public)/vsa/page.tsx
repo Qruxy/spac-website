@@ -65,11 +65,11 @@ export default async function VSAPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative py-32 lg:py-44 overflow-hidden">
-        {content['header_photo'] ? (
+        {content['hero_image'] ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={content['header_photo']}
+              src={content['hero_image']}
               alt=""
               aria-hidden="true"
               className="absolute inset-0 w-full h-full object-cover"
