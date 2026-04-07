@@ -75,6 +75,16 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40 mb-2">{children}</p>;
 }
 
+function fmtDate(val: string | null | undefined, includeTime = true): string {
+  if (!val) return '—';
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    ...(includeTime ? { hour: 'numeric', minute: '2-digit' } : {}),
+  });
+}
+
 function FilterChip({ label, active, disabled, onClick }: { label: string; active: boolean; disabled?: boolean; onClick: () => void }) {
   return (
     <button
@@ -688,7 +698,7 @@ function TemplatesTab() {
                     <Tag className="h-2.5 w-2.5" />
                     {t.usageCount || 0} use{t.usageCount !== 1 ? 's' : ''}
                   </div>
-                  <span className="text-[10px] text-white/25">{new Date(t.updatedAt).toLocaleDateString()}</span>
+                  <span className="text-[10px] text-white/25">{fmtDate(t.updatedAt, false)}</span>
                 </div>
               </div>
             );
@@ -880,7 +890,7 @@ function HistoryTab() {
                     <td className="px-5 py-3.5 text-white/50 max-w-xs truncate">{log.subject}</td>
                     <td className="px-5 py-3.5 text-white/35 text-xs">{log.templateName || 'Custom'}</td>
                     <td className="px-5 py-3.5"><StatusBadge status={log.status} /></td>
-                    <td className="px-5 py-3.5 text-white/30 text-xs">{new Date(log.sentAt).toLocaleString()}</td>
+                    <td className="px-5 py-3.5 text-white/30 text-xs">{fmtDate(log.sentAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1024,7 +1034,7 @@ function GroupsTab() {
                   <div>
                     <h3 className="font-bold text-white">{selectedGroup.name}</h3>
                     {selectedGroup.description && <p className="text-sm text-white/40 mt-0.5">{selectedGroup.description}</p>}
-                    <p className="text-[10px] text-white/25 mt-1.5">Created by {selectedGroup.createdBy.firstName} {selectedGroup.createdBy.lastName} · {new Date(selectedGroup.createdAt).toLocaleDateString()}</p>
+                    <p className="text-[10px] text-white/25 mt-1.5">Created by {selectedGroup.createdBy.firstName} {selectedGroup.createdBy.lastName} · {fmtDate(selectedGroup.createdAt, false)}</p>
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => { setEditingGroup(selectedGroup); setEditName(selectedGroup.name); setEditDescription(selectedGroup.description || ''); }} className="p-1.5 hover:bg-white/[0.07] rounded-lg transition-colors"><Edit2 className="h-3.5 w-3.5 text-indigo-400" /></button>

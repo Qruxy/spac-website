@@ -40,8 +40,22 @@ export async function GET(request: Request) {
       prisma.emailLog.count({ where }),
     ]);
 
+    // Normalize to frontend EmailLog shape
+    const normalized = logs.map((log) => ({
+      id: log.id,
+      recipient: log.recipientEmail,
+      recipientId: log.recipientUserId ?? '',
+      subject: log.subject,
+      status: log.status,
+      // sentAt is nullable — fall back to createdAt so we never show 1970
+      sentAt: (log.sentAt ?? log.createdAt).toISOString(),
+      templateId: log.templateId ?? undefined,
+      templateName: log.template?.name ?? undefined,
+      error: log.errorMessage ?? undefined,
+    }));
+
     return NextResponse.json({
-      logs,
+      logs: normalized,
       total,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
