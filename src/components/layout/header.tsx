@@ -139,7 +139,7 @@ export function Header() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-56 rounded-lg border border-border bg-card/95 backdrop-blur-lg shadow-lg z-20 overflow-hidden"
+                      className="absolute right-0 mt-2 w-56 rounded-lg border border-white/[0.12] bg-[#0d1020] shadow-2xl shadow-black/60 z-20 overflow-hidden"
                     >
                       <div className="py-2">
                         {moreLinks.filter(link => !link.membersOnly || isAuthenticated).map((link) => (
@@ -150,8 +150,8 @@ export function Header() {
                             className={cn(
                               'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
                               pathname.startsWith(link.href)
-                                ? 'bg-primary/10 text-primary'
-                                : 'text-foreground hover:bg-muted'
+                                ? 'bg-primary/15 text-primary'
+                                : 'text-white/80 hover:text-white hover:bg-white/[0.06]'
                             )}
                           >
                             <link.icon className="h-4 w-4" />
@@ -191,12 +191,12 @@ export function Header() {
                         className="fixed inset-0 z-10"
                         onClick={() => setUserMenuOpen(false)}
                       />
-                      <div className="absolute right-0 mt-2 w-48 rounded-md border border-border bg-card shadow-lg z-20">
-                        <div className="px-3 py-2 border-b border-border">
-                          <p className="text-sm font-medium text-foreground truncate">
+                      <div className="absolute right-0 mt-2 w-52 rounded-xl border border-white/[0.12] bg-[#0d1020] shadow-2xl shadow-black/60 z-20 overflow-hidden">
+                        <div className="px-3 py-2.5 border-b border-white/[0.08]">
+                          <p className="text-sm font-semibold text-white truncate">
                             {session.user.name}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="text-xs text-white/40 truncate">
                             {session.user.email}
                           </p>
                         </div>
@@ -204,22 +204,23 @@ export function Header() {
                           <Link
                             href="/dashboard"
                             onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/[0.06] transition-colors"
                           >
-                            <LayoutDashboard className="h-4 w-4" />
+                            <LayoutDashboard className="h-4 w-4 text-white/50" />
                             Dashboard
                           </Link>
                           <Link
                             href="/profile"
                             onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/[0.06] transition-colors"
                           >
-                            <User className="h-4 w-4" />
+                            <User className="h-4 w-4 text-white/50" />
                             Profile
                           </Link>
+                          <div className="my-1 border-t border-white/[0.06]" />
                           <button
                             onClick={() => signOut({ callbackUrl: '/' })}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                            className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-red-400/80 hover:text-red-400 hover:bg-red-500/[0.08] transition-colors"
                           >
                             <LogOut className="h-4 w-4" />
                             Sign Out
