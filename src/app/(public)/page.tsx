@@ -15,7 +15,7 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import { HeroSection, HomeCtaButton } from './hero-section';
@@ -24,12 +24,12 @@ import { APODSection } from './apod-section';
 import { EventCard, PastEventCard, NoEventsCard, type EventData } from './event-card';
 
 // Client-only animation-heavy sections — deferred so they don't block hero paint
-const FeaturesSection = dynamic(
+const FeaturesSection = nextDynamic(
   () => import('./features-section').then((m) => m.FeaturesSection),
   { ssr: false, loading: () => <div className="py-24" aria-hidden="true" /> }
 );
 
-const StatsSection = dynamic(
+const StatsSection = nextDynamic(
   () => import('./stats-section').then((m) => m.StatsSection),
   { ssr: false, loading: () => <div className="py-24" aria-hidden="true" /> }
 );
