@@ -28,6 +28,7 @@ import {
   Camera,
   CheckSquare,
   Square,
+  Repeat2,
   CheckCheck,
 } from 'lucide-react';
 
@@ -63,6 +64,7 @@ interface Event {
   registration_closes: string | null;
   isRecurring: boolean;
   recurrencePattern: string | null;
+  recurrenceEndDate: string | null;
   imageUrl: string | null;
   createdAt: string;
   _count: {
@@ -86,6 +88,12 @@ interface EventFormData {
   campingAvailable: boolean;
   campingPrice: string;
   imageUrl: string;
+  // Recurring
+  isRecurring: boolean;
+  recurrencePattern: string; // DAILY | WEEKLY | BIWEEKLY | MONTHLY | YEARLY
+  recurrenceEndDate: string;
+  recurrenceCount: string;   // alternative to end date: "create N occurrences"
+  recurrenceEndType: 'date' | 'count'; // which mode the user picked
 }
 
 const EVENT_TYPES: { value: EventType; label: string; color: string }[] = [
@@ -267,6 +275,15 @@ export default function EventsPage() {
         campingAvailable: formData.campingAvailable,
         campingPrice: formData.campingAvailable ? (formData.campingPrice ? parseFloat(formData.campingPrice) : null) : null,
         imageUrl: formData.imageUrl || null,
+        // Recurring
+        isRecurring: formData.isRecurring,
+        recurrencePattern: formData.isRecurring ? formData.recurrencePattern : null,
+        recurrenceEndDate: formData.isRecurring && formData.recurrenceEndType === 'date' && formData.recurrenceEndDate
+          ? formData.recurrenceEndDate
+          : null,
+        recurrenceCount: formData.isRecurring && formData.recurrenceEndType === 'count' && formData.recurrenceCount
+          ? parseInt(formData.recurrenceCount)
+          : null,
       };
 
       const url = editingEvent
@@ -681,6 +698,12 @@ function EventFormPanel({ event, onClose, onSubmit }: EventFormPanelProps) {
     campingAvailable: event?.campingAvailable || false,
     campingPrice: event?.camping_price?.toString() || '',
     imageUrl: event?.imageUrl || '',
+    // Recurring
+    isRecurring: event?.isRecurring || false,
+    recurrencePattern: event?.recurrencePattern || 'WEEKLY',
+    recurrenceEndDate: event?.recurrenceEndDate ? event.recurrenceEndDate.slice(0, 10) : '',
+    recurrenceCount: '10',
+    recurrenceEndType: 'count' as const,
   });
 
   const [uploading, setUploading] = useState(false);
@@ -940,6 +963,116 @@ function EventFormPanel({ event, onClose, onSubmit }: EventFormPanelProps) {
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm px-3 py-2 focus:outline-none focus:border-blue-500/40"
               />
             </div>
+          </div>
+
+          {/* Recurring */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-white/[0.02] border border-white/[0.06] rounded-lg">
+              <input
+                type="checkbox"
+                id="isRecurring"
+                checked={formData.isRecurring}
+                onChange={(e) => setFormData({ ...formData, isRecurring: e.target.checked })}
+                className="w-4 h-4 rounded border-white/[0.08] bg-white/[0.04] text-indigo-500 focus:ring-indigo-500/40"
+              />
+              <div className="flex items-center gap-2">
+                <Repeat2 className="w-4 h-4 text-indigo-400" />
+                <label htmlFor="isRecurring" className="text-sm font-medium text-white/70 cursor-pointer">
+                  Recurring Event
+                </label>
+              </div>
+            </div>
+
+            {formData.isRecurring && (
+              <div className="border border-indigo-500/20 bg-indigo-500/[0.04] rounded-xl p-4 space-y-4">
+                {/* Pattern */}
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-2">Repeat</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: 'DAILY',     label: 'Daily' },
+                      { value: 'WEEKLY',    label: 'Weekly' },
+                      { value: 'BIWEEKLY',  label: 'Bi-weekly' },
+                      { value: 'MONTHLY',   label: 'Monthly' },
+                      { value: 'YEARLY',    label: 'Yearly' },
+                    ].map((p) => (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, recurrencePattern: p.value })}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                          formData.recurrencePattern === p.value
+                            ? 'bg-indigo-500 border-indigo-500 text-white'
+                            : 'bg-white/[0.04] border-white/[0.08] text-white/50 hover:text-white/70 hover:border-white/20'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* End type toggle */}
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-2">Ends</label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, recurrenceEndType: 'count' })}
+                      className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                        formData.recurrenceEndType === 'count'
+                          ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
+                          : 'bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/60'
+                      }`}
+                    >
+                      After N occurrences
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, recurrenceEndType: 'date' })}
+                      className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                        formData.recurrenceEndType === 'date'
+                          ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
+                          : 'bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/60'
+                      }`}
+                    >
+                      On date
+                    </button>
+                  </div>
+                </div>
+
+                {formData.recurrenceEndType === 'count' ? (
+                  <div>
+                    <label className="block text-sm font-medium text-white/70 mb-2">
+                      Number of occurrences
+                    </label>
+                    <input
+                      type="number"
+                      min="2"
+                      max="104"
+                      value={formData.recurrenceCount}
+                      onChange={(e) => setFormData({ ...formData, recurrenceCount: e.target.value })}
+                      className="w-32 bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm px-3 py-2 focus:outline-none focus:border-indigo-500/40"
+                    />
+                    <p className="text-[11px] text-white/30 mt-1">
+                      Creates {formData.recurrenceCount || '?'} events starting from the start date above
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-white/70 mb-2">
+                      End date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.recurrenceEndDate}
+                      onChange={(e) => setFormData({ ...formData, recurrenceEndDate: e.target.value })}
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/80 text-sm px-3 py-2 focus:outline-none focus:border-indigo-500/40"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Location */}

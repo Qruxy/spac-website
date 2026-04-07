@@ -82,6 +82,7 @@ export async function POST(request: Request) {
       isRecurring,
       recurrencePattern,
       recurrenceEndDate,
+      recurrenceCount,
       imageUrl,
     } = body;
 
@@ -142,6 +143,73 @@ export async function POST(request: Request) {
       data: eventData as Parameters<typeof prisma.event.create>[0]['data'],
     });
 
+    // Generate recurring child events if requested
+    if (isRecurring && recurrencePattern && event.startDate) {
+      const childEvents: Record<string, unknown>[] = [];
+      const durationMs = event.endDate
+        ? event.endDate.getTime() - event.startDate.getTime()
+        : 0;
+
+      // Helper: advance a date by one recurrence step
+      const advance = (d: Date): Date => {
+        const next = new Date(d);
+        if (recurrencePattern === 'DAILY')    next.setUTCDate(next.getUTCDate() + 1);
+        if (recurrencePattern === 'WEEKLY')   next.setUTCDate(next.getUTCDate() + 7);
+        if (recurrencePattern === 'BIWEEKLY') next.setUTCDate(next.getUTCDate() + 14);
+        if (recurrencePattern === 'MONTHLY')  next.setUTCMonth(next.getUTCMonth() + 1);
+        if (recurrencePattern === 'YEARLY')   next.setUTCFullYear(next.getUTCFullYear() + 1);
+        return next;
+      };
+
+      const MAX_OCCURRENCES = 104; // safety cap (~2 years of weekly events)
+      let current = advance(event.startDate); // parent is occurrence #1
+      let count = 1; // parent already counts as 1
+
+      const endByDate = recurrenceEndDate ? new Date(recurrenceEndDate) : null;
+      const endByCount = recurrenceCount ? parseInt(String(recurrenceCount)) : null;
+
+      while (count < (endByCount ?? MAX_OCCURRENCES)) {
+        if (endByDate && current > endByDate) break;
+        if (!endByCount && !endByDate) break; // no end condition provided
+
+        const childStartDate = new Date(current);
+        const childEndDate = new Date(current.getTime() + durationMs);
+
+        // Generate unique slug for child
+        const childSlug = `${event.slug}-${count + 1}`;
+
+        childEvents.push({
+          title: event.title,
+          slug: childSlug,
+          description: event.description,
+          type: event.type,
+          status: event.status,
+          startDate: childStartDate,
+          endDate: childEndDate,
+          timezone: event.timezone,
+          locationName: event.locationName,
+          locationAddress: event.locationAddress,
+          capacity: event.capacity,
+          memberPrice: event.memberPrice,
+          guest_price: event.guest_price,
+          campingAvailable: event.campingAvailable,
+          camping_price: event.camping_price,
+          imageUrl: event.imageUrl,
+          isRecurring: false,
+          parentEventId: event.id,
+          createdById: auth.userId!,
+        });
+
+        current = advance(current);
+        count++;
+      }
+
+      if (childEvents.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await prisma.event.createMany({ data: childEvents as any });
+      }
+    }
+
     // Log creation
     await prisma.auditLog.create({
       data: {
@@ -149,7 +217,7 @@ export async function POST(request: Request) {
         action: 'CREATE',
         entityType: 'Event',
         entityId: event.id,
-        newValues: { title, type },
+        newValues: { title, type, isRecurring, recurrencePattern },
       },
     });
 
