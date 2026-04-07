@@ -78,7 +78,8 @@ export async function POST(request: Request) {
         description,
         icon,
         category: category as 'ATTENDANCE' | 'MILESTONE' | 'SPECIAL' | 'OBS',
-        criteria: criteria ?? undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        criteria: (criteria ?? undefined) as any,
         sortOrder: sortOrder ?? 0,
       },
     });

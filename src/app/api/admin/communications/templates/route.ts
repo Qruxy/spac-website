@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         description,
         category: (category as 'GENERAL' | 'WELCOME' | 'MEMBERSHIP' | 'EVENT' | 'NEWSLETTER' | 'ADMIN' | 'SYSTEM') || 'GENERAL',
         variables: variables || [],
-        createdById: auth.userId,
+        createdById: auth.userId!,
       },
     });
 

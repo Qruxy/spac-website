@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Communications Panel — Admin Dashboard
- * Redesigned with dark terminal aesthetic (TYDE/Nexus-inspired)
+ * Communications Panel — Admin Dashboard (v2)
+ * Redesigned with dark-terminal aesthetic (TYDE/Nexus-inspired).
  */
 
 import { useState, useEffect } from 'react';
@@ -10,13 +10,13 @@ import {
   Mail, Send, Eye, Plus, Edit2, Trash2, Users, FileText, Clock,
   CheckCircle2, XCircle, Loader2, AlertCircle, ChevronLeft, ChevronRight,
   X, FolderPlus, UserPlus, UserMinus, Search, AtSign, Zap, ChevronDown,
-  ChevronUp, ToggleLeft, ToggleRight, ImagePlus, BarChart2, ChevronRight as Arrow,
-  Sparkles, Filter,
+  ChevronUp, ToggleLeft, ToggleRight, ImagePlus, BarChart2, Sparkles,
+  Tag, RefreshCw,
 } from 'lucide-react';
 import { RichTextEditor } from '@/components/admin/rich-text-editor';
 import { SocialCrossPostPanel } from '@/components/admin/social-cross-post-panel';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────────────
 type Category = 'GENERAL' | 'WELCOME' | 'MEMBERSHIP' | 'EVENT' | 'NEWSLETTER' | 'ADMIN' | 'SYSTEM';
 type MembershipType = 'INDIVIDUAL' | 'FAMILY' | 'STUDENT' | 'PATRON' | 'BENEFACTOR' | 'LIFETIME';
 type MembershipStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING';
@@ -45,73 +45,96 @@ interface GroupDetail extends MemberGroup {
 }
 interface UserSearchResult { id: string; firstName: string; lastName: string; email: string; role: string; }
 
-// ─── Shared Helpers ───────────────────────────────────────────────────────────
+// ── Category colours ─────────────────────────────────────────────────────────
+const CATEGORY_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
+  GENERAL:    { bg: 'bg-slate-700/60',    text: 'text-slate-300',   dot: 'bg-slate-400' },
+  WELCOME:    { bg: 'bg-emerald-600/20',  text: 'text-emerald-300', dot: 'bg-emerald-400' },
+  MEMBERSHIP: { bg: 'bg-indigo-600/20',   text: 'text-indigo-300',  dot: 'bg-indigo-400' },
+  EVENT:      { bg: 'bg-amber-600/20',    text: 'text-amber-300',   dot: 'bg-amber-400' },
+  NEWSLETTER: { bg: 'bg-blue-600/20',     text: 'text-blue-300',    dot: 'bg-blue-400' },
+  ADMIN:      { bg: 'bg-purple-600/20',   text: 'text-purple-300',  dot: 'bg-purple-400' },
+  SYSTEM:     { bg: 'bg-rose-600/20',     text: 'text-rose-300',    dot: 'bg-rose-400' },
+};
+
+// ── Shared atoms ─────────────────────────────────────────────────────────────
 function Toast({ toast, onClose }: { toast: { type: 'success' | 'error'; message: string }; onClose: () => void }) {
   return (
-    <div className={`fixed top-4 right-4 z-50 px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 border ${
+    <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl border ${
       toast.type === 'success'
-        ? 'bg-green-500/10 border-green-500/30 text-green-300'
-        : 'bg-red-500/10 border-red-500/30 text-red-300'
-    }`}>
-      {toast.type === 'success' ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-      <span className="text-sm">{toast.message}</span>
-      <button onClick={onClose} className="ml-1 hover:opacity-70 transition-opacity"><X className="h-3.5 w-3.5" /></button>
+        ? 'bg-emerald-950/90 border-emerald-500/30 text-emerald-200'
+        : 'bg-red-950/90 border-red-500/30 text-red-200'
+    } backdrop-blur-sm`}>
+      {toast.type === 'success' ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" /> : <XCircle className="h-4 w-4 shrink-0 text-red-400" />}
+      <span className="text-sm font-medium">{toast.message}</span>
+      <button onClick={onClose} className="ml-1 opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
     </div>
   );
 }
 
-function FilterPill({ label, active, onClick, disabled }: { label: string; active: boolean; onClick: () => void; disabled?: boolean }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40 mb-2">{children}</p>;
+}
+
+function FilterChip({ label, active, disabled, onClick }: { label: string; active: boolean; disabled?: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} disabled={disabled}
-      className={`px-3 py-1 rounded-full text-xs font-medium transition-all border ${
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
         active
-          ? 'bg-indigo-500/20 border-indigo-500/60 text-indigo-300'
-          : 'bg-slate-800 border-white/10 text-slate-400 hover:border-indigo-500/40 hover:text-slate-200'
-      } disabled:opacity-40 disabled:cursor-not-allowed`}>
+          ? 'bg-indigo-500/30 text-indigo-200 ring-1 ring-indigo-400/50'
+          : 'bg-white/[0.05] text-white/50 hover:bg-white/[0.08] hover:text-white/70'
+      } disabled:opacity-30 disabled:cursor-not-allowed`}
+    >
       {label}
     </button>
   );
 }
 
-// ─── Shell ────────────────────────────────────────────────────────────────────
-export function CommunicationsPanel() {
-  const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history' | 'groups' | 'automations' | 'deliverability'>('compose');
+// ── Root shell ────────────────────────────────────────────────────────────────
+type Tab = 'compose' | 'templates' | 'history' | 'groups' | 'automations' | 'deliverability';
 
-  const tabs = [
-    { id: 'compose', label: 'Compose', icon: Send },
-    { id: 'templates', label: 'Templates', icon: FileText },
-    { id: 'history', label: 'Sent History', icon: Clock },
-    { id: 'groups', label: 'Groups', icon: Users },
-    { id: 'automations', label: 'Automations', icon: Zap },
-    { id: 'deliverability', label: 'Deliverability', icon: BarChart2 },
-  ] as const;
+const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: 'compose',       label: 'Compose',       icon: <Send className="h-3.5 w-3.5" /> },
+  { id: 'templates',     label: 'Templates',     icon: <FileText className="h-3.5 w-3.5" /> },
+  { id: 'history',       label: 'History',       icon: <Clock className="h-3.5 w-3.5" /> },
+  { id: 'groups',        label: 'Groups',        icon: <Users className="h-3.5 w-3.5" /> },
+  { id: 'automations',   label: 'Automations',   icon: <Zap className="h-3.5 w-3.5" /> },
+  { id: 'deliverability',label: 'Deliverability',icon: <BarChart2 className="h-3.5 w-3.5" /> },
+];
+
+export function CommunicationsPanel() {
+  const [activeTab, setActiveTab] = useState<Tab>('compose');
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20">
-          <Mail className="h-6 w-6 text-indigo-400" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-300 to-violet-300 bg-clip-text text-transparent">
-            Communications
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Email campaigns, templates, and automation</p>
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-indigo-500/15 ring-1 ring-indigo-400/20">
+            <Mail className="h-5 w-5 text-indigo-400" />
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.14em] text-white/40 font-semibold">Admin</p>
+            <h1 className="text-xl font-black text-white tracking-tight leading-none mt-0.5">Communications</h1>
+          </div>
         </div>
       </div>
 
-      {/* Tab Bar */}
-      <div className="flex gap-1 p-1 bg-slate-800/60 rounded-xl border border-white/5 w-fit">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => setActiveTab(id as typeof activeTab)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === id
-                ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 shadow-lg shadow-indigo-500/10'
-                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-            }`}>
-            <Icon className="h-4 w-4" />
-            {label}
+      {/* Tab Nav — pill style */}
+      <div className="flex gap-1.5 p-1 bg-white/[0.03] border border-white/[0.07] rounded-xl w-fit">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === t.id
+                ? 'bg-indigo-500/25 text-indigo-200 ring-1 ring-indigo-400/40 shadow-inner'
+                : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
+            }`}
+          >
+            {t.icon}
+            {t.label}
           </button>
         ))}
       </div>
@@ -127,24 +150,28 @@ export function CommunicationsPanel() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // TAB 1 — COMPOSE
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 function ComposeTab() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [groups, setGroups] = useState<MemberGroup[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [recipientFilter, setRecipientFilter] = useState<RecipientFilter>({});
   const [manualEmails, setManualEmails] = useState<string[]>([]);
-  const [manualInput, setManualInput] = useState('');
+  const [manualEmailInput, setManualEmailInput] = useState('');
   const [insertingImage, setInsertingImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [expandedSection, setExpandedSection] = useState<string | null>('role');
+
+  // Accordion open state for recipient sections
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    role: false, type: false, status: false, group: false, manual: false,
+  });
 
   useEffect(() => { loadTemplates(); loadGroups(); }, []);
 
@@ -161,37 +188,35 @@ function ComposeTab() {
     } catch {}
   };
 
-  const recipientSummary = () => {
-    const parts: string[] = [];
-    if (recipientFilter.all) return ['All Members'];
-    if (recipientFilter.roles?.length) parts.push(...recipientFilter.roles);
-    if (recipientFilter.membershipTypes?.length) parts.push(...recipientFilter.membershipTypes);
-    if (recipientFilter.membershipStatuses?.length) parts.push(...recipientFilter.membershipStatuses);
-    if (recipientFilter.groupIds?.length) {
-      recipientFilter.groupIds.forEach(gid => {
-        const g = groups.find(g => g.id === gid);
-        if (g) parts.push(g.name);
-      });
-    }
-    if (manualEmails.length) parts.push(`${manualEmails.length} manual`);
-    return parts;
-  };
+  const toggleSection = (key: string) =>
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const hasRecipients = recipientFilter.all ||
-    (recipientFilter.roles?.length || 0) > 0 ||
-    (recipientFilter.membershipTypes?.length || 0) > 0 ||
-    (recipientFilter.membershipStatuses?.length || 0) > 0 ||
-    (recipientFilter.groupIds?.length || 0) > 0 ||
+  const hasRecipients =
+    recipientFilter.all ||
+    (recipientFilter.roles?.length ?? 0) > 0 ||
+    (recipientFilter.membershipTypes?.length ?? 0) > 0 ||
+    (recipientFilter.membershipStatuses?.length ?? 0) > 0 ||
+    (recipientFilter.groupIds?.length ?? 0) > 0 ||
     manualEmails.length > 0;
 
-  const handleTemplateSelect = (id: string) => {
-    setSelectedTemplate(id);
-    const t = templates.find(t => t.id === id);
+  // Count active filter selections for badge
+  const selectionCount =
+    (recipientFilter.all ? 1 : 0) +
+    (recipientFilter.roles?.length ?? 0) +
+    (recipientFilter.membershipTypes?.length ?? 0) +
+    (recipientFilter.membershipStatuses?.length ?? 0) +
+    (recipientFilter.groupIds?.length ?? 0) +
+    manualEmails.length;
+
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    const t = templates.find((t) => t.id === templateId);
     if (t) { setSubject(t.subject || ''); setBodyHtml(t.bodyHtml || ''); }
   };
 
-  const handleSend = async () => {
-    setShowConfirm(false); setLoading(true);
+  const handleSendEmail = async () => {
+    setShowConfirm(false);
+    setLoading(true);
     try {
       const res = await fetch('/api/admin/communications', {
         method: 'POST',
@@ -199,18 +224,19 @@ function ComposeTab() {
         body: JSON.stringify({
           subject, html: bodyHtml,
           templateId: selectedTemplate || undefined,
-          recipientFilter: hasRecipients ? recipientFilter : undefined,
+          recipientFilter: recipientFilter.all || recipientFilter.roles?.length || recipientFilter.membershipTypes?.length || recipientFilter.membershipStatuses?.length || recipientFilter.groupIds?.length
+            ? recipientFilter : undefined,
           manualEmails: manualEmails.length > 0 ? manualEmails : undefined,
         }),
       });
       if (res.ok) {
-        const r = await res.json();
-        setToast({ type: 'success', message: `Sent to ${r.totalRecipients} recipients!` });
+        const result = await res.json();
+        setToast({ type: 'success', message: `Sent to ${result.totalRecipients} recipient${result.totalRecipients !== 1 ? 's' : ''}` });
         setSubject(''); setBodyHtml(''); setSelectedTemplate('');
-        setRecipientFilter({}); setManualEmails([]); setManualInput('');
+        setRecipientFilter({}); setManualEmails([]); setManualEmailInput('');
       } else {
         const e = await res.json();
-        setToast({ type: 'error', message: e.error || 'Send failed' });
+        setToast({ type: 'error', message: e.error || 'Failed to send email' });
       }
     } catch { setToast({ type: 'error', message: 'Network error' }); }
     finally { setLoading(false); setTimeout(() => setToast(null), 5000); }
@@ -224,259 +250,292 @@ function ComposeTab() {
       const res = await fetch('/api/admin/page-builder/upload', { method: 'POST', body: fd });
       if (!res.ok) throw new Error('Upload failed');
       const { url } = await res.json();
-      setBodyHtml(prev => prev + `<img src="${url}" alt="Inserted image" style="max-width:100%;height:auto;" />`);
+      setBodyHtml((prev) => prev + `<img src="${url}" alt="Inserted image" style="max-width:100%;height:auto;" />`);
     } catch { setToast({ type: 'error', message: 'Image upload failed' }); setTimeout(() => setToast(null), 4000); }
     finally { setInsertingImage(false); }
   };
 
-  const toggle = (key: 'roles' | 'membershipTypes' | 'membershipStatuses', val: string) => {
-    const arr = (recipientFilter[key] as string[] | undefined) || [];
-    const next = arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val];
-    setRecipientFilter({ ...recipientFilter, [key]: next, all: false });
+  const toggleRole = (role: Role) => {
+    const roles = recipientFilter.roles || [];
+    setRecipientFilter({ ...recipientFilter, all: false, roles: roles.includes(role) ? roles.filter((r) => r !== role) : [...roles, role] });
   };
-  const toggleGroup = (gid: string) => {
-    const arr = recipientFilter.groupIds || [];
-    setRecipientFilter({ ...recipientFilter, groupIds: arr.includes(gid) ? arr.filter(g => g !== gid) : [...arr, gid], all: false });
+  const toggleMembershipType = (type: MembershipType) => {
+    const types = recipientFilter.membershipTypes || [];
+    setRecipientFilter({ ...recipientFilter, all: false, membershipTypes: types.includes(type) ? types.filter((t) => t !== type) : [...types, type] });
+  };
+  const toggleMembershipStatus = (status: MembershipStatus) => {
+    const statuses = recipientFilter.membershipStatuses || [];
+    setRecipientFilter({ ...recipientFilter, all: false, membershipStatuses: statuses.includes(status) ? statuses.filter((s) => s !== status) : [...statuses, status] });
+  };
+  const toggleGroup = (groupId: string) => {
+    const gids = recipientFilter.groupIds || [];
+    setRecipientFilter({ ...recipientFilter, all: false, groupIds: gids.includes(groupId) ? gids.filter((g) => g !== groupId) : [...gids, groupId] });
   };
   const toggleAll = () => setRecipientFilter(recipientFilter.all ? {} : { all: true, roles: [], membershipTypes: [], membershipStatuses: [], groupIds: [] });
-  const addEmail = () => {
-    const e = manualInput.trim().toLowerCase();
-    if (e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !manualEmails.includes(e)) {
-      setManualEmails([...manualEmails, e]); setManualInput('');
+
+  const addManualEmail = () => {
+    const email = manualEmailInput.trim().toLowerCase();
+    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !manualEmails.includes(email)) {
+      setManualEmails([...manualEmails, email]); setManualEmailInput('');
     }
   };
 
-  const summary = recipientSummary();
-
   return (
-    <div className="grid grid-cols-5 gap-6 items-start">
+    <div className="space-y-5">
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
 
-      {/* ── Left: Recipient Targeting ───────────────────────────────────── */}
-      <div className="col-span-2 space-y-3">
-        <div className="flex items-center gap-2 px-1">
-          <Filter className="h-4 w-4 text-slate-400" />
-          <span className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Target Audience</span>
-        </div>
-
-        {/* All Members */}
-        <div className={`rounded-xl border p-4 cursor-pointer transition-all ${
-          recipientFilter.all
-            ? 'bg-indigo-500/10 border-indigo-500/40'
-            : 'bg-slate-800/50 border-white/8 hover:border-white/20'
-        }`} onClick={toggleAll}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-                recipientFilter.all ? 'bg-indigo-500 border-indigo-500' : 'border-slate-500'
-              }`}>
-                {recipientFilter.all && <CheckCircle2 className="h-3 w-3 text-white" />}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        {/* ── LEFT: Recipients ──────────────────────────────── */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+            {/* Panel header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-indigo-400" />
+                <span className="text-sm font-bold text-white">Recipients</span>
               </div>
-              <span className="font-medium text-white text-sm">All Members</span>
-            </div>
-            <Users className="h-4 w-4 text-slate-500" />
-          </div>
-        </div>
-
-        {/* Accordion sections */}
-        {[
-          { key: 'role', label: 'By Role', items: ['ADMIN','MODERATOR','MEMBER'] as Role[], field: 'roles' as const },
-          { key: 'type', label: 'By Membership Type', items: ['INDIVIDUAL','FAMILY','STUDENT','PATRON','BENEFACTOR','LIFETIME'] as MembershipType[], field: 'membershipTypes' as const },
-          { key: 'status', label: 'By Status', items: ['ACTIVE','EXPIRED'] as MembershipStatus[], field: 'membershipStatuses' as const },
-        ].map(({ key, label, items, field }) => (
-          <div key={key} className="bg-slate-800/50 border border-white/8 rounded-xl overflow-hidden">
-            <button
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-300 hover:text-white transition-colors"
-              onClick={() => setExpandedSection(expandedSection === key ? null : key)}
-              disabled={recipientFilter.all}
-            >
-              {label}
-              {expandedSection === key ? <ChevronUp className="h-4 w-4 text-slate-500" /> : <ChevronDown className="h-4 w-4 text-slate-500" />}
-            </button>
-            {expandedSection === key && (
-              <div className="px-4 pb-3 flex flex-wrap gap-2 border-t border-white/5 pt-3">
-                {(items as string[]).map(item => (
-                  <FilterPill key={item} label={item}
-                    active={!!((recipientFilter[field] as string[] | undefined)?.includes(item))}
-                    onClick={() => toggle(field, item)}
-                    disabled={recipientFilter.all}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Groups */}
-        {groups.length > 0 && (
-          <div className="bg-slate-800/50 border border-white/8 rounded-xl overflow-hidden">
-            <button
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-300 hover:text-white transition-colors"
-              onClick={() => setExpandedSection(expandedSection === 'groups' ? null : 'groups')}
-              disabled={recipientFilter.all}
-            >
-              By Group
-              {expandedSection === 'groups' ? <ChevronUp className="h-4 w-4 text-slate-500" /> : <ChevronDown className="h-4 w-4 text-slate-500" />}
-            </button>
-            {expandedSection === 'groups' && (
-              <div className="px-4 pb-3 flex flex-wrap gap-2 border-t border-white/5 pt-3">
-                {groups.map(g => (
-                  <FilterPill key={g.id} label={`${g.name} (${g._count.members})`}
-                    active={!!recipientFilter.groupIds?.includes(g.id)}
-                    onClick={() => toggleGroup(g.id)}
-                    disabled={recipientFilter.all}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Manual emails */}
-        <div className="bg-slate-800/50 border border-white/8 rounded-xl overflow-hidden">
-          <button
-            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-300 hover:text-white transition-colors"
-            onClick={() => setExpandedSection(expandedSection === 'manual' ? null : 'manual')}
-          >
-            <span className="flex items-center gap-2"><AtSign className="h-4 w-4" />Manual Addresses {manualEmails.length > 0 && <span className="px-1.5 py-0.5 text-xs bg-indigo-500/20 text-indigo-300 rounded-full">{manualEmails.length}</span>}</span>
-            {expandedSection === 'manual' ? <ChevronUp className="h-4 w-4 text-slate-500" /> : <ChevronDown className="h-4 w-4 text-slate-500" />}
-          </button>
-          {expandedSection === 'manual' && (
-            <div className="px-4 pb-4 border-t border-white/5 pt-3 space-y-2">
-              <div className="flex gap-2">
-                <input type="email" value={manualInput} onChange={e => setManualInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addEmail(); } }}
-                  placeholder="email@example.com"
-                  className="flex-1 px-3 py-1.5 bg-slate-900/60 border border-white/10 rounded-lg text-sm text-white placeholder-slate-500 focus:border-indigo-500/60 focus:outline-none" />
-                <button onClick={addEmail} className="px-3 py-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/30 rounded-lg text-sm transition-colors">Add</button>
-              </div>
-              {manualEmails.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {manualEmails.map(e => (
-                    <span key={e} className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-xs">
-                      {e}
-                      <button onClick={() => setManualEmails(manualEmails.filter(m => m !== e))} className="hover:text-white transition-colors"><X className="h-3 w-3" /></button>
-                    </span>
-                  ))}
-                </div>
+              {selectionCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/30 text-indigo-200 ring-1 ring-indigo-400/30">
+                  {selectionCount} selected
+                </span>
               )}
             </div>
-          )}
-        </div>
 
-        {/* Recipient summary pill */}
-        {hasRecipients && (
-          <div className="flex flex-wrap gap-2 px-1">
-            {summary.map(s => (
-              <span key={s} className="px-2.5 py-1 bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 rounded-full text-xs font-medium">{s}</span>
-            ))}
-          </div>
-        )}
-        {!hasRecipients && (
-          <p className="text-xs text-slate-500 px-1">No recipients selected. Choose filters above.</p>
-        )}
-      </div>
-
-      {/* ── Right: Compose Area ─────────────────────────────────────────── */}
-      <div className="col-span-3 space-y-0">
-        {/* Compose Card */}
-        <div className="bg-slate-800/40 border border-white/10 rounded-xl overflow-hidden shadow-xl">
-          {/* Card Header */}
-          <div className="px-5 py-4 border-b border-white/8 bg-slate-900/40 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-indigo-400" />
-              <span className="text-sm font-semibold text-white">New Email</span>
-            </div>
-            {/* Template picker */}
-            <select value={selectedTemplate} onChange={e => handleTemplateSelect(e.target.value)}
-              className="px-3 py-1.5 bg-slate-800 border border-white/10 rounded-lg text-sm text-slate-300 focus:border-indigo-500/60 focus:outline-none cursor-pointer hover:border-white/20 transition-colors">
-              <option value="">Start from template…</option>
-              {templates.filter(t => t.isActive).map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* From / To / Subject fields */}
-          <div className="divide-y divide-white/5">
-            {/* From */}
-            <div className="flex items-center gap-4 px-5 py-3">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider w-16 shrink-0">From</span>
-              <span className="text-sm text-slate-300">SPAC &lt;onboarding@resend.dev&gt;</span>
-              <span className="ml-auto text-xs text-amber-400/70 border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 rounded-full">Verify domain to use @stpeteastronomyclub.org</span>
-            </div>
-
-            {/* To */}
-            <div className="flex items-start gap-4 px-5 py-3">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider w-16 shrink-0 mt-1">To</span>
-              <div className="flex-1 flex flex-wrap gap-1.5 min-h-[1.75rem]">
-                {!hasRecipients && <span className="text-sm text-slate-500 italic">Select recipients on the left…</span>}
-                {summary.map(s => (
-                  <span key={s} className="px-2 py-0.5 bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 rounded-md text-xs">{s}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* Subject */}
-            <div className="flex items-center gap-4 px-5 py-3">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider w-16 shrink-0">Subject</span>
-              <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
-                placeholder="Email subject line…"
-                className="flex-1 bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none" />
-            </div>
-          </div>
-
-          {/* Body editor */}
-          <div className="border-t border-white/8">
-            {/* Toolbar row */}
-            <div className="flex items-center justify-between px-5 py-2.5 bg-slate-900/20 border-b border-white/5">
-              <span className="text-xs text-slate-500">Rich Text Editor</span>
-              <label className="flex items-center gap-1.5 cursor-pointer px-2.5 py-1 bg-slate-700/60 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs transition-colors">
-                <input type="file" accept="image/*" className="sr-only"
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handleInsertImage(f); e.target.value = ''; }}
-                  disabled={insertingImage} />
-                {insertingImage ? <><Loader2 className="h-3 w-3 animate-spin" />Uploading…</> : <><ImagePlus className="h-3 w-3" />Insert Image</>}
+            <div className="p-4 space-y-1">
+              {/* All Members */}
+              <label className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/[0.04] transition-colors group">
+                <input
+                  type="checkbox" checked={recipientFilter.all || false} onChange={toggleAll}
+                  className="w-3.5 h-3.5 rounded border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                />
+                <span className="text-sm font-semibold text-white group-hover:text-indigo-200 transition-colors">All Members</span>
+                <span className="ml-auto text-[10px] text-white/30">everyone</span>
               </label>
-            </div>
-            <div className="p-4">
-              <RichTextEditor value={bodyHtml} onChange={setBodyHtml} placeholder="Compose your email…" />
-            </div>
-          </div>
 
-          {/* Action footer */}
-          <div className="flex items-center justify-between px-5 py-4 border-t border-white/8 bg-slate-900/30">
-            <div className="flex items-center gap-2">
-              {hasRecipients ? (
-                <span className="text-xs text-green-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Recipients selected
-                </span>
-              ) : (
-                <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5" /> No recipients
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setShowPreview(true)} disabled={!subject || !bodyHtml}
-                className="px-4 py-2 bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed border border-white/8 hover:border-white/20">
-                <Eye className="h-4 w-4" /> Preview
-              </button>
-              <button onClick={() => setShowConfirm(true)}
-                disabled={!subject || !bodyHtml || !hasRecipients || loading}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {loading ? 'Sending…' : 'Send Email'}
-              </button>
+              {/* Accordion sections */}
+              {[
+                {
+                  key: 'role', label: 'By Role',
+                  count: recipientFilter.roles?.length ?? 0,
+                  content: (
+                    <div className="flex flex-wrap gap-1.5 pt-2 pb-1">
+                      {(['ADMIN', 'MODERATOR', 'MEMBER'] as Role[]).map((r) => (
+                        <FilterChip key={r} label={r} active={!!recipientFilter.roles?.includes(r)} disabled={recipientFilter.all} onClick={() => toggleRole(r)} />
+                      ))}
+                    </div>
+                  ),
+                },
+                {
+                  key: 'type', label: 'By Membership',
+                  count: recipientFilter.membershipTypes?.length ?? 0,
+                  content: (
+                    <div className="flex flex-wrap gap-1.5 pt-2 pb-1">
+                      {(['INDIVIDUAL', 'FAMILY', 'STUDENT', 'PATRON', 'BENEFACTOR', 'LIFETIME'] as MembershipType[]).map((t) => (
+                        <FilterChip key={t} label={t} active={!!recipientFilter.membershipTypes?.includes(t)} disabled={recipientFilter.all} onClick={() => toggleMembershipType(t)} />
+                      ))}
+                    </div>
+                  ),
+                },
+                {
+                  key: 'status', label: 'By Status',
+                  count: recipientFilter.membershipStatuses?.length ?? 0,
+                  content: (
+                    <div className="flex flex-wrap gap-1.5 pt-2 pb-1">
+                      {(['ACTIVE', 'EXPIRED'] as MembershipStatus[]).map((s) => (
+                        <FilterChip key={s} label={s} active={!!recipientFilter.membershipStatuses?.includes(s)} disabled={recipientFilter.all} onClick={() => toggleMembershipStatus(s)} />
+                      ))}
+                    </div>
+                  ),
+                },
+                ...(groups.length > 0 ? [{
+                  key: 'group', label: 'By Group',
+                  count: recipientFilter.groupIds?.length ?? 0,
+                  content: (
+                    <div className="flex flex-wrap gap-1.5 pt-2 pb-1">
+                      {groups.map((g) => (
+                        <FilterChip key={g.id} label={`${g.name} (${g._count.members})`} active={!!recipientFilter.groupIds?.includes(g.id)} disabled={recipientFilter.all} onClick={() => toggleGroup(g.id)} />
+                      ))}
+                    </div>
+                  ),
+                }] : []),
+                {
+                  key: 'manual', label: 'Manual Addresses',
+                  count: manualEmails.length,
+                  content: (
+                    <div className="pt-2 pb-1 space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="email" value={manualEmailInput}
+                          onChange={(e) => setManualEmailInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addManualEmail(); } }}
+                          placeholder="email@example.com"
+                          className="flex-1 px-3 py-1.5 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-white/25 focus:border-indigo-500/60 focus:outline-none"
+                        />
+                        <button onClick={addManualEmail} className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg text-xs font-semibold transition-colors">
+                          Add
+                        </button>
+                      </div>
+                      {manualEmails.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {manualEmails.map((email) => (
+                            <span key={email} className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-600/20 text-indigo-300 rounded-full text-xs ring-1 ring-indigo-400/20">
+                              <AtSign className="h-2.5 w-2.5" />
+                              {email}
+                              <button onClick={() => setManualEmails(manualEmails.filter((e) => e !== email))} className="ml-0.5 opacity-60 hover:opacity-100">
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ),
+                },
+              ].map(({ key, label, count, content }) => (
+                <div key={key} className="rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => toggleSection(key)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 text-sm transition-colors rounded-xl ${
+                      openSections[key] ? 'bg-white/[0.05] text-white' : 'hover:bg-white/[0.04] text-white/60 hover:text-white/80'
+                    }`}
+                  >
+                    <span className="font-medium">{label}</span>
+                    <div className="flex items-center gap-2">
+                      {count > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/30 text-indigo-200">
+                          {count}
+                        </span>
+                      )}
+                      {openSections[key] ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    </div>
+                  </button>
+                  {openSections[key] && (
+                    <div className="px-3">{content}</div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Social Cross-Post */}
-        <div className="mt-4">
-          <SocialCrossPostPanel
-            subject={subject}
-            bodyText={(bodyHtml || '').replace(/<[^>]+>/g, '').slice(0, 2000)}
-          />
+        {/* ── RIGHT: Compose ────────────────────────────────── */}
+        <div className="lg:col-span-3 flex flex-col gap-4">
+          {/* Email envelope card */}
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+            {/* Envelope header */}
+            <div className="border-b border-white/[0.06] divide-y divide-white/[0.06]">
+              {/* From */}
+              <div className="flex items-center gap-3 px-5 py-3">
+                <span className="text-[11px] font-semibold text-white/30 w-16 shrink-0">FROM</span>
+                <span className="text-sm text-white/60 font-mono">SPAC &lt;onboarding@resend.dev&gt;</span>
+                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/20">
+                  pending domain
+                </span>
+              </div>
+              {/* To */}
+              <div className="flex items-start gap-3 px-5 py-3 min-h-[46px]">
+                <span className="text-[11px] font-semibold text-white/30 w-16 shrink-0 mt-0.5">TO</span>
+                <div className="flex-1">
+                  {selectionCount === 0 ? (
+                    <span className="text-sm text-white/25 italic">Select recipients on the left…</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {recipientFilter.all && <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-full text-xs ring-1 ring-indigo-400/20"><Users className="h-2.5 w-2.5" />All Members</span>}
+                      {recipientFilter.roles?.map((r) => <span key={r} className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full text-xs ring-1 ring-purple-400/20">{r}</span>)}
+                      {recipientFilter.membershipTypes?.map((t) => <span key={t} className="px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full text-xs ring-1 ring-blue-400/20">{t}</span>)}
+                      {recipientFilter.membershipStatuses?.map((s) => <span key={s} className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded-full text-xs ring-1 ring-emerald-400/20">{s}</span>)}
+                      {recipientFilter.groupIds?.map((gid) => {
+                        const g = groups.find((x) => x.id === gid);
+                        return <span key={gid} className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full text-xs ring-1 ring-amber-400/20">{g?.name ?? gid}</span>;
+                      })}
+                      {manualEmails.map((e) => <span key={e} className="px-2 py-0.5 bg-slate-600/50 text-slate-300 rounded-full text-xs font-mono">{e}</span>)}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Subject */}
+              <div className="flex items-center gap-3 px-5 py-2.5">
+                <span className="text-[11px] font-semibold text-white/30 w-16 shrink-0">SUBJECT</span>
+                <input
+                  type="text" value={subject} onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Enter email subject…"
+                  className="flex-1 bg-transparent text-sm text-white placeholder-white/25 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Template picker strip */}
+            {templates.filter((t) => t.isActive).length > 0 && (
+              <div className="px-5 py-3 border-b border-white/[0.06] flex items-center gap-3">
+                <Sparkles className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                <span className="text-[11px] font-semibold text-white/40 shrink-0">TEMPLATE</span>
+                <div className="flex gap-1.5 overflow-x-auto hide-scrollbar flex-1">
+                  {selectedTemplate && (
+                    <button
+                      onClick={() => { setSelectedTemplate(''); }}
+                      className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white/[0.06] hover:bg-white/[0.1] text-white/50 rounded-full text-xs transition-colors"
+                    >
+                      <X className="h-2.5 w-2.5" /> Clear
+                    </button>
+                  )}
+                  {templates.filter((t) => t.isActive).map((t) => {
+                    const cat = CATEGORY_STYLE[t.category || 'GENERAL'];
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => handleTemplateSelect(t.id)}
+                        className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                          selectedTemplate === t.id
+                            ? 'bg-indigo-500/30 text-indigo-200 ring-1 ring-indigo-400/40'
+                            : 'bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white/70'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${cat.dot}`} />
+                        {t.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Body editor */}
+            <div className="p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <SectionLabel>Email Body</SectionLabel>
+                <label className="flex items-center gap-1.5 cursor-pointer px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] text-white/50 hover:text-white/80 rounded-lg text-xs transition-colors">
+                  <input type="file" accept="image/*" className="sr-only"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleInsertImage(f); e.target.value = ''; }}
+                    disabled={insertingImage}
+                  />
+                  {insertingImage ? <><Loader2 className="h-3 w-3 animate-spin" /> Uploading…</> : <><ImagePlus className="h-3 w-3" /> Insert Image</>}
+                </label>
+              </div>
+              <RichTextEditor value={bodyHtml} onChange={setBodyHtml} placeholder="Write your email…" />
+            </div>
+          </div>
+
+          {/* Social cross-post */}
+          <SocialCrossPostPanel subject={subject} bodyText={(bodyHtml || '').replace(/<[^>]+>/g, '').slice(0, 2000)} />
+
+          {/* Actions bar */}
+          <div className="flex items-center gap-3 justify-end">
+            <button
+              onClick={() => setShowPreview(true)}
+              disabled={!subject || !bodyHtml}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.05] hover:bg-white/[0.08] text-white/70 hover:text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Eye className="h-4 w-4" /> Preview
+            </button>
+            <button
+              onClick={() => setShowConfirm(true)}
+              disabled={!subject || !bodyHtml || !hasRecipients || loading}
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-900/40 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {loading ? 'Sending…' : `Send Email${selectionCount > 0 ? '' : ''}`}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -484,35 +543,37 @@ function ComposeTab() {
       {showPreview && (
         <Modal onClose={() => setShowPreview(false)} title="Email Preview" size="large">
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider w-16">Subject</span>
-              <span className="text-white text-sm">{subject}</span>
+            <div className="flex items-center gap-2 p-3 bg-white/[0.04] rounded-xl">
+              <span className="text-xs font-semibold text-white/40 w-16">SUBJECT</span>
+              <span className="text-sm text-white">{subject}</span>
             </div>
-            <div className="bg-white text-black p-6 rounded-xl shadow-inner" dangerouslySetInnerHTML={{ __html: bodyHtml || '' }} />
+            <div className="rounded-xl overflow-hidden ring-1 ring-white/10">
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-white/30 bg-white/[0.04] px-4 py-2">Rendered Preview</div>
+              <div className="bg-white text-black p-6 min-h-[200px]" dangerouslySetInnerHTML={{ __html: bodyHtml || '' }} />
+            </div>
           </div>
         </Modal>
       )}
 
       {/* Confirm Modal */}
       {showConfirm && (
-        <Modal onClose={() => setShowConfirm(false)} title="Confirm Send"
+        <Modal
+          onClose={() => setShowConfirm(false)} title="Confirm Send"
           actions={
             <>
-              <button onClick={() => setShowConfirm(false)} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors">Cancel</button>
-              <button onClick={handleSend} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/20">
-                Confirm &amp; Send
-              </button>
+              <button onClick={() => setShowConfirm(false)} className="px-4 py-2 bg-white/[0.07] hover:bg-white/[0.12] text-white rounded-xl text-sm font-semibold transition-colors">Cancel</button>
+              <button onClick={handleSendEmail} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-colors">Confirm & Send</button>
             </>
-          }>
-          <div className="space-y-4">
-            <p className="text-slate-300 text-sm">You&apos;re about to send this email. This cannot be undone.</p>
-            <div className="bg-slate-900/50 border border-white/8 rounded-xl p-4 space-y-2 text-sm">
-              <div className="flex gap-3"><span className="text-slate-400 w-20 shrink-0">Subject</span><span className="text-white">{subject}</span></div>
-              {recipientFilter.all && <div className="flex gap-3"><span className="text-slate-400 w-20 shrink-0">To</span><span className="text-white">All members</span></div>}
-              {summary.length > 0 && !recipientFilter.all && (
-                <div className="flex gap-3"><span className="text-slate-400 w-20 shrink-0">Filters</span><span className="text-white">{summary.join(', ')}</span></div>
-              )}
-              {manualEmails.length > 0 && <div className="flex gap-3"><span className="text-slate-400 w-20 shrink-0">Manual</span><span className="text-white">{manualEmails.join(', ')}</span></div>}
+          }
+        >
+          <div className="space-y-3">
+            <p className="text-white/70 text-sm">You&apos;re about to send this email. This cannot be undone.</p>
+            <div className="p-4 bg-black/20 rounded-xl border border-white/[0.07] space-y-2 text-sm">
+              <p className="text-white/80"><span className="text-white/40 font-medium">Subject:</span> {subject}</p>
+              {recipientFilter.all && <p className="text-white/80"><span className="text-white/40 font-medium">To:</span> All members</p>}
+              {(recipientFilter.roles?.length ?? 0) > 0 && <p className="text-white/80"><span className="text-white/40 font-medium">Roles:</span> {recipientFilter.roles?.join(', ')}</p>}
+              {(recipientFilter.groupIds?.length ?? 0) > 0 && <p className="text-white/80"><span className="text-white/40 font-medium">Groups:</span> {recipientFilter.groupIds?.map((gid) => groups.find((g) => g.id === gid)?.name ?? gid).join(', ')}</p>}
+              {manualEmails.length > 0 && <p className="text-white/80"><span className="text-white/40 font-medium">Manual:</span> {manualEmails.join(', ')}</p>}
             </div>
           </div>
         </Modal>
@@ -521,107 +582,126 @@ function ComposeTab() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // TAB 2 — TEMPLATES
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 function TemplatesTab() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<Template | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [filterCat, setFilterCat] = useState<string>('');
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { loadTemplates(); }, []);
 
-  const load = async () => {
+  const loadTemplates = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/communications/templates');
       if (res.ok) { const d = await res.json(); setTemplates(d.templates || []); }
-    } finally { setLoading(false); }
+    } catch {}
+    finally { setLoading(false); }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this template?')) return;
     const res = await fetch(`/api/admin/communications/templates/${id}`, { method: 'DELETE' });
-    setToast(res.ok ? { type: 'success', message: 'Template deleted' } : { type: 'error', message: 'Delete failed' });
-    setTimeout(() => setToast(null), 4000);
-    if (res.ok) load();
+    if (res.ok) { setToast({ type: 'success', message: 'Template deleted' }); loadTemplates(); }
+    else setToast({ type: 'error', message: 'Delete failed' });
+    setTimeout(() => setToast(null), 5000);
   };
 
-  const CATEGORY_COLORS: Record<string, string> = {
-    GENERAL: 'text-slate-300 bg-slate-700/60',
-    WELCOME: 'text-green-300 bg-green-500/15',
-    MEMBERSHIP: 'text-blue-300 bg-blue-500/15',
-    EVENT: 'text-violet-300 bg-violet-500/15',
-    NEWSLETTER: 'text-indigo-300 bg-indigo-500/15',
-    ADMIN: 'text-orange-300 bg-orange-500/15',
-    SYSTEM: 'text-red-300 bg-red-500/15',
-  };
+  const categories = Array.from(new Set(templates.map((t) => t.category || 'GENERAL')));
+  const visible = filterCat ? templates.filter((t) => (t.category || 'GENERAL') === filterCat) : templates;
 
   return (
     <div className="space-y-5">
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
 
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold text-white">Email Templates</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{templates.length} templates · {templates.filter(t => t.isActive).length} active</p>
+      <div className="flex items-center justify-between gap-4">
+        {/* Category filter pills */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button onClick={() => setFilterCat('')} className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${!filterCat ? 'bg-indigo-500/25 text-indigo-200 ring-1 ring-indigo-400/40' : 'text-white/40 hover:text-white/70 bg-white/[0.04]'}`}>
+            All ({templates.length})
+          </button>
+          {categories.map((cat) => {
+            const s = CATEGORY_STYLE[cat] || CATEGORY_STYLE.GENERAL;
+            const n = templates.filter((t) => (t.category || 'GENERAL') === cat).length;
+            return (
+              <button key={cat} onClick={() => setFilterCat(cat === filterCat ? '' : cat)}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${filterCat === cat ? `${s.bg} ${s.text} ring-1` : 'text-white/40 hover:text-white/60 bg-white/[0.03]'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{cat} ({n})
+              </button>
+            );
+          })}
         </div>
-        <button onClick={() => { setEditing(null); setShowForm(true); }}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-500/20">
+        <button
+          onClick={() => { setEditingTemplate(null); setShowForm(true); }}
+          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-colors shadow-lg shadow-indigo-900/30 shrink-0"
+        >
           <Plus className="h-4 w-4" /> New Template
         </button>
       </div>
 
-      <div className="bg-slate-800/40 border border-white/8 rounded-xl overflow-hidden">
-        {loading ? (
-          <div className="p-12 text-center text-slate-400"><Loader2 className="h-7 w-7 animate-spin mx-auto mb-2" /><p className="text-sm">Loading…</p></div>
-        ) : templates.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
-            <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No templates yet. Create one to get started.</p>
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-900/60 border-b border-white/8">
-              <tr>
-                {['Name', 'Category', 'Subject', 'Updated', 'Uses', 'Active', ''].map(h => (
-                  <th key={h} className={`px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider ${h === '' ? 'text-right' : ''}`}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {templates.map(t => (
-                <tr key={t.id} className="hover:bg-slate-900/30 transition-colors group">
-                  <td className="px-5 py-3.5 text-white font-medium">{t.name}</td>
-                  <td className="px-5 py-3.5">
-                    <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${CATEGORY_COLORS[t.category || 'GENERAL']}`}>{t.category || '—'}</span>
-                  </td>
-                  <td className="px-5 py-3.5 text-slate-400 max-w-xs truncate">{t.subject}</td>
-                  <td className="px-5 py-3.5 text-slate-500">{new Date(t.updatedAt).toLocaleDateString()}</td>
-                  <td className="px-5 py-3.5 text-slate-400">{t.usageCount || 0}</td>
-                  <td className="px-5 py-3.5">
-                    {t.isActive
-                      ? <span className="w-2 h-2 bg-green-400 rounded-full inline-block" />
-                      : <span className="w-2 h-2 bg-slate-600 rounded-full inline-block" />}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => { setEditing(t); setShowForm(true); }} className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors"><Edit2 className="h-3.5 w-3.5 text-indigo-400" /></button>
-                      <button onClick={() => handleDelete(t.id)} className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors"><Trash2 className="h-3.5 w-3.5 text-red-400" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-16 text-white/30"><Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading…</div>
+      ) : visible.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-white/30">
+          <FileText className="h-10 w-10 mb-3 opacity-30" />
+          <p>No templates yet</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {visible.map((t) => {
+            const cat = CATEGORY_STYLE[t.category || 'GENERAL'];
+            return (
+              <div key={t.id} className="group bg-white/[0.03] border border-white/[0.07] hover:border-white/[0.12] rounded-2xl p-5 flex flex-col gap-3 transition-all">
+                {/* Top row */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${cat.bg} ${cat.text}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${cat.dot}`} />
+                      {t.category || 'GENERAL'}
+                    </span>
+                    {!t.isActive && <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-700/60 text-slate-400">Inactive</span>}
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => { setEditingTemplate(t); setShowForm(true); }} className="p-1.5 hover:bg-white/[0.08] rounded-lg transition-colors" title="Edit">
+                      <Edit2 className="h-3.5 w-3.5 text-indigo-400" />
+                    </button>
+                    <button onClick={() => handleDelete(t.id)} className="p-1.5 hover:bg-white/[0.08] rounded-lg transition-colors" title="Delete">
+                      <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Name & subject */}
+                <div>
+                  <h3 className="font-bold text-white text-sm leading-tight">{t.name}</h3>
+                  <p className="text-xs text-white/40 mt-0.5 truncate">{t.subject}</p>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-2 mt-auto border-t border-white/[0.06]">
+                  <div className="flex items-center gap-1 text-[10px] text-white/30">
+                    <Tag className="h-2.5 w-2.5" />
+                    {t.usageCount || 0} use{t.usageCount !== 1 ? 's' : ''}
+                  </div>
+                  <span className="text-[10px] text-white/25">{new Date(t.updatedAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {showForm && (
-        <TemplateFormModal template={editing} onClose={() => { setShowForm(false); setEditing(null); load(); }}
-          onSuccess={msg => { setToast({ type: 'success', message: msg }); setTimeout(() => setToast(null), 4000); }} />
+        <TemplateFormModal
+          template={editingTemplate}
+          onClose={() => { setShowForm(false); setEditingTemplate(null); loadTemplates(); }}
+          onSuccess={(msg) => { setToast({ type: 'success', message: msg }); setTimeout(() => setToast(null), 5000); }}
+        />
       )}
     </div>
   );
@@ -631,25 +711,25 @@ function TemplateFormModal({ template, onClose, onSuccess }: { template: Templat
   const [form, setForm] = useState({
     name: template?.name || '', subject: template?.subject || '',
     bodyHtml: template?.bodyHtml || '', description: template?.description || '',
-    category: template?.category || 'GENERAL' as Category,
-    variables: template?.variables?.join(', ') || '',
+    category: template?.category || 'GENERAL', variables: template?.variables?.join(', ') || '',
     isActive: template?.isActive ?? true,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault(); setLoading(true); setError('');
+  const handleSubmit = async () => {
+    setLoading(true); setError('');
     try {
       const url = template ? `/api/admin/communications/templates/${template.id}` : '/api/admin/communications/templates';
+      const method = template ? 'PUT' : 'POST';
       const res = await fetch(url, {
-        method: template ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...form,
-          variables: form.variables ? form.variables.split(',').map(v => v.trim()).filter(Boolean) : undefined,
+          name: form.name, subject: form.subject, bodyHtml: form.bodyHtml,
           description: form.description || undefined,
           category: form.category as Category,
+          variables: form.variables ? form.variables.split(',').map((v) => v.trim()).filter(Boolean) : undefined,
+          isActive: form.isActive,
         }),
       });
       if (res.ok) { onSuccess(template ? 'Template updated' : 'Template created'); onClose(); }
@@ -662,152 +742,161 @@ function TemplateFormModal({ template, onClose, onSuccess }: { template: Templat
     <Modal onClose={onClose} title={template ? 'Edit Template' : 'New Template'} size="large"
       actions={
         <>
-          <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors">Cancel</button>
-          <button onClick={save} disabled={loading} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
+          <button onClick={onClose} className="px-4 py-2 bg-white/[0.07] hover:bg-white/[0.12] text-white rounded-xl text-sm font-semibold transition-colors">Cancel</button>
+          <button onClick={handleSubmit} disabled={loading || !form.name || !form.subject || !form.bodyHtml}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-40">
             {loading ? 'Saving…' : 'Save Template'}
           </button>
         </>
-      }>
-      <form onSubmit={save} className="space-y-4">
-        {error && <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-sm">{error}</div>}
+      }
+    >
+      <div className="space-y-4">
+        {error && <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm">{error}</div>}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Name *</label>
-            <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white text-sm focus:border-indigo-500/60 focus:outline-none" />
+            <SectionLabel>Name *</SectionLabel>
+            <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-xl text-sm text-white focus:border-indigo-500/60 focus:outline-none placeholder-white/25" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Category *</label>
-            <select required value={form.category} onChange={e => setForm({ ...form, category: e.target.value as Category })}
-              className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white text-sm focus:border-indigo-500/60 focus:outline-none">
-              {['GENERAL','WELCOME','MEMBERSHIP','EVENT','NEWSLETTER','ADMIN','SYSTEM'].map(c => <option key={c} value={c}>{c}</option>)}
+            <SectionLabel>Category *</SectionLabel>
+            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as Category })}
+              className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-xl text-sm text-white focus:border-indigo-500/60 focus:outline-none">
+              {Object.keys(CATEGORY_STYLE).map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Subject *</label>
-          <input required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
-            className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white text-sm focus:border-indigo-500/60 focus:outline-none" />
+          <SectionLabel>Subject *</SectionLabel>
+          <input type="text" required value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}
+            className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-xl text-sm text-white focus:border-indigo-500/60 focus:outline-none placeholder-white/25" />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Body *</label>
-          <RichTextEditor value={form.bodyHtml} onChange={html => setForm({ ...form, bodyHtml: html })} placeholder="Email body…" />
+          <SectionLabel>Description</SectionLabel>
+          <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="Optional description…"
+            className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-xl text-sm text-white focus:border-indigo-500/60 focus:outline-none placeholder-white/25" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-            <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-              placeholder="Optional internal note…"
-              className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white text-sm focus:border-indigo-500/60 focus:outline-none placeholder-slate-600" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Variables</label>
-            <input value={form.variables} onChange={e => setForm({ ...form, variables: e.target.value })}
-              placeholder="firstName, lastName, email…"
-              className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white text-sm focus:border-indigo-500/60 focus:outline-none placeholder-slate-600" />
-          </div>
+        <div>
+          <SectionLabel>Variables (comma-separated)</SectionLabel>
+          <input type="text" value={form.variables} onChange={(e) => setForm({ ...form, variables: e.target.value })}
+            placeholder="e.g. firstName, lastName, email"
+            className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-xl text-sm text-white focus:border-indigo-500/60 focus:outline-none placeholder-white/25 font-mono" />
         </div>
-        <label className="flex items-center gap-2.5 cursor-pointer">
-          <input type="checkbox" checked={form.isActive} onChange={e => setForm({ ...form, isActive: e.target.checked })}
-            className="w-4 h-4 rounded border-white/20 bg-slate-900/60 text-indigo-600 focus:ring-indigo-500" />
-          <span className="text-sm text-slate-300">Active</span>
+        <div>
+          <SectionLabel>Email Body *</SectionLabel>
+          <RichTextEditor value={form.bodyHtml} onChange={(v) => setForm({ ...form, bodyHtml: v })} placeholder="Write the template body…" />
+        </div>
+        <label className="flex items-center gap-2.5 cursor-pointer group">
+          <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+            className="w-3.5 h-3.5 rounded border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0" />
+          <span className="text-sm text-white/60 group-hover:text-white/80 transition-colors">Active (appears in template picker)</span>
         </label>
-      </form>
+      </div>
     </Modal>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // TAB 3 — HISTORY
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 function HistoryTab() {
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<EmailStatus | ''>('');
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 20;
 
-  useEffect(() => { load(); }, [page, statusFilter]);
+  useEffect(() => { loadHistory(); }, [currentPage, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const load = async () => {
+  const loadHistory = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      const params = new URLSearchParams({ page: String(currentPage), limit: String(limit) });
       if (statusFilter) params.append('status', statusFilter);
       const res = await fetch(`/api/admin/communications?${params}`);
       if (res.ok) { const d = await res.json(); setLogs(d.logs || []); setTotalPages(Math.ceil((d.total || 0) / limit)); }
-    } finally { setLoading(false); }
+    } catch {}
+    finally { setLoading(false); }
   };
 
   const StatusBadge = ({ status }: { status: EmailStatus }) => {
-    const cfg = {
-      SENT: { cls: 'text-green-300 bg-green-500/10 border-green-500/20', icon: CheckCircle2 },
-      SENDING: { cls: 'text-blue-300 bg-blue-500/10 border-blue-500/20', icon: Loader2 },
-      FAILED: { cls: 'text-red-300 bg-red-500/10 border-red-500/20', icon: XCircle },
-    }[status];
-    const Icon = cfg.icon;
+    const map: Record<EmailStatus, string> = {
+      SENT:    'bg-emerald-500/20 text-emerald-300 ring-emerald-400/20',
+      SENDING: 'bg-blue-500/20 text-blue-300 ring-blue-400/20',
+      FAILED:  'bg-red-500/20 text-red-300 ring-red-400/20',
+    };
+    const icons: Record<EmailStatus, React.ReactNode> = {
+      SENT:    <CheckCircle2 className="h-3 w-3" />,
+      SENDING: <Loader2 className="h-3 w-3 animate-spin" />,
+      FAILED:  <XCircle className="h-3 w-3" />,
+    };
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${cfg.cls}`}>
-        <Icon className={`h-3 w-3 ${status === 'SENDING' ? 'animate-spin' : ''}`} />{status}
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ${map[status]}`}>
+        {icons[status]} {status.charAt(0) + status.slice(1).toLowerCase()}
       </span>
     );
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Sent History</h2>
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as EmailStatus | ''); setPage(1); }}
-          className="px-3 py-1.5 bg-slate-800 border border-white/10 rounded-lg text-sm text-slate-300 focus:border-indigo-500/60 focus:outline-none">
-          <option value="">All Status</option>
-          <option value="SENT">Sent</option>
-          <option value="SENDING">Sending</option>
-          <option value="FAILED">Failed</option>
-        </select>
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <SectionLabel>Filter</SectionLabel>
+        <div className="flex gap-1.5">
+          {(['', 'SENT', 'SENDING', 'FAILED'] as (EmailStatus | '')[]).map((s) => (
+            <button key={s || 'all'} onClick={() => { setStatusFilter(s); setCurrentPage(1); }}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${statusFilter === s ? 'bg-indigo-500/25 text-indigo-200 ring-1 ring-indigo-400/40' : 'text-white/40 hover:text-white/60 bg-white/[0.04]'}`}>
+              {s || 'All'}
+            </button>
+          ))}
+        </div>
+        <button onClick={loadHistory} className="ml-auto p-1.5 hover:bg-white/[0.07] rounded-lg transition-colors text-white/40 hover:text-white/70" title="Refresh">
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
       </div>
 
-      <div className="bg-slate-800/40 border border-white/8 rounded-xl overflow-hidden">
+      <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400"><Loader2 className="h-7 w-7 animate-spin mx-auto mb-2" /><p className="text-sm">Loading…</p></div>
+          <div className="flex items-center justify-center py-12 text-white/30"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading…</div>
         ) : logs.length === 0 ? (
-          <div className="p-12 text-center text-slate-500"><Mail className="h-10 w-10 mx-auto mb-3 opacity-30" /><p className="text-sm">No emails found</p></div>
+          <div className="flex flex-col items-center justify-center py-12 text-white/30">
+            <Clock className="h-8 w-8 mb-2 opacity-30" /><p className="text-sm">No email history found</p>
+          </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-900/60 border-b border-white/8">
-              <tr>
-                {['Recipient', 'Subject', 'Template', 'Status', 'Sent At'].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {logs.map(log => (
-                <tr key={log.id} className="hover:bg-slate-900/30 transition-colors">
-                  <td className="px-5 py-3.5 text-slate-200">{log.recipient}</td>
-                  <td className="px-5 py-3.5 text-slate-400 max-w-xs truncate">{log.subject}</td>
-                  <td className="px-5 py-3.5 text-slate-500 text-xs">{log.templateName || 'Custom'}</td>
-                  <td className="px-5 py-3.5"><StatusBadge status={log.status} /></td>
-                  <td className="px-5 py-3.5 text-slate-500 text-xs">{new Date(log.sentAt).toLocaleString()}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  {['Recipient', 'Subject', 'Template', 'Status', 'Sent At'].map((h) => (
+                    <th key={h} className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-white/30">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {logs.map((log) => (
+                  <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="px-5 py-3.5 text-white/80 font-medium">{log.recipient}</td>
+                    <td className="px-5 py-3.5 text-white/50 max-w-xs truncate">{log.subject}</td>
+                    <td className="px-5 py-3.5 text-white/35 text-xs">{log.templateName || 'Custom'}</td>
+                    <td className="px-5 py-3.5"><StatusBadge status={log.status} /></td>
+                    <td className="px-5 py-3.5 text-white/30 text-xs">{new Date(log.sentAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-slate-500">Page {page} of {totalPages}</span>
-          <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="p-2 bg-slate-700/60 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-40">
-              <ChevronLeft className="h-4 w-4 text-white" />
-            </button>
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              className="p-2 bg-slate-700/60 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-40">
-              <ChevronRight className="h-4 w-4 text-white" />
-            </button>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-white/30 text-xs">Page {currentPage} of {totalPages}</span>
+          <div className="flex gap-1.5">
+            <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
+              className="p-2 bg-white/[0.05] hover:bg-white/[0.09] rounded-xl transition-colors disabled:opacity-30"><ChevronLeft className="h-4 w-4 text-white" /></button>
+            <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+              className="p-2 bg-white/[0.05] hover:bg-white/[0.09] rounded-xl transition-colors disabled:opacity-30"><ChevronRight className="h-4 w-4 text-white" /></button>
           </div>
         </div>
       )}
@@ -815,120 +904,152 @@ function HistoryTab() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // TAB 4 — GROUPS
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 function GroupsTab() {
   const [groups, setGroups] = useState<MemberGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [selected, setSelected] = useState<GroupDetail | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<GroupDetail | null>(null);
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [newName, setNewName] = useState(''); const [newDesc, setNewDesc] = useState(''); const [creating, setCreating] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<MemberGroup | null>(null); const [editName, setEditName] = useState(''); const [editDesc, setEditDesc] = useState('');
-  const [memberSearch, setMemberSearch] = useState(''); const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]); const [searching, setSearching] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupDescription, setNewGroupDescription] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<MemberGroup | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [memberSearch, setMemberSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => { loadGroups(); }, []);
-  const loadGroups = async () => { setLoading(true); try { const r = await fetch('/api/admin/groups'); if (r.ok) setGroups(await r.json()); } finally { setLoading(false); } };
-  const loadDetail = async (id: string) => { const r = await fetch(`/api/admin/groups/${id}`); if (r.ok) setSelected(await r.json()); };
-  const toast5 = (t: { type: 'success' | 'error'; message: string }) => { setToast(t); setTimeout(() => setToast(null), 5000); };
 
-  const create = async (e: React.FormEvent) => {
-    e.preventDefault(); if (!newName.trim()) return; setCreating(true);
-    const r = await fetch('/api/admin/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName.trim(), description: newDesc.trim() || undefined }) });
-    toast5(r.ok ? { type: 'success', message: 'Group created' } : { type: 'error', message: 'Failed' });
-    if (r.ok) { setNewName(''); setNewDesc(''); setShowCreate(false); loadGroups(); }
-    setCreating(false);
+  const loadGroups = async () => {
+    setLoading(true);
+    try { const res = await fetch('/api/admin/groups'); if (res.ok) setGroups(await res.json()); }
+    catch {} finally { setLoading(false); }
   };
-  const update = async (e: React.FormEvent) => {
+  const loadGroupDetail = async (groupId: string) => {
+    try { const res = await fetch(`/api/admin/groups/${groupId}`); if (res.ok) setSelectedGroup(await res.json()); }
+    catch {}
+  };
+  const showToast = (t: { type: 'success' | 'error'; message: string }) => { setToast(t); setTimeout(() => setToast(null), 5000); };
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault(); if (!newGroupName.trim()) return;
+    setCreating(true);
+    try {
+      const res = await fetch('/api/admin/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newGroupName.trim(), description: newGroupDescription.trim() || undefined }) });
+      if (res.ok) { showToast({ type: 'success', message: 'Group created' }); setNewGroupName(''); setNewGroupDescription(''); setShowCreateForm(false); loadGroups(); }
+      else { const d = await res.json(); showToast({ type: 'error', message: d.error || 'Failed to create' }); }
+    } catch { showToast({ type: 'error', message: 'Network error' }); }
+    finally { setCreating(false); }
+  };
+  const handleUpdateGroup = async (e: React.FormEvent) => {
     e.preventDefault(); if (!editingGroup) return;
-    const r = await fetch(`/api/admin/groups/${editingGroup.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: editName.trim(), description: editDesc.trim() || undefined }) });
-    toast5(r.ok ? { type: 'success', message: 'Group updated' } : { type: 'error', message: 'Failed' });
-    if (r.ok) { setEditingGroup(null); loadGroups(); if (selected?.id === editingGroup.id) loadDetail(editingGroup.id); }
+    try {
+      const res = await fetch(`/api/admin/groups/${editingGroup.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: editName.trim(), description: editDescription.trim() || undefined }) });
+      if (res.ok) { showToast({ type: 'success', message: 'Group updated' }); setEditingGroup(null); loadGroups(); if (selectedGroup?.id === editingGroup.id) loadGroupDetail(editingGroup.id); }
+      else { const d = await res.json(); showToast({ type: 'error', message: d.error || 'Update failed' }); }
+    } catch { showToast({ type: 'error', message: 'Network error' }); }
   };
-  const del = async (id: string) => {
+  const handleDeleteGroup = async (groupId: string) => {
     if (!confirm('Delete this group?')) return;
-    const r = await fetch(`/api/admin/groups/${id}`, { method: 'DELETE' });
-    toast5(r.ok ? { type: 'success', message: 'Group deleted' } : { type: 'error', message: 'Failed' });
-    if (r.ok) { if (selected?.id === id) setSelected(null); loadGroups(); }
+    const res = await fetch(`/api/admin/groups/${groupId}`, { method: 'DELETE' });
+    if (res.ok) { showToast({ type: 'success', message: 'Group deleted' }); if (selectedGroup?.id === groupId) setSelectedGroup(null); loadGroups(); }
+    else showToast({ type: 'error', message: 'Delete failed' });
   };
-  const search = async (q: string) => {
-    setMemberSearch(q); if (q.length < 2) { setSearchResults([]); return; } setSearching(true);
-    const r = await fetch(`/api/messages/user-search?q=${encodeURIComponent(q)}`);
-    if (r.ok) { const d = await r.json(); const ids = new Set(selected?.members.map(m => m.userId) || []); setSearchResults((d.users || []).filter((u: UserSearchResult) => !ids.has(u.id))); }
-    setSearching(false);
+  const searchMembers = async (query: string) => {
+    setMemberSearch(query); if (query.length < 2) { setSearchResults([]); return; }
+    setSearching(true);
+    try {
+      const res = await fetch(`/api/messages/user-search?q=${encodeURIComponent(query)}`);
+      if (res.ok) { const d = await res.json(); const existing = new Set(selectedGroup?.members.map((m) => m.userId) || []); setSearchResults((d.users || []).filter((u: UserSearchResult) => !existing.has(u.id))); }
+    } catch {} finally { setSearching(false); }
   };
-  const addMember = async (uid: string) => {
-    if (!selected) return;
-    const r = await fetch(`/api/admin/groups/${selected.id}/members`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userIds: [uid] }) });
-    if (r.ok) { loadDetail(selected.id); loadGroups(); setSearchResults(searchResults.filter(u => u.id !== uid)); }
+  const handleAddMember = async (userId: string) => {
+    if (!selectedGroup) return;
+    const res = await fetch(`/api/admin/groups/${selectedGroup.id}/members`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userIds: [userId] }) });
+    if (res.ok) { loadGroupDetail(selectedGroup.id); loadGroups(); setSearchResults(searchResults.filter((u) => u.id !== userId)); }
   };
-  const removeMember = async (uid: string) => {
-    if (!selected) return;
-    const r = await fetch(`/api/admin/groups/${selected.id}/members`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid }) });
-    if (r.ok) { loadDetail(selected.id); loadGroups(); }
+  const handleRemoveMember = async (userId: string) => {
+    if (!selectedGroup) return;
+    const res = await fetch(`/api/admin/groups/${selectedGroup.id}/members`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) });
+    if (res.ok) { loadGroupDetail(selectedGroup.id); loadGroups(); }
   };
 
   return (
     <div className="space-y-5">
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-white">Member Groups</h2>
-        <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-500/20">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-white/40 font-semibold">Member Groups</p>
+          <p className="text-xs text-white/30 mt-0.5">Organise members into segments for targeted emails</p>
+        </div>
+        <button onClick={() => setShowCreateForm(true)} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-colors shadow-lg shadow-indigo-900/30">
           <FolderPlus className="h-4 w-4" /> New Group
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Group list */}
         <div className="space-y-2">
-          {loading ? <div className="p-8 text-center text-slate-400"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
-            : groups.length === 0 ? <div className="bg-slate-800/40 border border-white/8 rounded-xl p-8 text-center text-slate-500 text-sm">No groups yet</div>
-            : groups.map(g => (
-              <button key={g.id} onClick={() => loadDetail(g.id)}
-                className={`w-full text-left p-4 rounded-xl border transition-all ${selected?.id === g.id ? 'bg-indigo-500/10 border-indigo-500/40' : 'bg-slate-800/40 border-white/8 hover:border-indigo-500/30'}`}>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-white text-sm">{g.name}</span>
-                  <span className="text-xs text-slate-400 bg-slate-700/60 px-2 py-0.5 rounded-full">{g._count.members}</span>
-                </div>
-                {g.description && <p className="text-xs text-slate-500 mt-1 line-clamp-1">{g.description}</p>}
-              </button>
-            ))}
+          {loading ? (
+            <div className="flex items-center justify-center py-10 text-white/30"><Loader2 className="h-5 w-5 animate-spin" /></div>
+          ) : groups.length === 0 ? (
+            <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-8 text-center text-white/30">
+              <Users className="h-8 w-8 mx-auto mb-2 opacity-30" /><p className="text-sm">No groups yet</p>
+            </div>
+          ) : groups.map((g) => (
+            <button key={g.id} onClick={() => loadGroupDetail(g.id)}
+              className={`w-full text-left p-4 rounded-xl border transition-all ${selectedGroup?.id === g.id ? 'bg-indigo-500/10 border-indigo-400/30' : 'bg-white/[0.03] border-white/[0.07] hover:border-white/[0.12]'}`}>
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-white text-sm">{g.name}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.08] text-white/40">{g._count.members}</span>
+              </div>
+              {g.description && <p className="text-xs text-white/35 mt-1 line-clamp-1">{g.description}</p>}
+            </button>
+          ))}
         </div>
 
-        <div className="col-span-2">
-          {selected ? (
-            <div className="bg-slate-800/40 border border-white/8 rounded-xl overflow-hidden">
-              <div className="p-5 border-b border-white/8">
-                <div className="flex items-start justify-between">
+        {/* Group detail */}
+        <div className="lg:col-span-2">
+          {selectedGroup ? (
+            <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+              <div className="p-5 border-b border-white/[0.06]">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-white">{selected.name}</h3>
-                    {selected.description && <p className="text-sm text-slate-400 mt-0.5">{selected.description}</p>}
-                    <p className="text-xs text-slate-500 mt-2">Created by {selected.createdBy.firstName} {selected.createdBy.lastName} · {new Date(selected.createdAt).toLocaleDateString()}</p>
+                    <h3 className="font-bold text-white">{selectedGroup.name}</h3>
+                    {selectedGroup.description && <p className="text-sm text-white/40 mt-0.5">{selectedGroup.description}</p>}
+                    <p className="text-[10px] text-white/25 mt-1.5">Created by {selectedGroup.createdBy.firstName} {selectedGroup.createdBy.lastName} · {new Date(selectedGroup.createdAt).toLocaleDateString()}</p>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => { setEditingGroup(selected); setEditName(selected.name); setEditDesc(selected.description || ''); }} className="p-2 hover:bg-slate-700 rounded-lg transition-colors"><Edit2 className="h-3.5 w-3.5 text-indigo-400" /></button>
-                    <button onClick={() => del(selected.id)} className="p-2 hover:bg-slate-700 rounded-lg transition-colors"><Trash2 className="h-3.5 w-3.5 text-red-400" /></button>
+                    <button onClick={() => { setEditingGroup(selectedGroup); setEditName(selectedGroup.name); setEditDescription(selectedGroup.description || ''); }} className="p-1.5 hover:bg-white/[0.07] rounded-lg transition-colors"><Edit2 className="h-3.5 w-3.5 text-indigo-400" /></button>
+                    <button onClick={() => handleDeleteGroup(selectedGroup.id)} className="p-1.5 hover:bg-white/[0.07] rounded-lg transition-colors"><Trash2 className="h-3.5 w-3.5 text-red-400" /></button>
                   </div>
                 </div>
                 <button onClick={() => { setShowAddMembers(!showAddMembers); setMemberSearch(''); setSearchResults([]); }}
-                  className="mt-3 px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5">
+                  className="mt-3 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 rounded-lg text-xs font-semibold transition-colors">
                   <UserPlus className="h-3.5 w-3.5" /> Add Members
                 </button>
                 {showAddMembers && (
                   <div className="mt-3 space-y-2">
                     <div className="relative">
-                      <Search className="absolute left-3 top-2 h-3.5 w-3.5 text-slate-400" />
-                      <input value={memberSearch} onChange={e => search(e.target.value)} placeholder="Search by name or email…"
-                        className="w-full pl-9 pr-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-sm text-white placeholder-slate-500 focus:border-indigo-500/60 focus:outline-none" />
+                      <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-white/30" />
+                      <input type="text" value={memberSearch} onChange={(e) => searchMembers(e.target.value)}
+                        placeholder="Search by name or email…"
+                        className="w-full pl-9 pr-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-white placeholder-white/25 focus:border-indigo-500/60 focus:outline-none" />
                     </div>
-                    {searching && <p className="text-xs text-slate-400">Searching…</p>}
+                    {searching && <p className="text-xs text-white/30 pl-1">Searching…</p>}
                     {searchResults.length > 0 && (
-                      <div className="max-h-40 overflow-y-auto space-y-1">
-                        {searchResults.map(u => (
-                          <div key={u.id} className="flex items-center justify-between p-2 bg-slate-900/50 rounded-lg">
-                            <div><span className="text-sm text-white">{u.firstName} {u.lastName}</span><span className="text-xs text-slate-400 ml-2">{u.email}</span></div>
-                            <button onClick={() => addMember(u.id)} className="px-2.5 py-1 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 rounded text-xs transition-colors">Add</button>
+                      <div className="max-h-44 overflow-y-auto space-y-1">
+                        {searchResults.map((u) => (
+                          <div key={u.id} className="flex items-center justify-between p-2.5 bg-black/20 rounded-xl">
+                            <div><span className="text-sm text-white">{u.firstName} {u.lastName}</span><span className="text-xs text-white/35 ml-2">{u.email}</span></div>
+                            <button onClick={() => handleAddMember(u.id)} className="px-2.5 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg text-xs font-semibold transition-colors">Add</button>
                           </div>
                         ))}
                       </div>
@@ -937,53 +1058,60 @@ function GroupsTab() {
                 )}
               </div>
               <div className="p-5">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Members ({selected.members.length})</p>
-                {selected.members.length === 0
-                  ? <p className="text-sm text-slate-500">No members yet.</p>
-                  : <div className="space-y-1.5 max-h-96 overflow-y-auto">
-                    {selected.members.map(m => (
-                      <div key={m.userId} className="flex items-center justify-between p-2.5 bg-slate-900/30 rounded-lg">
-                        <div>
-                          <span className="text-sm text-white">{m.user.firstName} {m.user.lastName}</span>
-                          <span className="text-xs text-slate-400 ml-2">{m.user.email}</span>
-                          <span className="text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded ml-2">{m.user.role}</span>
+                <p className="text-[10px] uppercase tracking-[0.12em] text-white/30 font-semibold mb-3">Members ({selectedGroup.members.length})</p>
+                {selectedGroup.members.length === 0 ? (
+                  <p className="text-sm text-white/30">No members yet.</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                    {selectedGroup.members.map((m) => (
+                      <div key={m.userId} className="flex items-center justify-between p-3 bg-black/20 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 text-xs font-bold shrink-0">
+                            {m.user.firstName[0]}{m.user.lastName[0]}
+                          </div>
+                          <div>
+                            <span className="text-sm text-white">{m.user.firstName} {m.user.lastName}</span>
+                            <span className="text-xs text-white/35 ml-1.5">{m.user.email}</span>
+                          </div>
                         </div>
-                        <button onClick={() => removeMember(m.userId)} className="p-1.5 hover:bg-slate-700 rounded transition-colors"><UserMinus className="h-3.5 w-3.5 text-red-400" /></button>
+                        <button onClick={() => handleRemoveMember(m.userId)} className="p-1.5 hover:bg-white/[0.07] rounded-lg transition-colors" title="Remove"><UserMinus className="h-3.5 w-3.5 text-red-400" /></button>
                       </div>
                     ))}
-                  </div>}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
-            <div className="bg-slate-800/40 border border-white/8 rounded-xl p-12 text-center text-slate-500">
-              <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Select a group to manage members</p>
+            <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl flex flex-col items-center justify-center py-16 text-white/25">
+              <Users className="h-10 w-10 mb-2 opacity-30" /><p className="text-sm">Select a group to manage it</p>
             </div>
           )}
         </div>
       </div>
 
-      {showCreate && (
-        <Modal onClose={() => setShowCreate(false)} title="New Group"
+      {showCreateForm && (
+        <Modal onClose={() => setShowCreateForm(false)} title="Create Group"
           actions={<>
-            <button onClick={() => setShowCreate(false)} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors">Cancel</button>
-            <button onClick={create} disabled={creating || !newName.trim()} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">{creating ? 'Creating…' : 'Create'}</button>
-          </>}>
-          <form onSubmit={create} className="space-y-4">
-            <div><label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Name *</label><input required value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Board Members" className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white text-sm focus:border-indigo-500/60 focus:outline-none placeholder-slate-600" /></div>
-            <div><label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Description</label><textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={3} placeholder="Optional…" className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white text-sm focus:border-indigo-500/60 focus:outline-none placeholder-slate-600" /></div>
+            <button onClick={() => setShowCreateForm(false)} className="px-4 py-2 bg-white/[0.07] hover:bg-white/[0.12] text-white rounded-xl text-sm font-semibold transition-colors">Cancel</button>
+            <button onClick={handleCreateGroup} disabled={creating || !newGroupName.trim()} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-40">{creating ? 'Creating…' : 'Create'}</button>
+          </>}
+        >
+          <form onSubmit={handleCreateGroup} className="space-y-4">
+            <div><SectionLabel>Name *</SectionLabel><input type="text" required value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} placeholder="e.g. Board Members, Volunteers" className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-xl text-sm text-white placeholder-white/25 focus:border-indigo-500/60 focus:outline-none" /></div>
+            <div><SectionLabel>Description</SectionLabel><textarea value={newGroupDescription} onChange={(e) => setNewGroupDescription(e.target.value)} rows={3} placeholder="Optional…" className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-xl text-sm text-white placeholder-white/25 focus:border-indigo-500/60 focus:outline-none resize-none" /></div>
           </form>
         </Modal>
       )}
       {editingGroup && (
         <Modal onClose={() => setEditingGroup(null)} title="Edit Group"
           actions={<>
-            <button onClick={() => setEditingGroup(null)} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors">Cancel</button>
-            <button onClick={update} disabled={!editName.trim()} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">Save</button>
-          </>}>
-          <form onSubmit={update} className="space-y-4">
-            <div><label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Name *</label><input required value={editName} onChange={e => setEditName(e.target.value)} className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white text-sm focus:border-indigo-500/60 focus:outline-none" /></div>
-            <div><label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Description</label><textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={3} className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white text-sm focus:border-indigo-500/60 focus:outline-none" /></div>
+            <button onClick={() => setEditingGroup(null)} className="px-4 py-2 bg-white/[0.07] hover:bg-white/[0.12] text-white rounded-xl text-sm font-semibold transition-colors">Cancel</button>
+            <button onClick={handleUpdateGroup} disabled={!editName.trim()} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-40">Save</button>
+          </>}
+        >
+          <form onSubmit={handleUpdateGroup} className="space-y-4">
+            <div><SectionLabel>Name *</SectionLabel><input type="text" required value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-xl text-sm text-white focus:border-indigo-500/60 focus:outline-none" /></div>
+            <div><SectionLabel>Description</SectionLabel><textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-xl text-sm text-white focus:border-indigo-500/60 focus:outline-none resize-none" /></div>
           </form>
         </Modal>
       )}
@@ -991,16 +1119,17 @@ function GroupsTab() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // TAB 5 — AUTOMATIONS
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 interface AutomationConfig { id: string; type: string; enabled: boolean; subject: string; bodyHtml: string; updatedAt: string; }
-const AUTOMATION_META: Record<string, { label: string; description: string; icon: string }> = {
-  WELCOME_REGISTRATION:      { label: 'Welcome Email',                  description: 'Triggered on new member registration',            icon: '👋' },
-  MEMBERSHIP_ACTIVATED:      { label: 'Membership Activated',           description: 'Triggered when PayPal subscription activates',     icon: '✅' },
-  EVENT_REGISTRATION:        { label: 'Event Registration Confirmation', description: 'Triggered after event payment confirmation',       icon: '📅' },
-  OBS_REGISTRATION:          { label: 'OBS Registration Confirmation',  description: 'Triggered after OBS event payment captured',       icon: '🔭' },
-  MEMBERSHIP_RENEWAL_REMINDER:{ label: 'Renewal Reminder',              description: 'Sent automatically 7 days before expiry',          icon: '⏰' },
+
+const AUTOMATION_META: Record<string, { label: string; description: string; icon: React.ReactNode }> = {
+  WELCOME_REGISTRATION:      { label: 'Welcome Email',             description: 'Sent when a new member creates an account',              icon: <Mail className="h-4 w-4" /> },
+  MEMBERSHIP_ACTIVATED:      { label: 'Membership Activated',      description: "Sent when a member's subscription is activated via PayPal", icon: <CheckCircle2 className="h-4 w-4" /> },
+  EVENT_REGISTRATION:        { label: 'Event Registration',        description: 'Sent after a member pays for and confirms an event',      icon: <Users className="h-4 w-4" /> },
+  OBS_REGISTRATION:          { label: 'OBS Registration',          description: 'Sent after OBS event payment is captured',               icon: <Sparkles className="h-4 w-4" /> },
+  MEMBERSHIP_RENEWAL_REMINDER:{ label: 'Renewal Reminder',        description: 'Sent automatically 7 days before membership expires',    icon: <Clock className="h-4 w-4" /> },
 };
 
 function AutomationsTab() {
@@ -1011,85 +1140,104 @@ function AutomationsTab() {
   const [saving, setSaving] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  useEffect(() => { load(); }, []);
-  const load = async () => {
+  useEffect(() => { loadConfigs(); }, []);
+
+  const loadConfigs = async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/admin/email-automation');
-      if (r.ok) { const d = await r.json(); setConfigs(d); const init: Record<string, { subject: string; bodyHtml: string }> = {}; for (const c of d as AutomationConfig[]) init[c.type] = { subject: c.subject, bodyHtml: c.bodyHtml }; setEditState(init); }
-    } finally { setLoading(false); }
+      const res = await fetch('/api/admin/email-automation');
+      if (res.ok) {
+        const data = await res.json();
+        setConfigs(data);
+        const init: Record<string, { subject: string; bodyHtml: string }> = {};
+        for (const c of data as AutomationConfig[]) init[c.type] = { subject: c.subject, bodyHtml: c.bodyHtml };
+        setEditState(init);
+      }
+    } catch {}
+    finally { setLoading(false); }
   };
-  const toggle = async (c: AutomationConfig) => {
-    const next = !c.enabled;
-    setConfigs(prev => prev.map(x => x.type === c.type ? { ...x, enabled: next } : x));
-    const r = await fetch('/api/admin/email-automation', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: c.type, enabled: next }) });
-    if (!r.ok) { setConfigs(prev => prev.map(x => x.type === c.type ? { ...x, enabled: c.enabled } : x)); setToast({ type: 'error', message: 'Update failed' }); setTimeout(() => setToast(null), 4000); }
+
+  const handleToggle = async (config: AutomationConfig) => {
+    const next = !config.enabled;
+    setConfigs((prev) => prev.map((c) => c.type === config.type ? { ...c, enabled: next } : c));
+    const res = await fetch('/api/admin/email-automation', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: config.type, enabled: next }) });
+    if (!res.ok) {
+      setConfigs((prev) => prev.map((c) => c.type === config.type ? { ...c, enabled: config.enabled } : c));
+      setToast({ type: 'error', message: 'Update failed' }); setTimeout(() => setToast(null), 5000);
+    }
   };
-  const save = async (type: string) => {
-    const edit = editState[type]; if (!edit) return; setSaving(type);
+
+  const handleSave = async (type: string) => {
+    const edit = editState[type]; if (!edit) return;
+    setSaving(type);
     try {
-      const r = await fetch('/api/admin/email-automation', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, ...edit }) });
-      if (r.ok) { setConfigs(prev => prev.map(c => c.type === type ? { ...c, ...edit } : c)); setToast({ type: 'success', message: 'Saved' }); }
+      const res = await fetch('/api/admin/email-automation', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, subject: edit.subject, bodyHtml: edit.bodyHtml }) });
+      if (res.ok) { const updated = await res.json(); setConfigs((prev) => prev.map((c) => c.type === type ? updated : c)); setToast({ type: 'success', message: 'Saved' }); }
       else throw new Error();
     } catch { setToast({ type: 'error', message: 'Save failed' }); }
-    finally { setSaving(null); setTimeout(() => setToast(null), 4000); }
+    finally { setSaving(null); setTimeout(() => setToast(null), 5000); }
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       <div>
-        <h2 className="text-lg font-semibold text-white">Email Automations</h2>
-        <p className="text-sm text-slate-500 mt-0.5">Automated emails triggered by membership events. Toggle or expand to edit.</p>
+        <p className="text-[10px] uppercase tracking-[0.14em] text-white/40 font-semibold">Email Automations</p>
+        <p className="text-xs text-white/30 mt-0.5">Configure automated emails triggered by member actions. Toggle to enable or expand to edit.</p>
       </div>
-
       {loading ? (
-        <div className="p-12 text-center text-slate-400"><Loader2 className="h-7 w-7 animate-spin mx-auto mb-2" /></div>
+        <div className="flex items-center justify-center py-12 text-white/30"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading…</div>
       ) : (
         <div className="space-y-3">
-          {configs.map(c => {
-            const meta = AUTOMATION_META[c.type] || { label: c.type, description: '', icon: '📧' };
-            const isOpen = expandedId === c.type;
-            const edit = editState[c.type] || { subject: c.subject, bodyHtml: c.bodyHtml };
+          {configs.map((config) => {
+            const meta = AUTOMATION_META[config.type] || { label: config.type, description: '', icon: <Zap className="h-4 w-4" /> };
+            const isOpen = expandedId === config.type;
+            const edit = editState[config.type] || { subject: config.subject, bodyHtml: config.bodyHtml };
+
             return (
-              <div key={c.type} className={`bg-slate-800/40 border rounded-xl overflow-hidden transition-colors ${isOpen ? 'border-indigo-500/30' : 'border-white/8'}`}>
+              <div key={config.type} className={`bg-white/[0.03] border rounded-2xl overflow-hidden transition-all ${isOpen ? 'border-indigo-400/20' : 'border-white/[0.07]'}`}>
                 <div className="flex items-center gap-4 p-5">
-                  <span className="text-2xl">{meta.icon}</span>
+                  {/* Toggle */}
+                  <button onClick={() => handleToggle(config)} title={config.enabled ? 'Disable' : 'Enable'}>
+                    {config.enabled ? <ToggleRight className="h-7 w-7 text-indigo-400" /> : <ToggleLeft className="h-7 w-7 text-white/25" />}
+                  </button>
+
+                  <div className={`p-2 rounded-lg ${config.enabled ? 'bg-indigo-500/15 text-indigo-400' : 'bg-white/[0.05] text-white/30'}`}>
+                    {meta.icon}
+                  </div>
+
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-semibold text-white text-sm">{meta.label}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.enabled ? 'bg-green-500/15 text-green-300 border border-green-500/20' : 'bg-slate-700/60 text-slate-400 border border-white/5'}`}>
-                        {c.enabled ? 'Active' : 'Disabled'}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-white text-sm">{meta.label}</h3>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${config.enabled ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/[0.07] text-white/35'}`}>
+                        {config.enabled ? 'On' : 'Off'}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{meta.description}</p>
-                    {!isOpen && <p className="text-xs text-slate-600 mt-1 truncate max-w-lg">Subject: {c.subject}</p>}
+                    <p className="text-xs text-white/35 mt-0.5">{meta.description}</p>
+                    {!isOpen && <p className="text-[11px] text-white/25 mt-1 truncate max-w-lg">Subject: {config.subject}</p>}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => toggle(c)} title={c.enabled ? 'Disable' : 'Enable'}>
-                      {c.enabled ? <ToggleRight className="h-6 w-6 text-indigo-400" /> : <ToggleLeft className="h-6 w-6 text-slate-500" />}
-                    </button>
-                    <button onClick={() => setExpandedId(isOpen ? null : c.type)} className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors">
-                      {isOpen ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
-                    </button>
-                  </div>
+
+                  <button onClick={() => setExpandedId(isOpen ? null : config.type)} className="p-2 hover:bg-white/[0.07] rounded-xl transition-colors">
+                    {isOpen ? <ChevronUp className="h-4 w-4 text-white/40" /> : <ChevronDown className="h-4 w-4 text-white/40" />}
+                  </button>
                 </div>
+
                 {isOpen && (
-                  <div className="border-t border-white/8 p-5 space-y-4 bg-slate-900/20">
+                  <div className="border-t border-white/[0.06] p-5 space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                      <input value={edit.subject} onChange={e => setEditState(prev => ({ ...prev, [c.type]: { ...edit, subject: e.target.value } }))}
-                        className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white text-sm focus:border-indigo-500/60 focus:outline-none" />
+                      <SectionLabel>Subject</SectionLabel>
+                      <input type="text" value={edit.subject} onChange={(e) => setEditState((prev) => ({ ...prev, [config.type]: { ...edit, subject: e.target.value } }))}
+                        className="w-full px-3 py-2.5 bg-black/30 border border-white/10 rounded-xl text-sm text-white focus:border-indigo-500/60 focus:outline-none" />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Email Body</label>
-                      <RichTextEditor value={edit.bodyHtml} onChange={html => setEditState(prev => ({ ...prev, [c.type]: { ...edit, bodyHtml: html } }))} placeholder="Edit email body…" />
+                      <SectionLabel>Email Body</SectionLabel>
+                      <RichTextEditor value={edit.bodyHtml} onChange={(html) => setEditState((prev) => ({ ...prev, [config.type]: { ...edit, bodyHtml: html } }))} placeholder="Edit the email body…" />
                     </div>
                     <div className="flex justify-end">
-                      <button onClick={() => save(c.type)} disabled={saving === c.type}
-                        className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-indigo-500/20">
-                        {saving === c.type && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                        {saving === c.type ? 'Saving…' : 'Save Changes'}
+                      <button onClick={() => handleSave(config.type)} disabled={saving === config.type}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-40 shadow-lg shadow-indigo-900/30">
+                        {saving === config.type ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        {saving === config.type ? 'Saving…' : 'Save Changes'}
                       </button>
                     </div>
                   </div>
@@ -1103,65 +1251,76 @@ function AutomationsTab() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // TAB 6 — DELIVERABILITY
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 function DeliverabilityTab() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/ses-stats')
-      .then(r => r.json())
-      .then(d => { if (d.error) setError(d.error); else setData(d); })
-      .catch(() => setError('Failed to load SES stats'))
-      .finally(() => setLoading(false));
+    fetch('/api/admin/ses-stats').then((r) => r.json()).then((d) => {
+      if (d.error) setError(d.error); else setData(d);
+    }).catch(() => setError('Failed to load SES stats')).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center py-20 text-slate-400"><Loader2 className="h-7 w-7 animate-spin mr-3" />Loading…</div>;
+  if (loading) return <div className="flex items-center justify-center py-16 text-white/30"><Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading SES stats…</div>;
   if (error) return (
-    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-8 text-center">
-      <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
+    <div className="bg-red-500/[0.08] border border-red-500/20 rounded-2xl p-8 text-center">
+      <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
       <p className="text-red-300 text-sm">{error}</p>
-      <p className="text-slate-500 text-xs mt-2">Ensure SES credentials have ses:GetSendStatistics and ses:GetSendQuota permissions.</p>
+      <p className="text-white/30 text-xs mt-2">Ensure SES credentials have ses:GetSendStatistics and ses:GetSendQuota permissions.</p>
     </div>
   );
 
-  const bounceRate = parseFloat(data?.totals?.bounceRate || '0');
-  const complaintRate = parseFloat(data?.totals?.complaintRate || '0');
-  const B = (r: number) => r > 5 ? 'text-red-400' : r > 2 ? 'text-yellow-400' : 'text-green-400';
-  const C = (r: number) => r > 0.1 ? 'text-red-400' : r > 0.05 ? 'text-yellow-400' : 'text-green-400';
+  if (!data) return null;
+
+  type Totals = { sent: number; bounced: number; complaints: number; bounceRate: string; complaintRate: string };
+  type Quota = { sentLast24Hours: number; max24HourSend: number; maxSendRate: number };
+  type DayStat = { date: string; sent: number; bounced: number; complaints: number; bounceRate: number; complaintRate: number };
+
+  const totals = data.totals as Totals | undefined;
+  const quota = data.quota as Quota | undefined;
+  const dailyStats = data.dailyStats as DayStat[] | undefined;
+
+  const bounceRate = parseFloat(totals?.bounceRate || '0');
+  const complaintRate = parseFloat(totals?.complaintRate || '0');
+  const bounceColor = bounceRate > 5 ? 'text-red-400' : bounceRate > 2 ? 'text-amber-400' : 'text-emerald-400';
+  const complaintColor = complaintRate > 0.1 ? 'text-red-400' : complaintRate > 0.05 ? 'text-amber-400' : 'text-emerald-400';
+  const bounceStatus = bounceRate > 5 ? '🔴 Critical' : bounceRate > 2 ? '🟡 Warning' : '🟢 Healthy';
+  const complaintStatus = complaintRate > 0.1 ? '🔴 Critical' : complaintRate > 0.05 ? '🟡 Warning' : '🟢 Healthy';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-white">SES Deliverability</h2>
-        <p className="text-sm text-slate-500 mt-0.5">Amazon SES metrics for the last 14 days. Keep bounce &lt;5% and complaints &lt;0.1%.</p>
+        <p className="text-[10px] uppercase tracking-[0.14em] text-white/40 font-semibold">SES Deliverability</p>
+        <p className="text-xs text-white/30 mt-0.5">Amazon SES stats for the last 14 days. Keep bounce &lt; 5% and complaint &lt; 0.1% to avoid suspension.</p>
       </div>
 
-      {data?.quota && (
-        <div className="bg-slate-800/40 border border-white/8 rounded-xl p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Sending Quota (24h)</p>
+      {quota && (
+        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-white/40 font-semibold mb-4">24-Hour Quota</p>
           <div className="grid grid-cols-3 gap-4 mb-4">
             {[
-              { label: 'Sent (last 24h)', value: data.quota.sentLast24Hours?.toLocaleString() || '0' },
-              { label: 'Daily Limit', value: data.quota.max24HourSend?.toLocaleString() || '—' },
-              { label: 'Send Rate', value: `${data.quota.maxSendRate || '—'}/s` },
-            ].map(({ label, value }) => (
-              <div key={label} className="text-center">
-                <p className="text-2xl font-bold text-white">{value}</p>
-                <p className="text-xs text-slate-500 mt-1">{label}</p>
+              { label: 'Sent (24h)', value: quota.sentLast24Hours?.toLocaleString() || '0' },
+              { label: 'Daily Limit', value: quota.max24HourSend?.toLocaleString() || '—' },
+              { label: 'Send Rate', value: `${quota.maxSendRate || '—'}/sec` },
+            ].map((s) => (
+              <div key={s.label} className="text-center">
+                <p className="text-2xl font-black text-white">{s.value}</p>
+                <p className="text-[10px] text-white/35 mt-1 uppercase tracking-wide">{s.label}</p>
               </div>
             ))}
           </div>
-          {data.quota.max24HourSend && (
+          {quota.max24HourSend > 0 && (
             <div>
-              <div className="flex justify-between text-xs text-slate-500 mb-1.5">
-                <span>Quota used</span><span>{((data.quota.sentLast24Hours / data.quota.max24HourSend) * 100).toFixed(1)}%</span>
+              <div className="flex justify-between text-[10px] text-white/30 mb-1">
+                <span>Quota used</span>
+                <span>{((quota.sentLast24Hours / quota.max24HourSend) * 100).toFixed(1)}%</span>
               </div>
-              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${Math.min(100, (data.quota.sentLast24Hours / data.quota.max24HourSend) * 100)}%` }} />
+              <div className="h-1.5 bg-white/[0.07] rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(100, (quota.sentLast24Hours / quota.max24HourSend) * 100)}%` }} />
               </div>
             </div>
           )}
@@ -1169,43 +1328,49 @@ function DeliverabilityTab() {
       )}
 
       <div className="grid grid-cols-2 gap-4">
-        {[
-          { label: 'Bounce Rate', rate: bounceRate, color: B(bounceRate), limit: '< 5%', count: data?.totals?.bounced || 0, total: data?.totals?.sent || 0, format: (n: number) => `${n.toFixed(2)}%` },
-          { label: 'Complaint Rate', rate: complaintRate, color: C(complaintRate), limit: '< 0.1%', count: data?.totals?.complaints || 0, total: data?.totals?.sent || 0, format: (n: number) => `${n.toFixed(3)}%` },
-        ].map(({ label, rate, color, limit, count, total, format }) => (
-          <div key={label} className="bg-slate-800/40 border border-white/8 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-slate-300">{label}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full border ${rate > 5 || (label.includes('Complaint') && rate > 0.1) ? 'bg-red-500/10 border-red-500/20 text-red-300' : rate > 2 || (label.includes('Complaint') && rate > 0.05) ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-300' : 'bg-green-500/10 border-green-500/20 text-green-300'}`}>
-                {rate > 5 || (label.includes('Complaint') && rate > 0.1) ? 'Critical' : rate > 2 || (label.includes('Complaint') && rate > 0.05) ? 'Warning' : 'Healthy'}
-              </span>
-            </div>
-            <p className={`text-3xl font-bold ${color}`}>{format(rate)}</p>
-            <p className="text-xs text-slate-500 mt-1">{count} of {total} emails</p>
-            <p className="text-xs text-slate-600 mt-2">AWS limit: {limit}</p>
+        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] uppercase tracking-[0.12em] text-white/40 font-semibold">Bounce Rate</p>
+            <span className="text-[10px] text-white/40">{bounceStatus}</span>
           </div>
-        ))}
+          <p className={`text-4xl font-black ${bounceColor}`}>{bounceRate.toFixed(2)}%</p>
+          <p className="text-xs text-white/30 mt-2">{totals?.bounced || 0} bounces / {totals?.sent || 0} sent</p>
+          <p className="text-[10px] text-white/20 mt-3 leading-relaxed">AWS limit: &lt; 5% — exceeding risks account suspension</p>
+        </div>
+        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] uppercase tracking-[0.12em] text-white/40 font-semibold">Complaint Rate</p>
+            <span className="text-[10px] text-white/40">{complaintStatus}</span>
+          </div>
+          <p className={`text-4xl font-black ${complaintColor}`}>{complaintRate.toFixed(3)}%</p>
+          <p className="text-xs text-white/30 mt-2">{totals?.complaints || 0} complaints / {totals?.sent || 0} sent</p>
+          <p className="text-[10px] text-white/20 mt-3 leading-relaxed">AWS limit: &lt; 0.1% — spam complaints from recipients</p>
+        </div>
       </div>
 
-      {data?.dailyStats?.length > 0 && (
-        <div className="bg-slate-800/40 border border-white/8 rounded-xl overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-white/8">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Breakdown</p>
+      {dailyStats && dailyStats.length > 0 && (
+        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/[0.06]">
+            <p className="text-[10px] uppercase tracking-[0.14em] text-white/40 font-semibold">Daily Breakdown — Last 14 Days</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-900/40">
-                <tr>{['Date','Sent','Bounced','Bounce %','Complaints','Complaint %'].map(h => <th key={h} className="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-left last:text-right">{h}</th>)}</tr>
+              <thead>
+                <tr className="border-b border-white/[0.05]">
+                  {['Date', 'Sent', 'Bounced', 'Bounce %', 'Complaints', 'Complaint %'].map((h) => (
+                    <th key={h} className={`px-5 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-white/30 ${h === 'Date' ? 'text-left' : 'text-right'}`}>{h}</th>
+                  ))}
+                </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
-                {data.dailyStats.slice().reverse().map((day: any) => (
-                  <tr key={day.date} className="hover:bg-slate-900/30 transition-colors">
-                    <td className="px-5 py-3 text-slate-300">{new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-                    <td className="px-5 py-3 text-slate-200">{day.sent.toLocaleString()}</td>
-                    <td className="px-5 py-3 text-slate-400">{day.bounced}</td>
-                    <td className={`px-5 py-3 font-medium ${B(day.bounceRate)}`}>{day.bounceRate.toFixed(2)}%</td>
-                    <td className="px-5 py-3 text-slate-400">{day.complaints}</td>
-                    <td className={`px-5 py-3 font-medium text-right ${C(day.complaintRate)}`}>{day.complaintRate.toFixed(3)}%</td>
+              <tbody className="divide-y divide-white/[0.04]">
+                {[...dailyStats].reverse().map((day) => (
+                  <tr key={day.date} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="px-5 py-3 text-white/60 text-sm">{new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                    <td className="px-5 py-3 text-right text-white/80 font-medium">{day.sent.toLocaleString()}</td>
+                    <td className="px-5 py-3 text-right text-white/50">{day.bounced}</td>
+                    <td className={`px-5 py-3 text-right font-bold ${day.bounceRate > 5 ? 'text-red-400' : day.bounceRate > 2 ? 'text-amber-400' : 'text-white/40'}`}>{day.bounceRate.toFixed(2)}%</td>
+                    <td className="px-5 py-3 text-right text-white/50">{day.complaints}</td>
+                    <td className={`px-5 py-3 text-right font-bold ${day.complaintRate > 0.1 ? 'text-red-400' : day.complaintRate > 0.05 ? 'text-amber-400' : 'text-white/40'}`}>{day.complaintRate.toFixed(3)}%</td>
                   </tr>
                 ))}
               </tbody>
@@ -1217,22 +1382,25 @@ function DeliverabilityTab() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MODAL
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+// SHARED MODAL
+// ══════════════════════════════════════════════════════════════════════════════
 function Modal({ children, onClose, title, size = 'medium', actions }: {
-  children: React.ReactNode; onClose: () => void; title: string;
-  size?: 'medium' | 'large'; actions?: React.ReactNode;
+  children: React.ReactNode; onClose: () => void; title: string; size?: 'medium' | 'large'; actions?: React.ReactNode;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className={`bg-slate-800 border border-white/10 rounded-2xl shadow-2xl flex flex-col ${size === 'large' ? 'max-w-4xl w-full' : 'max-w-xl w-full'} max-h-[90vh]`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
-          <h3 className="text-base font-semibold text-white">{title}</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors"><X className="h-4 w-4 text-slate-400" /></button>
+      <div className={`bg-[#0e1119] border border-white/[0.09] rounded-2xl shadow-2xl flex flex-col ${size === 'large' ? 'max-w-4xl w-full' : 'max-w-xl w-full'} max-h-[92vh]`}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07]">
+          <h3 className="font-bold text-white">{title}</h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-white/[0.07] rounded-lg transition-colors"><X className="h-4 w-4 text-white/50" /></button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
-        {actions && <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/8">{actions}</div>}
+        {actions && (
+          <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-white/[0.07]">
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   );

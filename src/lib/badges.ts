@@ -530,7 +530,8 @@ export async function seedDefaultBadges(): Promise<void> {
         description: badge.description,
         icon: badge.icon,
         category: badge.category,
-        criteria: badge.criteria as unknown as Record<string, unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        criteria: badge.criteria as any,
         isActive: true,
         sortOrder: badge.sortOrder,
       },
