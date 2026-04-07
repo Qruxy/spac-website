@@ -271,7 +271,7 @@ export default async function HomePage() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="https://www.cleardarksky.com/c/WthccRPFLkey.png"
+                  src="https://www.cleardarksky.com/c/WthccRPFLcsk.gif"
                   alt="Withlacoochee River Park Clear Sky Chart — cloud cover, transparency, seeing, darkness forecast"
                   className="rounded-lg max-w-full"
                   width={750}
