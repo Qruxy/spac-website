@@ -256,42 +256,38 @@ export default async function HomePage() {
 
       {/* Dark Sky Forecast — Clear Sky Chart for Withlacoochee River Park */}
       <div aria-hidden="true" className="gradient-sep" />
-      <section className="bg-gradient-to-b from-transparent via-slate-950/60 to-transparent py-12 section-fade-in">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="shrink-0">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-                Dark Sky Forecast — Withlacoochee River Park
-              </p>
-              <a
-                href="https://cleardarksky.com/c/WthccRPFLkey.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block hover:opacity-90 transition-opacity"
-                title="Withlacoochee River Park Clear Sky Chart"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="https://www.cleardarksky.com/c/WthccRPFLcsk.gif"
-                  alt="Withlacoochee River Park Clear Sky Chart — cloud cover, transparency, seeing, darkness forecast"
-                  className="rounded-lg max-w-full"
-                  width={750}
-                  height={90}
-                />
-              </a>
-              <p className="text-[11px] text-muted-foreground mt-1.5">
-                Click chart for full forecast ·{' '}
-                <a
-                  href="https://cleardarksky.com/c/WthccRPFLkey.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-foreground transition-colors"
-                >
-                  cleardarksky.com
-                </a>
-              </p>
-            </div>
-          </div>
+      <section className="bg-gradient-to-b from-transparent via-slate-950/60 to-transparent py-14 section-fade-in">
+        <div className="container mx-auto px-4 flex flex-col items-center text-center">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+            Dark Sky Forecast — Withlacoochee River Park
+          </p>
+          <a
+            href="https://cleardarksky.com/c/WthccRPFLkey.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block hover:opacity-90 transition-opacity w-full max-w-3xl"
+            title="Withlacoochee River Park Clear Sky Chart"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://www.cleardarksky.com/c/WthccRPFLcsk.gif"
+              alt="Withlacoochee River Park Clear Sky Chart — cloud cover, transparency, seeing, darkness forecast"
+              className="rounded-lg w-full"
+              width={900}
+              height={108}
+            />
+          </a>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Click chart for full forecast ·{' '}
+            <a
+              href="https://cleardarksky.com/c/WthccRPFLkey.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-foreground transition-colors"
+            >
+              cleardarksky.com
+            </a>
+          </p>
         </div>
       </section>
 
