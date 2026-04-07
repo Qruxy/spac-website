@@ -9,7 +9,7 @@ import TextStyle from '@tiptap/extension-text-style';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Bold,
   Italic,
@@ -25,6 +25,20 @@ import {
   Image as ImageIcon,
   Loader2,
 } from 'lucide-react';
+
+// Extended Image extension that supports inline `style` for size control
+const ResizableImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      style: {
+        default: null,
+        parseHTML: (el) => el.getAttribute('style') || null,
+        renderHTML: (attrs) => attrs.style ? { style: attrs.style } : {},
+      },
+    };
+  },
+});
 
 interface RichTextEditorProps {
   value: string;
@@ -68,13 +82,14 @@ const TEXT_COLORS = [
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [imageSelected, setImageSelected] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
-      Image.configure({ inline: false, allowBase64: false }),
+      ResizableImage.configure({ inline: false, allowBase64: false }),
       Link.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer' } }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TextStyle,
@@ -86,6 +101,10 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     content: value,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+      setImageSelected(editor.isActive('image'));
+    },
+    onSelectionUpdate: ({ editor }) => {
+      setImageSelected(editor.isActive('image'));
     },
     editorProps: {
       attributes: {
@@ -103,6 +122,15 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
       editor.commands.setContent(value || '', false);
     }
   }, [value, editor]);
+
+  const setImageSize = useCallback((size: 'small' | 'medium' | 'full') => {
+    const styleMap = {
+      small: 'max-width: 300px; width: 100%;',
+      medium: 'max-width: 520px; width: 100%;',
+      full: '',
+    };
+    editor?.chain().focus().updateAttributes('image', { style: styleMap[size] || null }).run();
+  }, [editor]);
 
   const setLink = () => {
     const previousUrl = editor?.getAttributes('link').href as string | undefined;
@@ -292,6 +320,27 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
             e.target.value = '';
           }}
         />
+
+        {/* Image size controls — only visible when an image is selected */}
+        {imageSelected && (
+          <>
+            <div className="w-px bg-white/10 mx-1" />
+            <div className="flex items-center gap-0.5">
+              <span className="text-[10px] text-white/30 mr-1 font-medium uppercase tracking-wider">Size:</span>
+              {(['small', 'medium', 'full'] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  title={s === 'small' ? '300px' : s === 'medium' ? '520px' : 'Full width'}
+                  onClick={() => setImageSize(s)}
+                  className="px-2 py-1 rounded text-[11px] font-semibold text-indigo-300 hover:bg-indigo-500/20 hover:text-indigo-200 transition-colors capitalize"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <div className="flex-1" />
 

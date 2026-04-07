@@ -82,18 +82,20 @@ export default async function VSAPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <FadeIn>
-              <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tight text-foreground">
+              {/* "VSA" accent badge */}
+              <div className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10">
                 <GradientText
                   colors={['#818cf8', '#a78bfa', '#818cf8']}
-                  className="text-6xl md:text-8xl lg:text-9xl font-bold"
+                  className="text-sm font-bold tracking-widest uppercase"
                   animationSpeed={8}
                 >
                   VSA
                 </GradientText>
+              </div>
+              {/* Main title — uses DB field if set, otherwise default */}
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-tight">
+                {content['hero_title'] || 'The Very Small Array'}
               </h1>
-              <p className="mt-4 text-2xl md:text-3xl text-muted-foreground font-light">
-                Very Small Array
-              </p>
             </FadeIn>
             <FadeIn delay={0.2}>
               <p className="mt-8 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -116,22 +118,8 @@ export default async function VSAPage() {
         </div>
       </section>
 
-      {/* Page Builder Content */}
-      {content['body'] && (
-        <section className="py-8">
-          <div className="container mx-auto px-4 max-w-4xl">
-            <div
-              className="prose prose-invert max-w-none rounded-2xl border-l-2 border-primary/30 bg-gradient-to-r from-primary/5 to-transparent p-6 md:p-10
-                         prose-headings:text-foreground prose-p:text-muted-foreground
-                         prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: content['body'] }}
-            />
-          </div>
-        </section>
-      )}
-
-      {/* Current Targets */}
-      <section className="py-24 lg:py-32">
+      {/* Current Targets — directly under hero */}
+      <section className="py-20 lg:py-28">
         <div className="container mx-auto px-4">
           <FadeIn>
             <div className="max-w-3xl mx-auto text-center mb-16">
@@ -203,6 +191,22 @@ export default async function VSAPage() {
         </div>
       </section>
 
+      {/* Page Builder Body Content — below Current Targets, above Equipment */}
+      {content['body'] && (
+        <section className="py-4 pb-16">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <div
+              className="prose prose-invert max-w-none rounded-2xl border-l-2 border-primary/30 bg-gradient-to-r from-primary/5 to-transparent p-6 md:p-10
+                         prose-headings:text-foreground prose-p:text-muted-foreground
+                         prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground
+                         prose-img:rounded-xl prose-img:my-8 prose-img:block prose-img:max-w-full prose-img:mx-auto
+                         [&_img]:rounded-xl [&_img]:my-6 [&_img]:block [&_img]:max-w-full"
+              dangerouslySetInnerHTML={{ __html: content['body'] }}
+            />
+          </div>
+        </section>
+      )}
+
       {/* Equipment */}
       {equipment.length > 0 && (
         <section className="py-24 lg:py-32 bg-gradient-to-b from-transparent via-slate-950/40 to-transparent">
@@ -256,7 +260,9 @@ export default async function VSAPage() {
                 </h2>
                 {content['what_is_vsa_body'] ? (
                   <div
-                    className="prose prose-invert max-w-none prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
+                    className="prose prose-invert max-w-none prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground
+                               prose-img:rounded-xl prose-img:my-8 prose-img:block prose-img:max-w-full
+                               [&_img]:rounded-xl [&_img]:my-6 [&_img]:block [&_img]:max-w-full [&_p:empty]:hidden"
                     dangerouslySetInnerHTML={{ __html: content['what_is_vsa_body'] }}
                   />
                 ) : (
