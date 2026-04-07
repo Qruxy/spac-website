@@ -65,7 +65,20 @@ export default async function VSAPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative py-32 lg:py-44 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/40 via-background to-background" />
+        {content['header_photo'] ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={content['header_photo']}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-background/80 to-background" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/40 via-background to-background" />
+        )}
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <FadeIn>

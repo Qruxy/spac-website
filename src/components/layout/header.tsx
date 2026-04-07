@@ -139,7 +139,7 @@ export function Header() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-56 rounded-lg border border-white/[0.12] bg-[#0d1020] shadow-2xl shadow-black/60 z-20 overflow-hidden"
+                      className="absolute right-0 mt-2 w-56 rounded-lg border border-white/[0.12] shadow-2xl z-20 overflow-hidden" style={{ background: '#0d1020', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}
                     >
                       <div className="py-2">
                         {moreLinks.filter(link => !link.membersOnly || isAuthenticated).map((link) => (
@@ -191,7 +191,7 @@ export function Header() {
                         className="fixed inset-0 z-10"
                         onClick={() => setUserMenuOpen(false)}
                       />
-                      <div className="absolute right-0 mt-2 w-52 rounded-xl border border-white/[0.12] bg-[#0d1020] shadow-2xl shadow-black/60 z-20 overflow-hidden">
+                      <div className="absolute right-0 mt-2 w-52 rounded-xl border border-white/[0.12] z-20 overflow-hidden" style={{ background: '#0d1020', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}>
                         <div className="px-3 py-2.5 border-b border-white/[0.08]">
                           <p className="text-sm font-semibold text-white truncate">
                             {session.user.name}
