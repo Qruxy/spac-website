@@ -34,7 +34,7 @@ const StatsSection = dynamic(
   { ssr: false, loading: () => <div className="py-24" aria-hidden="true" /> }
 );
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 const features = [
   {
@@ -223,14 +223,39 @@ async function PastEventsSection() {
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Fetch page builder content — editable via Admin > Page Builder
+  const contentRows = await prisma.siteContent.findMany({ where: { pageKey: 'home' } });
+  const content: Record<string, string> = {};
+  for (const row of contentRows) content[row.fieldKey] = row.value;
+
+  // Merge DB feature descriptions into the features array (titles/icons stay fixed)
+  const featureKeys = ['star_parties', 'general_meetings', 'obs', 'mirror_lab', 'outreach', 'classifieds'];
+  const mergedFeatures = features.map((f, i) => ({
+    ...f,
+    description: content[`feature_${featureKeys[i]}_desc`] || f.description,
+    title: content[`feature_${featureKeys[i]}_title`] || f.title,
+  }));
+
+  // Stats — DB overrides if set
+  const mergedStats = [
+    { value: parseInt(content['stat_founded'] || '1927'), label: content['stat_founded_label'] || 'Founded', suffix: '' },
+    { value: parseInt(content['stat_members'] || '300'), label: content['stat_members_label'] || 'Members', suffix: content['stat_members_suffix'] !== undefined ? content['stat_members_suffix'] : '+' },
+    { value: parseInt(content['stat_events_per_year'] || '12'), label: content['stat_events_label'] || 'Events/Year', suffix: '' },
+    { value: parseInt(content['stat_years_strong'] || String(SPAC_YEARS)), label: content['stat_years_label'] || 'Years Strong', suffix: '' },
+  ];
+
+  // CTA text
+  const ctaHeading = content['cta_heading'] || 'Ready to Explore the Universe?';
+  const ctaBody = content['cta_body'] || "Whether you're a seasoned astronomer or just starting out, there's a place for you at SPAC. Join our community of stargazers today.";
+
   return (
     <>
       {/* Hero — above the fold, renders immediately */}
       <HeroSection />
 
       {/* Below-fold client components — deferred bundle, don't block hero */}
-      <FeaturesSection features={features} />
+      <FeaturesSection features={mergedFeatures} />
 
       {/* Server component — Suspense streams it, won't block above-fold content */}
       <Suspense fallback={<div className="py-24" aria-hidden="true" />}>
@@ -247,9 +272,11 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-foreground">Upcoming Events</h2>
+              <h2 className="text-3xl font-bold text-foreground">
+                {content['events_heading'] || 'Upcoming Events'}
+              </h2>
               <p className="text-muted-foreground mt-2">
-                Join us for star parties, meetings, and special events
+                {content['events_subheading'] || 'Join us for star parties, meetings, and special events'}
               </p>
             </div>
             <Link
@@ -284,18 +311,16 @@ export default function HomePage() {
         <PastEventsSection />
       </Suspense>
 
-      <StatsSection stats={stats} />
+      <StatsSection stats={mergedStats} />
 
       {/* CTA */}
       <section className="bg-primary/5 py-24">
         <div className="container mx-auto max-w-3xl px-4 text-center">
           <h2 className="mb-4 text-3xl font-bold text-foreground">
-            Ready to Explore the Universe?
+            {ctaHeading}
           </h2>
           <p className="mb-8 text-lg text-muted-foreground">
-            Whether you&apos;re a seasoned astronomer or just starting out,
-            there&apos;s a place for you at SPAC. Join our community of stargazers
-            today.
+            {ctaBody}
           </p>
           <HomeCtaButton />
         </div>
