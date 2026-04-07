@@ -105,7 +105,7 @@ export default function MirrorLabPage() {
       <MirrorLabHero />
 
       {/* What is Mirror Grinding */}
-      <section className="py-24 lg:py-32 bg-muted/20">
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
             <FadeIn>
@@ -191,7 +191,7 @@ export default function MirrorLabPage() {
       </section>
 
       {/* What You'll Learn */}
-      <section className="py-24 lg:py-32 bg-muted/20">
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4">
           <FadeIn>
             <div className="max-w-3xl mx-auto text-center mb-16">
@@ -275,7 +275,7 @@ export default function MirrorLabPage() {
       </section>
 
       {/* Gallery */}
-      <section className="py-24 lg:py-32 bg-muted/20">
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4">
           <FadeIn>
             <div className="max-w-3xl mx-auto text-center mb-16">

@@ -31,9 +31,9 @@ interface AboutClientContentProps {
 
 export function AboutHeroWithAurora({ children }: { children: React.ReactNode }) {
   return (
-    <section className="relative container mx-auto px-4 mb-16 overflow-hidden">
-      {/* Aurora background */}
-      <div className="absolute inset-0 -z-10 opacity-40">
+    <section className="relative w-full pt-20 pb-32">
+      {/* Aurora fills full width — no overflow-hidden, bleeds edge to edge */}
+      <div className="absolute inset-0 -z-10 opacity-35">
         <Aurora
           colorStops={['#6B21A8', '#0891B2', '#4F46E5']}
           amplitude={1.2}
@@ -41,7 +41,13 @@ export function AboutHeroWithAurora({ children }: { children: React.ReactNode })
           speed={0.5}
         />
       </div>
-      {children}
+      {/* Fade top edge into page bg */}
+      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background to-transparent -z-10" />
+      {/* Fade bottom edge into page bg */}
+      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background to-transparent -z-10" />
+      <div className="container mx-auto px-4">
+        {children}
+      </div>
     </section>
   );
 }

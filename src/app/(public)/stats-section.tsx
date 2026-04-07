@@ -23,7 +23,7 @@ interface StatsSectionProps {
 
 export function StatsSection({ stats }: StatsSectionProps) {
   return (
-    <section className="bg-primary/5 py-24">
+    <section className="py-24 bg-gradient-to-b from-transparent via-primary/6 to-transparent">
       <div className="container mx-auto px-4">
         <div className="mb-12 text-center">
           <GradualBlur

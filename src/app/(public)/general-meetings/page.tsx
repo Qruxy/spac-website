@@ -174,7 +174,7 @@ export default async function GeneralMeetingsPage() {
       </section>
 
       {/* Past Presentations — editable via Admin > Page Builder */}
-      <section className="pb-24 bg-muted/10">
+      <section className="pb-24">
         <div className="container mx-auto px-4 max-w-5xl py-16">
           <FadeIn delay={0.15}>
             <h2 className="text-3xl font-bold text-foreground mb-8">Past Presentations</h2>

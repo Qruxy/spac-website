@@ -119,7 +119,7 @@ export default function DonationsPage() {
       </section>
 
       {/* Quote */}
-      <section className="py-24 lg:py-32 bg-muted/20">
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4">
           <FadeIn>
             <div className="max-w-3xl mx-auto text-center">
@@ -188,7 +188,7 @@ export default function DonationsPage() {
       </section>
 
       {/* Tax Info */}
-      <section className="py-24 bg-muted/20">
+      <section className="py-24">
         <div className="container mx-auto px-4">
           <FadeIn>
             <div className="max-w-3xl mx-auto">

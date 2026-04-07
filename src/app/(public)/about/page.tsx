@@ -80,7 +80,7 @@ export default async function AboutPage() {
   const content: Record<string, string> = {};
   for (const r of contentRows) content[r.fieldKey] = r.value;
   return (
-    <div className="py-12">
+    <div>
       {/* Hero with Aurora Background */}
       <AboutHeroWithAurora>
         <div className="py-8">
@@ -106,7 +106,7 @@ export default async function AboutPage() {
       )}
 
       {/* Mission — editable via Admin > Page Builder */}
-      <section id="mission" className="bg-muted/30 py-16">
+      <section id="mission" className="py-20">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
@@ -214,7 +214,7 @@ export default async function AboutPage() {
       </section>
 
       {/* Board Members */}
-      <section id="board" className="bg-muted/30 py-16">
+      <section id="board" className="py-20">
         <div className="container mx-auto px-4">
           <div className="inline-flex items-center gap-2 text-primary mb-4">
             <Users className="h-5 w-5" />
@@ -285,7 +285,7 @@ export default async function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-primary/5 py-16">
+      <section className="py-20 bg-gradient-to-b from-transparent via-primary/8 to-transparent">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold text-foreground mb-4">
             Ready to Join Us?

@@ -174,7 +174,7 @@ export default async function HistoryPage() {
       )}
 
       {/* Intro */}
-      <section className="py-24 lg:py-32 bg-muted/20">
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4 text-center max-w-4xl">
           <FadeIn>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight mb-8">
@@ -211,7 +211,7 @@ export default async function HistoryPage() {
       </section>
 
       {/* Notable Members */}
-      <section className="py-24 lg:py-32 bg-muted/20">
+      <section className="py-24 lg:py-32">
         <div className="container mx-auto px-4">
           <FadeIn>
             <div className="max-w-3xl mx-auto text-center mb-16">
@@ -245,7 +245,7 @@ export default async function HistoryPage() {
       </section>
 
       {/* Stats */}
-      <section className="py-24 bg-muted/20">
+      <section className="py-24">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto text-center">
             <FadeIn>
