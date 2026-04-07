@@ -5,32 +5,36 @@ import {
   Home, Users, Calendar, Image as ImageIcon, CreditCard, Mail,
   Phone, BookOpen, Star, ShoppingBag, Heart, Telescope, Eye, Zap,
   MessageSquare, Upload, Check, AlertCircle, Loader2,
-  Type, AlignLeft, FileImage, FileText, ChevronRight, Globe, Sparkles,
-  Info,
+  Type, AlignLeft, FileText, ChevronDown, ChevronUp, ExternalLink,
+  Sparkles, X,
 } from 'lucide-react';
 import { PageContentEditor } from '@/components/admin/page-content-editor';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type FieldType = 'text' | 'textarea' | 'richtext' | 'image';
 
 interface FieldDef {
   key: string;
   label: string;
-  hint: string;           // plain English — what does this control?
+  hint: string;
   type: FieldType;
   placeholder?: string;
   maxLength?: number;
-  section?: string;       // group label
-  defaultValue?: string;  // site's hardcoded default (shown when no DB value is saved)
+  section?: string;
+  defaultValue?: string;
 }
 
 interface PageDef {
   key: string;
   label: string;
   href: string;
-  description: string;   // what this page is for
+  description: string;
   icon: React.ElementType;
   fields: FieldDef[];
 }
+
+// ─── Page Config (do not modify) ─────────────────────────────────────────────
 
 const PAGES: PageDef[] = [
   {
@@ -40,12 +44,10 @@ const PAGES: PageDef[] = [
     description: 'The first page visitors see when they come to the site.',
     icon: Home,
     fields: [
-      // Hero
       { key: 'hero_title', label: 'Main Headline', hint: 'The big bold text front and center — the first thing everyone reads.', type: 'text', placeholder: 'e.g. St. Petersburg Astronomy Club', maxLength: 80, section: 'Hero Section', defaultValue: 'St. Petersburg Astronomy Club' },
       { key: 'hero_subtitle', label: 'Tagline / Subheading', hint: 'A short sentence below the headline that describes the club.', type: 'textarea', placeholder: 'e.g. Exploring the universe together since 1975', maxLength: 200, section: 'Hero Section', defaultValue: "Tampa Bay's home for stargazers, educators, and night sky enthusiasts since 1927." },
       { key: 'hero_image', label: 'Hero Background Photo', hint: 'The full-width background image behind the headline. Use a high-quality astronomy or night sky photo.', type: 'image', section: 'Hero Section' },
       { key: 'cta_primary_text', label: 'Join Button Text', hint: 'The text on the main call-to-action button.', type: 'text', placeholder: 'Join the Club', maxLength: 40, section: 'Hero Section', defaultValue: 'Join Today' },
-      // Features / Activity Cards
       { key: 'feature_star_parties_title', label: 'Feature 1 — Title', hint: 'Title for the Monthly Star Parties card.', type: 'text', placeholder: 'Monthly Star Parties', maxLength: 60, section: 'Activity Cards', defaultValue: 'Monthly Star Parties' },
       { key: 'feature_star_parties_desc', label: 'Feature 1 — Description', hint: 'Short description for the Monthly Star Parties card.', type: 'textarea', placeholder: 'Join us at our dark sky site...', maxLength: 200, section: 'Activity Cards', defaultValue: 'Join us at our dark sky site at Withlacoochee River Park for new moon observing sessions.' },
       { key: 'feature_general_meetings_title', label: 'Feature 2 — Title', hint: 'Title for the General Meetings card.', type: 'text', placeholder: 'General Meetings', maxLength: 60, section: 'Activity Cards', defaultValue: 'General Meetings' },
@@ -58,10 +60,8 @@ const PAGES: PageDef[] = [
       { key: 'feature_outreach_desc', label: 'Feature 5 — Description', hint: 'Short description for the Public Outreach card.', type: 'textarea', placeholder: 'We bring the stars to schools...', maxLength: 200, section: 'Activity Cards', defaultValue: 'We bring the stars to schools, scout troops, and community organizations.' },
       { key: 'feature_classifieds_title', label: 'Feature 6 — Title', hint: 'Title for the Classifieds card.', type: 'text', placeholder: 'Equipment Classifieds', maxLength: 60, section: 'Activity Cards', defaultValue: 'Equipment Classifieds' },
       { key: 'feature_classifieds_desc', label: 'Feature 6 — Description', hint: 'Short description for the Classifieds card.', type: 'textarea', placeholder: 'Buy, sell, and trade astronomy equipment...', maxLength: 200, section: 'Activity Cards', defaultValue: 'Buy, sell, and trade astronomy equipment with fellow club members.' },
-      // Upcoming Events section
       { key: 'events_heading', label: 'Events Section Heading', hint: 'The title above the upcoming events list.', type: 'text', placeholder: 'Upcoming Events', maxLength: 60, section: 'Events Section', defaultValue: 'Upcoming Events' },
       { key: 'events_subheading', label: 'Events Section Subheading', hint: 'The small line below the events heading.', type: 'text', placeholder: 'Join us for star parties, meetings, and special events', maxLength: 120, section: 'Events Section', defaultValue: 'Join us for star parties, meetings, and special events' },
-      // Stats bar
       { key: 'stat_founded', label: 'Stat: Founded Year', hint: 'The founding year displayed in the stats bar. Default: 1927', type: 'text', placeholder: '1927', maxLength: 10, section: 'Stats Bar', defaultValue: '1927' },
       { key: 'stat_founded_label', label: 'Stat: Founded Label', hint: 'Label under the founding year.', type: 'text', placeholder: 'Founded', maxLength: 30, section: 'Stats Bar', defaultValue: 'Founded' },
       { key: 'stat_members', label: 'Stat: Member Count', hint: 'Number shown in the Members stat. Just the number, e.g. 300', type: 'text', placeholder: '300', maxLength: 10, section: 'Stats Bar', defaultValue: '300' },
@@ -71,7 +71,6 @@ const PAGES: PageDef[] = [
       { key: 'stat_events_label', label: 'Stat: Events Label', hint: 'Label under the events count.', type: 'text', placeholder: 'Events/Year', maxLength: 30, section: 'Stats Bar', defaultValue: 'Events/Year' },
       { key: 'stat_years_strong', label: 'Stat: Years Active', hint: 'Number of years the club has been active. Auto-calculated from 1927 if left blank.', type: 'text', placeholder: 'Auto', maxLength: 10, section: 'Stats Bar' },
       { key: 'stat_years_label', label: 'Stat: Years Label', hint: 'Label under the years active count.', type: 'text', placeholder: 'Years Strong', maxLength: 30, section: 'Stats Bar', defaultValue: 'Years Strong' },
-      // CTA
       { key: 'cta_heading', label: 'CTA Heading', hint: 'The heading above the "Join Us" call-to-action at the bottom of the page.', type: 'text', placeholder: 'Ready to Explore the Universe?', maxLength: 80, section: 'Call to Action (Bottom)', defaultValue: 'Ready to Explore the Universe?' },
       { key: 'cta_body', label: 'CTA Body Text', hint: 'The paragraph below the CTA heading encouraging visitors to join.', type: 'textarea', placeholder: 'Whether you\'re a seasoned astronomer or just starting out...', maxLength: 300, section: 'Call to Action (Bottom)', defaultValue: "Whether you're a seasoned astronomer or just starting out, there's a place for you at SPAC. Join our community of stargazers today." },
     ],
@@ -83,16 +82,12 @@ const PAGES: PageDef[] = [
     description: 'Tells visitors who the club is, its history, mission, board, and affiliations.',
     icon: Users,
     fields: [
-      // Header
       { key: 'hero_title', label: 'Page Title', hint: 'The large heading at the top of the About page.', type: 'text', placeholder: 'About SPAC', maxLength: 60, section: 'Page Header', defaultValue: 'About SPAC' },
       { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description shown just below the title.', type: 'textarea', placeholder: 'Dedicated to astronomy education and stargazing...', maxLength: 200, section: 'Page Header', defaultValue: "For nearly a century, SPAC has been bringing the wonders of the night sky to Tampa Bay." },
       { key: 'hero_image', label: 'Header Photo', hint: 'Optional: a photo used at the top of the About page.', type: 'image', section: 'Page Header' },
-      // Body
       { key: 'about_body', label: 'About Us Body Content', hint: 'An optional extra block of text below the hero. Use this for a custom intro, announcements, or featured content.', type: 'richtext', section: 'Body Content (Optional)' },
-      // Mission
       { key: 'mission_heading', label: 'Mission Section Heading', hint: 'The heading above the "Our Mission" section.', type: 'text', placeholder: 'Making Astronomy Accessible to All', maxLength: 80, section: 'Mission Section', defaultValue: 'Making Astronomy Accessible to All' },
       { key: 'mission_body', label: 'Mission Description', hint: 'The text in the Mission section describing what the club is about. Can be 1–3 paragraphs.', type: 'richtext', section: 'Mission Section' },
-      // Mission stats cards
       { key: 'stat_years', label: 'Stat Card 1 — Years Active', hint: 'Displayed as the big number in the first stat card. Example: 97+', type: 'text', placeholder: '97+', maxLength: 10, section: 'Mission Stats Cards', defaultValue: '97+' },
       { key: 'stat_years_label', label: 'Stat Card 1 — Label', hint: 'Label under the years number.', type: 'text', placeholder: 'Years Active', maxLength: 30, section: 'Mission Stats Cards', defaultValue: 'Years Active' },
       { key: 'stat_members', label: 'Stat Card 2 — Members', hint: 'Member count displayed in the second stat card. Example: 300+', type: 'text', placeholder: '300+', maxLength: 10, section: 'Mission Stats Cards', defaultValue: '300+' },
@@ -101,10 +96,8 @@ const PAGES: PageDef[] = [
       { key: 'stat_events_label', label: 'Stat Card 3 — Label', hint: 'Label under the events number.', type: 'text', placeholder: 'Annual Events', maxLength: 30, section: 'Mission Stats Cards', defaultValue: 'Annual Events' },
       { key: 'stat_students', label: 'Stat Card 4 — Students Reached', hint: 'Students/people reached. Example: 1000s', type: 'text', placeholder: '1000s', maxLength: 10, section: 'Mission Stats Cards', defaultValue: '1000s' },
       { key: 'stat_students_label', label: 'Stat Card 4 — Label', hint: 'Label under the students number.', type: 'text', placeholder: 'Students Reached', maxLength: 30, section: 'Mission Stats Cards', defaultValue: 'Students Reached' },
-      // History / Timeline
       { key: 'history_heading', label: 'History Section Heading', hint: 'The heading above the club history/timeline section.', type: 'text', placeholder: 'A Legacy of Stargazing', maxLength: 80, section: 'History / Timeline', defaultValue: 'A Legacy of Stargazing' },
       { key: 'milestones_body', label: 'History / Timeline Content', hint: 'The full club history. You can use headings for eras, bullet lists for milestones, or any format you like. This replaces the automatic timeline when filled in.', type: 'richtext', section: 'History / Timeline' },
-      // Affiliations
       { key: 'affiliations_heading', label: 'Affiliations Section Heading', hint: 'The heading above the affiliations section.', type: 'text', placeholder: 'Our Partners & Affiliations', maxLength: 80, section: 'Affiliations', defaultValue: 'Our Partners & Affiliations' },
       { key: 'affiliations_body', label: 'Affiliations Content', hint: 'Details about organizations SPAC is affiliated with. Use headings for each org name, followed by a short description and link. This replaces the default ASP + IDA cards when filled in.', type: 'richtext', section: 'Affiliations' },
     ],
@@ -224,11 +217,8 @@ const PAGES: PageDef[] = [
     description: "Information about the club's regular monthly meetings — schedule, location, contact, and past presentations.",
     icon: MessageSquare,
     fields: [
-      // Header
       { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'The line below the "General Meetings" heading at the top of the page.', type: 'textarea', placeholder: 'Join us for presentations, discussions, and club news...', maxLength: 200, section: 'Page Header', defaultValue: 'Join fellow astronomers for presentations, discussions, and club news. Free and open to the public.' },
-      // Optional intro block
       { key: 'body', label: 'Intro / Announcement Block', hint: 'Optional: an intro paragraph or announcement shown above the schedule card. Leave blank to hide this section.', type: 'richtext', section: 'Intro (Optional)' },
-      // Meeting schedule — each field maps to a line in the schedule card
       { key: 'meeting_day', label: 'Meeting Day / Frequency', hint: 'When meetings are held. Example: "Fourth Thursday of each month (except November and December, when the third Thursday is used)"', type: 'textarea', placeholder: 'Fourth Thursday of each month', maxLength: 300, section: 'Meeting Schedule', defaultValue: 'Fourth Thursday of each month (except November and December, when meetings are held on the third Thursday)' },
       { key: 'meeting_time', label: 'Meeting Start Time', hint: 'What time the meeting starts. Example: 7:30 PM', type: 'text', placeholder: '7:30 PM', maxLength: 30, section: 'Meeting Schedule', defaultValue: '7:30 PM' },
       { key: 'meeting_location_name', label: 'Venue / Location Name', hint: 'The name of the building or venue. Example: "St. Petersburg College — Gibbs Campus"', type: 'text', placeholder: 'St. Petersburg College — Gibbs Campus', maxLength: 150, section: 'Meeting Schedule', defaultValue: 'St. Petersburg College — Gibbs Campus' },
@@ -236,10 +226,8 @@ const PAGES: PageDef[] = [
       { key: 'meeting_room', label: 'Room / Building', hint: 'The specific room or building within the venue. Example: "Natural Sciences Building, Room SC236"', type: 'text', placeholder: 'Natural Sciences Building, Room SC236', maxLength: 150, section: 'Meeting Schedule', defaultValue: 'Natural Sciences Building, Room SC236' },
       { key: 'open_to_public_note', label: 'Open to Public Note', hint: 'A note about whether meetings are open to the public, shown in the schedule card.', type: 'textarea', placeholder: 'Meetings are free and open to the public. Everyone is welcome!', maxLength: 300, section: 'Meeting Schedule', defaultValue: 'Meetings are free and open to the public. Everyone is welcome!' },
       { key: 'social_room', label: 'Parties & Picnics Room', hint: 'The room/location used for special social events like holiday parties. Leave blank to hide this.', type: 'text', placeholder: 'Philip Benjamin Social Arts Building, Room SA114', maxLength: 150, section: 'Meeting Schedule', defaultValue: 'Philip Benjamin Social Arts Building, Room SA114' },
-      // Contact
       { key: 'contact_name', label: 'Contact Person Name', hint: "The person's name displayed in the 'Questions? Contact...' line. Leave blank to show just the email.", type: 'text', placeholder: 'Peter McLean', maxLength: 80, section: 'Contact', defaultValue: 'Peter McLean' },
       { key: 'contact_email', label: 'Contact Email Address', hint: 'The email address displayed for meeting questions.', type: 'text', placeholder: 'Info@StPeteAstronomyClub.org', maxLength: 150, section: 'Contact', defaultValue: 'Info@StPeteAstronomyClub.org' },
-      // Past Presentations
       { key: 'past_presentations', label: 'Past Presentations Content', hint: 'The full list or table of past presentations. Use a table, bullet list, or any format. When filled in, this replaces the default hardcoded table. TIP: Use a table with columns: Date, Title, Video, PDF — add links using the link button in the toolbar.', type: 'richtext', section: 'Past Presentations' },
     ],
   },
@@ -299,33 +287,44 @@ const PAGES: PageDef[] = [
     description: "SPAC's smart telescope loaner program — current targets, how to participate, and program details.",
     icon: Telescope,
     fields: [
-      // Header
       { key: 'hero_title', label: 'Page Title', hint: 'The large heading at the top of the VSA page.', type: 'text', placeholder: 'Very Small Array', maxLength: 60, section: 'Page Header', defaultValue: 'Very Small Array' },
       { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short tagline describing the VSA program.', type: 'textarea', placeholder: "SPAC's smart telescope loaner program...", maxLength: 200, section: 'Page Header', defaultValue: "SPAC's innovative smart telescope program for all skill levels." },
       { key: 'hero_image', label: 'Header Photo', hint: 'Optional: a photo at the top of the VSA page (e.g. a smart telescope setup or night sky shot).', type: 'image', section: 'Page Header' },
-      // What is VSA section
       { key: 'what_is_vsa_heading', label: '"What is the VSA?" Heading', hint: 'The heading for the left column of the about section.', type: 'text', placeholder: 'What is the VSA?', maxLength: 80, section: '"What is the VSA?" Section', defaultValue: 'What is the VSA?' },
       { key: 'what_is_vsa_body', label: '"What is the VSA?" Body Text', hint: 'The description of the VSA program — what it is, how it works, who can participate. This replaces the default 3 paragraphs when filled in.', type: 'richtext', section: '"What is the VSA?" Section' },
-      // Join the Community section
       { key: 'community_heading', label: '"Join the Community" Heading', hint: 'The heading for the right column of the about section.', type: 'text', placeholder: 'Join the Community', maxLength: 80, section: '"Join the Community" Section', defaultValue: 'Join the Community' },
       { key: 'community_body', label: '"Join the Community" Body Text', hint: 'Text encouraging people to join the VSA community, shown above the Facebook button.', type: 'richtext', section: '"Join the Community" Section' },
       { key: 'facebook_url', label: 'Facebook Group URL', hint: 'The full URL to the VSA Facebook group. Example: https://www.facebook.com/groups/spacvsa', type: 'text', placeholder: 'https://www.facebook.com/groups/spacvsa', maxLength: 300, section: '"Join the Community" Section', defaultValue: 'https://www.facebook.com/groups/spacvsa' },
       { key: 'facebook_button_text', label: 'Facebook Button Label', hint: 'The text shown on the Facebook group button.', type: 'text', placeholder: 'Join VSA Facebook Group', maxLength: 60, section: '"Join the Community" Section', defaultValue: 'Join VSA Facebook Group' },
-      // Targets / Details content
       { key: 'body', label: 'Current Targets / Additional Content', hint: 'Any additional content shown on the page — current observation targets, schedule, equipment specs, etc.', type: 'richtext', section: 'Additional Content (Optional)' },
     ],
   },
 ];
 
-// Field type icons and colors
-const FIELD_TYPE_META = {
-  text:     { icon: Type,      color: 'text-blue-400',   bg: 'bg-blue-500/10',   label: 'Short Text'    },
-  textarea: { icon: AlignLeft, color: 'text-green-400',  bg: 'bg-green-500/10',  label: 'Paragraph'     },
-  richtext: { icon: FileText,  color: 'text-purple-400', bg: 'bg-purple-500/10', label: 'Rich Content'  },
-  image:    { icon: FileImage, color: 'text-orange-400', bg: 'bg-orange-500/10', label: 'Image'         },
+// ─── Field type metadata ──────────────────────────────────────────────────────
+
+const FIELD_TYPE_META: Record<FieldType, { label: string; pillClass: string; dotClass: string }> = {
+  text:     { label: 'Short Text',   pillClass: 'bg-teal-500/15 text-teal-300 ring-1 ring-teal-400/20',     dotClass: 'bg-teal-400'   },
+  textarea: { label: 'Paragraph',    pillClass: 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-400/20',      dotClass: 'bg-blue-400'   },
+  richtext: { label: 'Rich Content', pillClass: 'bg-purple-500/15 text-purple-300 ring-1 ring-purple-400/20', dotClass: 'bg-purple-400' },
+  image:    { label: 'Image',        pillClass: 'bg-orange-500/15 text-orange-300 ring-1 ring-orange-400/20', dotClass: 'bg-orange-400' },
 };
 
+// Section accent colors (cycles through a palette)
+const SECTION_ACCENTS = [
+  'bg-indigo-400',
+  'bg-teal-400',
+  'bg-purple-400',
+  'bg-blue-400',
+  'bg-amber-400',
+  'bg-rose-400',
+  'bg-emerald-400',
+  'bg-cyan-400',
+];
+
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+// ─── Root component ───────────────────────────────────────────────────────────
 
 export default function PageBuilderPage() {
   const [selectedPage, setSelectedPage] = useState<PageDef>(PAGES[0]);
@@ -334,8 +333,10 @@ export default function PageBuilderPage() {
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
+  // Load all page content on mount
   useEffect(() => {
     fetch('/api/admin/page-builder')
       .then(r => r.ok ? r.json() : {})
@@ -343,6 +344,45 @@ export default function PageBuilderPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Ctrl+S: save all dirty fields for current page
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        // Flush all pending save timers for the current page
+        Object.entries(saveTimers.current).forEach(([k, timer]) => {
+          if (k.startsWith(`${selectedPage.key}:`)) {
+            clearTimeout(timer);
+            const fieldKey = k.split(':')[1];
+            const value = contentMap[selectedPage.key]?.[fieldKey] ?? '';
+            triggerSave(selectedPage.key, fieldKey, value);
+          }
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPage.key, contentMap]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Immediate API call (used by Ctrl+S flush)
+  const triggerSave = useCallback(async (pageKey: string, fieldKey: string, value: string) => {
+    const k = `${pageKey}:${fieldKey}`;
+    setSaveStatus(prev => ({ ...prev, [k]: 'saving' }));
+    try {
+      const res = await fetch('/api/admin/page-builder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageKey, fieldKey, value }),
+      });
+      const next = res.ok ? 'saved' : 'error';
+      setSaveStatus(prev => ({ ...prev, [k]: next }));
+      if (next === 'saved') setTimeout(() => setSaveStatus(prev => ({ ...prev, [k]: 'idle' })), 2000);
+    } catch {
+      setSaveStatus(prev => ({ ...prev, [k]: 'error' }));
+    }
+  }, []);
+
+  // Get current value for a field (db value or default)
   const val = (fieldKey: string) => {
     const dbValue = contentMap[selectedPage.key]?.[fieldKey];
     if (dbValue !== undefined && dbValue !== '') return dbValue;
@@ -350,6 +390,7 @@ export default function PageBuilderPage() {
     return field?.defaultValue ?? '';
   };
 
+  // Debounced save on change
   const save = useCallback((fieldKey: string, value: string) => {
     const pageKey = selectedPage.key;
     setContentMap(prev => ({ ...prev, [pageKey]: { ...(prev[pageKey] || {}), [fieldKey]: value } }));
@@ -365,13 +406,14 @@ export default function PageBuilderPage() {
         });
         const next = res.ok ? 'saved' : 'error';
         setSaveStatus(prev => ({ ...prev, [k]: next }));
-        if (next === 'saved') setTimeout(() => setSaveStatus(prev => ({ ...prev, [k]: 'idle' })), 2500);
+        if (next === 'saved') setTimeout(() => setSaveStatus(prev => ({ ...prev, [k]: 'idle' })), 2000);
       } catch {
         setSaveStatus(prev => ({ ...prev, [k]: 'error' }));
       }
-    }, 700);
+    }, 500);
   }, [selectedPage.key]);
 
+  // Image upload
   const uploadImage = useCallback(async (fieldKey: string, file: File) => {
     const k = `${selectedPage.key}:${fieldKey}`;
     setUploadingField(k);
@@ -386,6 +428,11 @@ export default function PageBuilderPage() {
     }
   }, [selectedPage.key, save]);
 
+  // Toggle section collapse
+  const toggleSection = (sectionKey: string) => {
+    setCollapsedSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+  };
+
   // Group fields by section
   const sections = selectedPage.fields.reduce<Record<string, FieldDef[]>>((acc, f) => {
     const s = f.section || 'General';
@@ -394,233 +441,519 @@ export default function PageBuilderPage() {
     return acc;
   }, {});
 
+  // Derive overall save status for the top bar chip
+  const allStatuses = Object.values(saveStatus);
+  const hasError = allStatuses.some(s => s === 'error');
+  const hasSaving = allStatuses.some(s => s === 'saving');
+  const hasSaved = allStatuses.some(s => s === 'saved');
+
   return (
-    <div className="flex gap-0 h-[calc(100vh-7rem)] -mx-4 md:-mx-6">
-      {/* Left sidebar: page list */}
-      <div className="w-52 shrink-0 border-r border-white/[0.06] bg-[#060611] overflow-y-auto flex flex-col">
-        <div className="px-3 pt-4 pb-2">
-          <p className="text-[10px] font-semibold text-white/20 uppercase tracking-[0.15em]">Pages</p>
+    <div className="flex h-[calc(100vh-7rem)] -mx-4 md:-mx-6 bg-[#08090d]">
+
+      {/* ── Left Sidebar: Page List ─────────────────────────────────────── */}
+      <aside className="w-60 shrink-0 flex flex-col bg-[#06060f] border-r border-white/[0.06] overflow-y-auto">
+        {/* Sidebar header */}
+        <div className="px-4 pt-5 pb-3 border-b border-white/[0.05]">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">Page Builder</p>
+          </div>
+          <p className="text-[11px] text-white/25 mt-1.5 leading-relaxed">Click a page to edit its content</p>
         </div>
-        {PAGES.map(page => {
-          const Icon = page.icon;
-          const active = selectedPage.key === page.key;
-          return (
-            <button
-              key={page.key}
-              onClick={() => setSelectedPage(page)}
-              className={`mx-2 mb-0.5 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all text-left ${
-                active
-                  ? 'bg-indigo-600/15 text-indigo-300 shadow-[inset_0_0_0_1px_rgba(99,102,241,0.2)]'
-                  : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
-              }`}
+
+        {/* Page list */}
+        <nav className="flex-1 py-2 px-2">
+          {PAGES.map(page => {
+            const Icon = page.icon;
+            const active = selectedPage.key === page.key;
+            return (
+              <button
+                key={page.key}
+                onClick={() => setSelectedPage(page)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-0.5 text-left transition-all group ${
+                  active
+                    ? 'bg-indigo-500/15 ring-1 ring-indigo-400/25 text-indigo-200'
+                    : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
+                }`}
+              >
+                <div className={`shrink-0 p-1.5 rounded-lg transition-all ${
+                  active ? 'bg-indigo-500/25 text-indigo-300' : 'bg-white/[0.06] text-white/30 group-hover:bg-white/[0.1] group-hover:text-white/50'
+                }`}>
+                  <Icon className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-[13px] font-medium leading-tight truncate">{page.label}</span>
+                {active && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Keyboard hint */}
+        <div className="px-4 py-3 border-t border-white/[0.05]">
+          <p className="text-[10px] text-white/20 leading-relaxed">
+            <kbd className="px-1.5 py-0.5 rounded bg-white/[0.08] text-white/40 font-mono text-[9px]">⌘S</kbd>
+            {' '}saves all pending changes
+          </p>
+        </div>
+      </aside>
+
+      {/* ── Main Content Area ───────────────────────────────────────────── */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+
+        {/* Top bar */}
+        <div className="shrink-0 flex items-center gap-4 px-6 py-4 border-b border-white/[0.06] bg-[#08090d]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 rounded-xl bg-indigo-500/15 ring-1 ring-indigo-400/20 shrink-0">
+              <selectedPage.icon className="h-4 w-4 text-indigo-400" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base font-bold text-white leading-none truncate">{selectedPage.label}</h1>
+              <p className="text-[11px] text-white/35 mt-0.5 truncate">{selectedPage.description}</p>
+            </div>
+          </div>
+
+          <div className="ml-auto flex items-center gap-3 shrink-0">
+            {/* Global save status chip */}
+            {hasError && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/15 ring-1 ring-red-400/25 text-red-300 text-xs font-semibold">
+                <AlertCircle className="h-3.5 w-3.5" />
+                Error saving
+              </span>
+            )}
+            {hasSaving && !hasError && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.07] text-white/50 text-xs font-semibold">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Saving…
+              </span>
+            )}
+            {hasSaved && !hasSaving && !hasError && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 ring-1 ring-emerald-400/25 text-emerald-300 text-xs font-semibold">
+                <Check className="h-3.5 w-3.5" />
+                Saved
+              </span>
+            )}
+
+            {/* Preview link */}
+            <a
+              href={selectedPage.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-500/15 hover:bg-indigo-500/25 ring-1 ring-indigo-400/25 hover:ring-indigo-400/40 text-indigo-300 hover:text-indigo-200 rounded-xl text-sm font-semibold transition-all"
             >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span className="truncate text-[13px]">{page.label}</span>
-              {active && <ChevronRight className="h-3.5 w-3.5 ml-auto opacity-40 shrink-0" />}
-            </button>
-          );
-        })}
+              <ExternalLink className="h-3.5 w-3.5" />
+              Preview Page
+            </a>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center h-full gap-3 text-white/40">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="text-sm">Loading page content…</span>
+            </div>
+          ) : (
+            <div className="max-w-4xl mx-auto px-6 py-8 pb-20 space-y-6">
+
+              {/* Auto-save notice banner */}
+              <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white/[0.025] border border-white/[0.06]">
+                <Sparkles className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                <p className="text-xs text-white/40 leading-relaxed">
+                  Changes save automatically as you type. Visitors will see updates within a few seconds.
+                  Use <kbd className="px-1.5 py-0.5 rounded bg-white/[0.08] text-white/50 font-mono text-[10px]">Ctrl+S</kbd> to save immediately.
+                </p>
+              </div>
+
+              {/* Sections */}
+              {Object.entries(sections).map(([sectionName, fields], sectionIdx) => {
+                const accentClass = SECTION_ACCENTS[sectionIdx % SECTION_ACCENTS.length];
+                const isCollapsed = collapsedSections[sectionName] === true;
+                const sectionKey = `${selectedPage.key}:${sectionName}`;
+
+                return (
+                  <section key={sectionName}>
+                    {/* Section header */}
+                    <button
+                      onClick={() => toggleSection(sectionName)}
+                      className="w-full flex items-center gap-3 mb-4 group"
+                    >
+                      {/* Colored accent bar */}
+                      <div className={`w-1 h-5 rounded-full shrink-0 ${accentClass}`} />
+
+                      {/* Section name */}
+                      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/60 group-hover:text-white/80 transition-colors">
+                        {sectionName}
+                      </span>
+
+                      {/* Field count badge */}
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/[0.07] text-white/35">
+                        {fields.length}
+                      </span>
+
+                      {/* Divider line */}
+                      <div className="flex-1 h-px bg-white/[0.05]" />
+
+                      {/* Collapse toggle */}
+                      <div className="shrink-0 opacity-40 group-hover:opacity-70 transition-opacity">
+                        {isCollapsed
+                          ? <ChevronDown className="h-4 w-4 text-white" />
+                          : <ChevronUp className="h-4 w-4 text-white" />
+                        }
+                      </div>
+                    </button>
+
+                    {/* Fields grid */}
+                    {!isCollapsed && (
+                      <div className="space-y-3">
+                        {fields.map(field => (
+                          <FieldCard
+                            key={`${sectionKey}:${field.key}`}
+                            field={field}
+                            value={val(field.key)}
+                            isDefault={
+                              (field.type === 'text' || field.type === 'textarea') &&
+                              field.defaultValue !== undefined &&
+                              val(field.key) === field.defaultValue &&
+                              !contentMap[selectedPage.key]?.[field.key]
+                            }
+                            saveStatus={saveStatus[`${selectedPage.key}:${field.key}`] || 'idle'}
+                            isUploading={uploadingField === `${selectedPage.key}:${field.key}`}
+                            isDragOver={dragOver === `${selectedPage.key}:${field.key}`}
+                            onSave={(v) => save(field.key, v)}
+                            onUploadImage={(file) => uploadImage(field.key, file)}
+                            onDragOver={() => setDragOver(`${selectedPage.key}:${field.key}`)}
+                            onDragLeave={() => setDragOver(null)}
+                            onDropImage={(file) => {
+                              setDragOver(null);
+                              uploadImage(field.key, file);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// ─── Field Card Component ─────────────────────────────────────────────────────
+
+interface FieldCardProps {
+  field: FieldDef;
+  value: string;
+  isDefault: boolean;
+  saveStatus: SaveStatus;
+  isUploading: boolean;
+  isDragOver: boolean;
+  onSave: (v: string) => void;
+  onUploadImage: (file: File) => void;
+  onDragOver: () => void;
+  onDragLeave: () => void;
+  onDropImage: (file: File) => void;
+}
+
+function FieldCard({
+  field, value, isDefault, saveStatus, isUploading, isDragOver,
+  onSave, onUploadImage, onDragOver, onDragLeave, onDropImage,
+}: FieldCardProps) {
+  const meta = FIELD_TYPE_META[field.type];
+  const hasError = saveStatus === 'error';
+
+  return (
+    <div className={`bg-white/[0.03] border rounded-2xl overflow-hidden transition-all ${
+      hasError
+        ? 'border-red-500/40 shadow-[0_0_0_1px_rgba(239,68,68,0.15)]'
+        : 'border-white/[0.07] hover:border-white/[0.11]'
+    }`}>
+      {/* Card header */}
+      <div className="flex items-start gap-3 px-5 py-4 border-b border-white/[0.05]">
+        <div className="flex-1 min-w-0">
+          {/* Label row */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-[13px] font-semibold text-white leading-none">{field.label}</span>
+            {/* Type badge */}
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.pillClass}`}>
+              <span className={`inline-block w-1.5 h-1.5 rounded-full ${meta.dotClass} mr-1.5 align-middle`} />
+              {meta.label}
+            </span>
+            {isDefault && saveStatus === 'idle' && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.07] text-white/35 font-medium">
+                Default
+              </span>
+            )}
+          </div>
+          {/* Hint text */}
+          <p className="text-[11px] text-white/40 mt-1.5 leading-relaxed">{field.hint}</p>
+        </div>
+
+        {/* Save status indicator */}
+        <div className="shrink-0 mt-0.5">
+          {saveStatus === 'saving' && (
+            <span className="flex items-center gap-1.5 text-[11px] text-white/40 font-medium">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Saving
+            </span>
+          )}
+          {saveStatus === 'saved' && (
+            <span className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-semibold">
+              <Check className="h-3 w-3" />
+              Saved
+            </span>
+          )}
+          {saveStatus === 'error' && (
+            <span className="flex items-center gap-1.5 text-[11px] text-red-400 font-semibold">
+              <AlertCircle className="h-3 w-3" />
+              Error
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Main content area */}
-      <div className="flex-1 overflow-y-auto bg-[#080812]">
-        {loading ? (
-          <div className="flex items-center justify-center h-full text-slate-400">
-            <Loader2 className="h-8 w-8 animate-spin mr-3" />
-            Loading page content...
-          </div>
-        ) : (
-          <div className="max-w-5xl mx-auto px-6 py-6 pb-16 space-y-8">
-            {/* Page header banner */}
-            <div className="bg-gradient-to-r from-indigo-600/10 to-purple-600/10 border border-indigo-500/20 rounded-2xl p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-indigo-600/20 rounded-xl">
-                    <selectedPage.icon className="h-5 w-5 text-indigo-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-white">{selectedPage.label}</h2>
-                    <p className="text-sm text-slate-400 mt-0.5">{selectedPage.description}</p>
-                  </div>
-                </div>
-                <a
-                  href={selectedPage.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 flex items-center gap-2 px-3.5 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 hover:text-indigo-200 rounded-lg text-sm transition-colors font-medium"
-                >
-                  <Globe className="h-4 w-4" />
-                  Preview Page ↗
-                </a>
-              </div>
-              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/10">
-                <Sparkles className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
-                <p className="text-xs text-slate-400">Changes save automatically. Visitors will see updates within a few seconds of saving.</p>
+      {/* Field input area */}
+      <div className="p-5">
+        {field.type === 'text' && (
+          <TextInput
+            value={value}
+            placeholder={field.placeholder}
+            maxLength={field.maxLength}
+            onChange={onSave}
+          />
+        )}
+
+        {field.type === 'textarea' && (
+          <TextareaInput
+            value={value}
+            placeholder={field.placeholder}
+            maxLength={field.maxLength}
+            onChange={onSave}
+          />
+        )}
+
+        {field.type === 'richtext' && (
+          <PageContentEditor
+            value={value}
+            onChange={onSave}
+            placeholder={field.placeholder || `Write ${field.label.toLowerCase()} here…`}
+          />
+        )}
+
+        {field.type === 'image' && (
+          <ImageInput
+            value={value}
+            isUploading={isUploading}
+            isDragOver={isDragOver}
+            onUpload={onUploadImage}
+            onRemove={() => onSave('')}
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDropImage}
+          />
+        )}
+
+        {hasError && (
+          <p className="mt-2 text-xs text-red-400 flex items-center gap-1.5">
+            <AlertCircle className="h-3 w-3 shrink-0" />
+            Failed to save — please try again.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Text Input ───────────────────────────────────────────────────────────────
+
+function TextInput({
+  value, placeholder, maxLength, onChange,
+}: {
+  value: string; placeholder?: string; maxLength?: number; onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-center bg-black/30 border border-white/[0.09] rounded-xl focus-within:border-indigo-500/60 focus-within:ring-1 focus-within:ring-indigo-500/20 transition-all">
+        <Type className="h-3.5 w-3.5 text-white/20 ml-3.5 shrink-0" />
+        <input
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          className="flex-1 px-3 py-2.5 bg-transparent text-white/90 placeholder-white/20 text-sm focus:outline-none"
+        />
+      </div>
+      {maxLength && (
+        <p className="text-[10px] text-white/25 mt-1.5 text-right tabular-nums">
+          <span className={value.length > maxLength * 0.9 ? 'text-amber-400' : ''}>{value.length}</span>
+          {' / '}{maxLength}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Textarea Input ───────────────────────────────────────────────────────────
+
+function TextareaInput({
+  value, placeholder, maxLength, onChange,
+}: {
+  value: string; placeholder?: string; maxLength?: number; onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <div className="bg-black/30 border border-white/[0.09] rounded-xl focus-within:border-indigo-500/60 focus-within:ring-1 focus-within:ring-indigo-500/20 transition-all">
+        <div className="flex items-start gap-2 px-3.5 pt-3 pb-1 border-b border-white/[0.05]">
+          <AlignLeft className="h-3.5 w-3.5 text-white/20 mt-0.5 shrink-0" />
+          <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Paragraph</span>
+        </div>
+        <textarea
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          rows={3}
+          className="w-full px-4 py-3 bg-transparent text-white/90 placeholder-white/20 text-sm focus:outline-none resize-y min-h-[72px]"
+        />
+      </div>
+      {maxLength && (
+        <p className="text-[10px] text-white/25 mt-1.5 text-right tabular-nums">
+          <span className={value.length > maxLength * 0.9 ? 'text-amber-400' : ''}>{value.length}</span>
+          {' / '}{maxLength}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Image Input ──────────────────────────────────────────────────────────────
+
+function ImageInput({
+  value, isUploading, isDragOver,
+  onUpload, onRemove, onDragOver, onDragLeave, onDrop,
+}: {
+  value: string;
+  isUploading: boolean;
+  isDragOver: boolean;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+  onDragOver: () => void;
+  onDragLeave: () => void;
+  onDrop: (file: File) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragEvent = (e: React.DragEvent) => {
+    e.preventDefault();
+    onDragOver();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file?.type.startsWith('image/')) onDrop(file);
+    else onDragLeave();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onUpload(file);
+    e.target.value = '';
+  };
+
+  if (value && !isUploading) {
+    // Preview state
+    return (
+      <div className="relative rounded-xl overflow-hidden group">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={value}
+          alt="Current image"
+          className="w-full max-h-48 object-cover rounded-xl"
+        />
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 rounded-xl">
+          <label className="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl text-sm font-semibold transition-all ring-1 ring-white/20">
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleFileChange}
+            />
+            <Upload className="h-4 w-4" />
+            Replace Photo
+          </label>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="flex items-center gap-2 px-4 py-2.5 bg-red-500/70 hover:bg-red-500 backdrop-blur-sm text-white rounded-xl text-sm font-semibold transition-all ring-1 ring-red-400/30"
+          >
+            <X className="h-4 w-4" />
+            Remove
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Drop zone (empty or uploading)
+  return (
+    <div
+      onDragOver={handleDragEvent}
+      onDragLeave={onDragLeave}
+      onDrop={handleDrop}
+      className={`relative rounded-xl border-2 border-dashed transition-all cursor-pointer ${
+        isDragOver
+          ? 'border-indigo-400/60 bg-indigo-500/10'
+          : 'border-white/[0.12] hover:border-white/25 hover:bg-white/[0.02]'
+      }`}
+      onClick={() => !isUploading && fileInputRef.current?.click()}
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        onChange={handleFileChange}
+        disabled={isUploading}
+      />
+
+      <div className="flex flex-col items-center justify-center gap-3 py-10 px-6 text-center">
+        {isUploading ? (
+          <>
+            {/* Upload shimmer */}
+            <div className="relative w-12 h-12 rounded-2xl bg-white/[0.08] flex items-center justify-center">
+              <Loader2 className="h-6 w-6 text-indigo-400 animate-spin" />
+              <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                <div className="h-full w-[200%] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent animate-[shimmer_1.5s_linear_infinite] -translate-x-full" />
               </div>
             </div>
-
-            {/* Sections */}
-            {Object.entries(sections).map(([sectionName, fields]) => {
-              // Use 2-column grid when all fields in the section are short text (maxLength <= 10)
-              const useGrid = fields.every(f => f.type === 'text' && (f.maxLength ?? 999) <= 10);
-              return (
-              <div key={sectionName}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-1 h-5 rounded-full bg-indigo-500 shrink-0" />
-                  <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">{sectionName}</h3>
-                  <div className="flex-1 h-px bg-white/[0.06]" />
-                </div>
-                <div className={useGrid ? 'grid grid-cols-2 gap-4' : 'space-y-4'}>
-                  {fields.map(field => {
-                    const typeMeta = FIELD_TYPE_META[field.type];
-                    const TypeIcon = typeMeta.icon;
-                    const fieldVal = val(field.key);
-                    const statusKey = `${selectedPage.key}:${field.key}`;
-                    const status = saveStatus[statusKey] || 'idle';
-                    const isUploading = uploadingField === statusKey;
-                    const isDefault = (field.type === 'text' || field.type === 'textarea') &&
-                      field.defaultValue !== undefined &&
-                      fieldVal === field.defaultValue &&
-                      !contentMap[selectedPage.key]?.[field.key];
-
-                    return (
-                      <div key={field.key} className="bg-slate-800/40 border border-white/[0.07] rounded-xl overflow-hidden hover:border-white/[0.12] transition-colors">
-                        {/* Field header */}
-                        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07] bg-slate-900/30">
-                          <div className={`p-1.5 rounded-lg ${typeMeta.bg}`}>
-                            <TypeIcon className={`h-3.5 w-3.5 ${typeMeta.color}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-white">{field.label}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${typeMeta.bg} ${typeMeta.color}`}>{typeMeta.label}</span>
-                            </div>
-                          </div>
-                          {/* Save status */}
-                          <div className="shrink-0 text-xs flex items-center gap-2">
-                            {isDefault && status === 'idle' && <span className="text-slate-500 px-1.5 py-0.5 rounded bg-slate-700/60 font-medium">Default</span>}
-                            {status === 'saving' && <span className="text-slate-400 flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Saving</span>}
-                            {status === 'saved' && <span className="text-emerald-400 flex items-center gap-1"><Check className="h-3 w-3" />Saved</span>}
-                            {status === 'error' && <span className="text-red-400 flex items-center gap-1"><AlertCircle className="h-3 w-3" />Error</span>}
-                          </div>
-                        </div>
-
-                        {/* Hint */}
-                        <div className="flex items-start gap-2 px-4 py-2.5 bg-blue-500/[0.04] border-b border-white/[0.05]">
-                          <Info className="h-3.5 w-3.5 text-blue-400/60 shrink-0 mt-0.5" />
-                          <p className="text-xs text-slate-400 leading-relaxed">{field.hint}</p>
-                        </div>
-
-                        {/* Input */}
-                        <div className="p-4">
-                          {field.type === 'text' && (
-                            <div>
-                              <input
-                                type="text"
-                                value={fieldVal}
-                                onChange={e => save(field.key, e.target.value)}
-                                placeholder={field.placeholder}
-                                maxLength={field.maxLength}
-                                className="w-full px-4 py-2.5 bg-slate-900/60 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none text-sm"
-                              />
-                              {field.maxLength && (
-                                <p className="text-[11px] text-slate-500 mt-1.5 text-right">{fieldVal.length} / {field.maxLength}</p>
-                              )}
-                            </div>
-                          )}
-
-                          {field.type === 'textarea' && (
-                            <div>
-                              <textarea
-                                value={fieldVal}
-                                onChange={e => save(field.key, e.target.value)}
-                                placeholder={field.placeholder}
-                                maxLength={field.maxLength}
-                                rows={3}
-                                className="w-full px-4 py-2.5 bg-slate-900/60 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none text-sm resize-y"
-                              />
-                              {field.maxLength && (
-                                <p className="text-[11px] text-slate-500 mt-1 text-right">{fieldVal.length} / {field.maxLength}</p>
-                              )}
-                            </div>
-                          )}
-
-                          {field.type === 'richtext' && (
-                            <PageContentEditor
-                              value={fieldVal}
-                              onChange={v => save(field.key, v)}
-                              placeholder={field.placeholder || `Write ${field.label.toLowerCase()} here...`}
-                            />
-                          )}
-
-                          {field.type === 'image' && (
-                            <div
-                              onDragOver={e => { e.preventDefault(); setDragOver(statusKey); }}
-                              onDragLeave={() => setDragOver(null)}
-                              onDrop={e => {
-                                e.preventDefault();
-                                setDragOver(null);
-                                const f = e.dataTransfer.files[0];
-                                if (f?.type.startsWith('image/')) uploadImage(field.key, f);
-                              }}
-                              className={`relative rounded-xl border-2 border-dashed transition-all overflow-hidden ${
-                                dragOver === statusKey
-                                  ? 'border-indigo-500 bg-indigo-500/10'
-                                  : 'border-white/10 hover:border-white/20'
-                              }`}
-                            >
-                              {fieldVal ? (
-                                <div className="relative">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={fieldVal} alt="Current" className="w-full h-48 object-cover" />
-                                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                    <label className="cursor-pointer bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors">
-                                      <input type="file" accept="image/*" className="sr-only" onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(field.key, f); e.target.value = ''; }} disabled={isUploading} />
-                                      <Upload className="h-4 w-4" />
-                                      Replace Photo
-                                    </label>
-                                    <button
-                                      type="button"
-                                      onClick={() => save(field.key, '')}
-                                      className="bg-red-500/80 hover:bg-red-500 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
-                                    >
-                                      Remove Photo
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <label className="cursor-pointer flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
-                                  <input type="file" accept="image/*" className="sr-only" onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(field.key, f); e.target.value = ''; }} disabled={isUploading} />
-                                  {isUploading ? (
-                                    <><Loader2 className="h-10 w-10 text-slate-500 animate-spin" /><p className="text-sm text-slate-400">Uploading...</p></>
-                                  ) : (
-                                    <>
-                                      <div className="p-4 bg-slate-700/50 rounded-2xl"><ImageIcon className="h-8 w-8 text-slate-400" /></div>
-                                      <div>
-                                        <p className="text-sm font-medium text-slate-300">Click to upload a photo</p>
-                                        <p className="text-xs text-slate-500 mt-1">or drag and drop it here</p>
-                                        <p className="text-xs text-slate-600 mt-1">JPG, PNG, WEBP — max 10MB</p>
-                                      </div>
-                                    </>
-                                  )}
-                                </label>
-                              )}
-                              {isUploading && fieldVal && (
-                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                  <Loader2 className="h-8 w-8 text-white animate-spin" />
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-            })}
-          </div>
+            <div>
+              <p className="text-sm font-semibold text-white/70">Uploading photo…</p>
+              <p className="text-xs text-white/30 mt-1">Please wait</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+              isDragOver ? 'bg-indigo-500/25' : 'bg-white/[0.07]'
+            }`}>
+              <ImageIcon className={`h-6 w-6 transition-colors ${isDragOver ? 'text-indigo-300' : 'text-white/40'}`} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white/70">
+                {isDragOver ? 'Drop to upload' : 'Click to upload or drag & drop'}
+              </p>
+              <p className="text-xs text-white/30 mt-1">JPG, PNG, WEBP — max 10 MB</p>
+            </div>
+          </>
         )}
       </div>
     </div>
