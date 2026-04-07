@@ -105,7 +105,7 @@ export default async function AboutPage() {
         </section>
       )}
 
-      {/* Mission */}
+      {/* Mission — editable via Admin > Page Builder */}
       <section id="mission" className="bg-muted/30 py-16">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -117,42 +117,51 @@ export default async function AboutPage() {
                 </span>
               </div>
               <h2 className="text-3xl font-bold text-foreground mb-4">
-                Making Astronomy Accessible to All
+                {content['mission_heading'] || 'Making Astronomy Accessible to All'}
               </h2>
-              <p className="text-muted-foreground mb-4">
-                The St. Petersburg Astronomy Club is dedicated to promoting astronomy
-                education, providing observing opportunities, and fostering a
-                community of amateur astronomers in the Tampa Bay area.
-              </p>
-              <p className="text-muted-foreground">
-                Whether you&apos;re looking through a telescope for the first time
-                or you&apos;re an experienced deep-sky observer, SPAC welcomes you
-                to join our community of stargazers.
-              </p>
+              {content['mission_body'] ? (
+                <div
+                  className="prose prose-invert max-w-none prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground"
+                  dangerouslySetInnerHTML={{ __html: content['mission_body'] }}
+                />
+              ) : (
+                <>
+                  <p className="text-muted-foreground mb-4">
+                    The St. Petersburg Astronomy Club is dedicated to promoting astronomy
+                    education, providing observing opportunities, and fostering a
+                    community of amateur astronomers in the Tampa Bay area.
+                  </p>
+                  <p className="text-muted-foreground">
+                    Whether you&apos;re looking through a telescope for the first time
+                    or you&apos;re an experienced deep-sky observer, SPAC welcomes you
+                    to join our community of stargazers.
+                  </p>
+                </>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <div className="text-3xl font-bold text-primary">97+</div>
-                <div className="text-sm text-muted-foreground">Years Active</div>
+                <div className="text-3xl font-bold text-primary">{content['stat_years'] || '97+'}</div>
+                <div className="text-sm text-muted-foreground">{content['stat_years_label'] || 'Years Active'}</div>
               </div>
               <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <div className="text-3xl font-bold text-primary">300+</div>
-                <div className="text-sm text-muted-foreground">Members</div>
+                <div className="text-3xl font-bold text-primary">{content['stat_members'] || '300+'}</div>
+                <div className="text-sm text-muted-foreground">{content['stat_members_label'] || 'Members'}</div>
               </div>
               <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <div className="text-3xl font-bold text-primary">12+</div>
-                <div className="text-sm text-muted-foreground">Annual Events</div>
+                <div className="text-3xl font-bold text-primary">{content['stat_events'] || '12+'}</div>
+                <div className="text-sm text-muted-foreground">{content['stat_events_label'] || 'Annual Events'}</div>
               </div>
               <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <div className="text-3xl font-bold text-primary">1000s</div>
-                <div className="text-sm text-muted-foreground">Students Reached</div>
+                <div className="text-3xl font-bold text-primary">{content['stat_students'] || '1000s'}</div>
+                <div className="text-sm text-muted-foreground">{content['stat_students_label'] || 'Students Reached'}</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* History */}
+      {/* History — editable via Admin > Page Builder */}
       <section id="history" className="py-16">
         <div className="container mx-auto px-4">
           <div className="inline-flex items-center gap-2 text-primary mb-4">
@@ -162,39 +171,45 @@ export default async function AboutPage() {
             </span>
           </div>
           <h2 className="text-3xl font-bold text-foreground mb-8">
-            A Legacy of Stargazing
+            {content['history_heading'] || 'A Legacy of Stargazing'}
           </h2>
 
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border md:left-1/2 md:-translate-x-1/2" />
-
-            <div className="space-y-8">
-              {milestones.map((milestone, index) => (
-                <div
-                  key={milestone.year}
-                  className={`relative flex items-start gap-4 md:gap-8 ${
-                    index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
-                  }`}
-                >
-                  {/* Timeline dot */}
-                  <div className="absolute left-4 w-2 h-2 rounded-full bg-primary md:left-1/2 md:-translate-x-1/2" />
-
-                  {/* Content */}
+          {content['milestones_body'] ? (
+            /* Admin-managed history content */
+            <div
+              className="prose prose-invert max-w-none
+                         prose-headings:text-foreground prose-p:text-muted-foreground
+                         prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: content['milestones_body'] }}
+            />
+          ) : (
+            /* Fallback: animated timeline */
+            <div className="relative">
+              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border md:left-1/2 md:-translate-x-1/2" />
+              <div className="space-y-8">
+                {milestones.map((milestone, index) => (
                   <div
-                    className={`ml-12 md:ml-0 md:w-1/2 ${
-                      index % 2 === 0 ? 'md:pr-12 md:text-right' : 'md:pl-12'
+                    key={milestone.year}
+                    className={`relative flex items-start gap-4 md:gap-8 ${
+                      index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
                     }`}
                   >
-                    <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-2">
-                      {milestone.year}
+                    <div className="absolute left-4 w-2 h-2 rounded-full bg-primary md:left-1/2 md:-translate-x-1/2" />
+                    <div
+                      className={`ml-12 md:ml-0 md:w-1/2 ${
+                        index % 2 === 0 ? 'md:pr-12 md:text-right' : 'md:pl-12'
+                      }`}
+                    >
+                      <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-2">
+                        {milestone.year}
+                      </div>
+                      <p className="text-foreground">{milestone.event}</p>
                     </div>
-                    <p className="text-foreground">{milestone.event}</p>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -218,7 +233,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      {/* Affiliations */}
+      {/* Affiliations — editable via Admin > Page Builder */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="inline-flex items-center gap-2 text-primary mb-4">
@@ -228,45 +243,44 @@ export default async function AboutPage() {
             </span>
           </div>
           <h2 className="text-3xl font-bold text-foreground mb-8">
-            Our Partners & Affiliations
+            {content['affiliations_heading'] || 'Our Partners & Affiliations'}
           </h2>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h3 className="font-semibold text-foreground mb-2">
-                Astronomical Society of the Pacific
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                The world&apos;s largest general astronomy society, connecting
-                scientists, educators, and enthusiasts.
-              </p>
-              <a
-                href="https://www.astrosociety.org"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline"
-              >
-                Learn more
-              </a>
+          {content['affiliations_body'] ? (
+            <div
+              className="prose prose-invert max-w-none
+                         prose-headings:text-foreground prose-p:text-muted-foreground
+                         prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: content['affiliations_body'] }}
+            />
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="rounded-lg border border-border bg-card p-6">
+                <h3 className="font-semibold text-foreground mb-2">
+                  Astronomical Society of the Pacific
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  The world&apos;s largest general astronomy society, connecting
+                  scientists, educators, and enthusiasts.
+                </p>
+                <a href="https://www.astrosociety.org" target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                  Learn more
+                </a>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-6">
+                <h3 className="font-semibold text-foreground mb-2">
+                  International Dark-Sky Association
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Working to protect the night sky from light pollution for present
+                  and future generations.
+                </p>
+                <a href="https://www.darksky.org" target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                  Learn more
+                </a>
+              </div>
             </div>
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h3 className="font-semibold text-foreground mb-2">
-                International Dark-Sky Association
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Working to protect the night sky from light pollution for present
-                and future generations.
-              </p>
-              <a
-                href="https://www.darksky.org"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline"
-              >
-                Learn more
-              </a>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 

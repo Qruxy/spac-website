@@ -1,38 +1,38 @@
 /**
  * Email Service
  *
- * Sends emails via Amazon SES (AWS native). Falls back to SMTP via nodemailer
- * if SES credentials are unavailable but SMTP is configured.
- *
- * Priority: SES > SMTP > Error
+ * Priority: Resend > SES > SMTP > Error
  *
  * Environment variables:
+ *   RESEND_API_KEY   — Resend API key (preferred)
+ *   RESEND_FROM      — From address for Resend (must be verified domain OR resend.dev)
  *   SES: SES_REGION (default: us-east-1), S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY
  *   SMTP: SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS
- *   EMAIL_FROM - sender address (must be SES-verified)
+ *   EMAIL_FROM       — sender address (SES/SMTP fallback)
  */
 
+import { Resend } from 'resend';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import { prisma } from '@/lib/db';
 
 const SES_REGION = process.env.SES_REGION || process.env.S3_REGION || 'us-east-1';
-const EMAIL_FROM = process.env.EMAIL_FROM || 'SPAC <noreply@stpeteastro.org>';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'SPAC <noreply@stpeteastronomyclub.org>';
 
-// Resolve credentials — Amplify reserves AWS_* prefix, so we use S3_* fallbacks
-const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
-const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+type EmailProvider = 'resend' | 'ses' | 'smtp' | 'none';
 
-type EmailProvider = 'ses' | 'smtp' | 'none';
-
+let resendClient: Resend | null = null;
 let sesClient: SESClient | null = null;
 let smtpTransporter: Transporter | null = null;
 let activeProvider: EmailProvider = 'none';
 
-// SMTP takes priority when configured — allows routing through a different SES account
-// or any SMTP relay (e.g. jaygoadmin's production SES) without touching S3 credentials
-if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+// Resend takes highest priority
+if (process.env.RESEND_API_KEY) {
+  resendClient = new Resend(process.env.RESEND_API_KEY);
+  activeProvider = 'resend';
+  console.log('[EMAIL] Using Resend');
+} else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
   smtpTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || '587', 10),
@@ -41,16 +41,23 @@ if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
   });
   activeProvider = 'smtp';
   console.log('[EMAIL] Using SMTP transport');
-} else if (accessKeyId && secretAccessKey) {
-  sesClient = new SESClient({
-    region: SES_REGION,
-    credentials: { accessKeyId, secretAccessKey },
-  });
-  activeProvider = 'ses';
-  console.log(`[EMAIL] Using Amazon SES (${SES_REGION})`);
 } else {
-  console.warn('[EMAIL] No email provider configured. Set SMTP_* vars or AWS credentials for SES.');
+  const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+  if (accessKeyId && secretAccessKey) {
+    sesClient = new SESClient({
+      region: SES_REGION,
+      credentials: { accessKeyId, secretAccessKey },
+    });
+    activeProvider = 'ses';
+    console.log(`[EMAIL] Using Amazon SES (${SES_REGION})`);
+  } else {
+    console.warn('[EMAIL] No email provider configured.');
+  }
 }
+
+// The FROM address used by Resend — falls back to EMAIL_FROM
+const resendFrom = process.env.RESEND_FROM || EMAIL_FROM;
 
 /** Replace {{variable}} placeholders in a template string */
 export function renderTemplate(
@@ -116,14 +123,22 @@ function htmlToPlainText(html: string): string {
     .trim();
 }
 
-/** Send a single email via SES */
+async function sendViaResend(to: string, subject: string, html: string, text?: string): Promise<void> {
+  if (!resendClient) throw new Error('Resend client not initialized');
+  const { error } = await resendClient.emails.send({
+    from: resendFrom,
+    to,
+    subject,
+    html,
+    text: text || htmlToPlainText(html),
+  });
+  if (error) throw new Error(error.message);
+}
+
 async function sendViaSES(to: string, subject: string, html: string, text?: string): Promise<void> {
   if (!sesClient) throw new Error('SES client not initialized');
-
-  // Parse "Name <email>" format for From
   const fromMatch = EMAIL_FROM.match(/^(.+?)\s*<(.+?)>$/);
   const sourceEmail = fromMatch ? EMAIL_FROM : `<${EMAIL_FROM}>`;
-
   const command = new SendEmailCommand({
     Source: sourceEmail,
     Destination: { ToAddresses: [to] },
@@ -135,14 +150,11 @@ async function sendViaSES(to: string, subject: string, html: string, text?: stri
       },
     },
   });
-
   await sesClient.send(command);
 }
 
-/** Send a single email via SMTP */
 async function sendViaSMTP(to: string, subject: string, html: string, text?: string): Promise<void> {
   if (!smtpTransporter) throw new Error('SMTP transporter not initialized');
-
   await smtpTransporter.sendMail({
     from: EMAIL_FROM,
     to,
@@ -168,9 +180,8 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
   const html = opts.useLayout === false ? opts.html : wrapInLayout(opts.html, opts.preheader);
 
   if (activeProvider === 'none') {
-    const errorMsg = 'No email provider configured. Set AWS credentials for SES or SMTP_* environment variables.';
+    const errorMsg = 'No email provider configured. Set RESEND_API_KEY or AWS credentials.';
     console.error('[EMAIL]', errorMsg);
-
     const log = await prisma.emailLog.create({
       data: {
         templateId: opts.templateId || null,
@@ -183,7 +194,6 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
         metadata: opts.metadata ? JSON.parse(JSON.stringify(opts.metadata)) : undefined,
       },
     });
-
     return { success: false, logId: log.id, error: errorMsg };
   }
 
@@ -200,7 +210,9 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
   });
 
   try {
-    if (activeProvider === 'ses') {
+    if (activeProvider === 'resend') {
+      await sendViaResend(opts.to, opts.subject, html, opts.text);
+    } else if (activeProvider === 'ses') {
       await sendViaSES(opts.to, opts.subject, html, opts.text);
     } else {
       await sendViaSMTP(opts.to, opts.subject, html, opts.text);
@@ -215,12 +227,10 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error(`[EMAIL] ${activeProvider.toUpperCase()} send failed:`, message);
-
     await prisma.emailLog.update({
       where: { id: log.id },
       data: { status: 'FAILED', errorMessage: message },
     });
-
     return { success: false, logId: log.id, error: message };
   }
 }
@@ -260,8 +270,8 @@ export async function sendBulkEmail(opts: BulkSendOptions): Promise<{ sent: numb
     else failed++;
     if (result.logId) logIds.push(result.logId);
 
-    // SES rate limit: 1 email/sec in sandbox, higher in production
-    await new Promise((r) => setTimeout(r, activeProvider === 'ses' ? 1100 : 100));
+    // Rate limit: Resend free tier = 2 req/s
+    await new Promise((r) => setTimeout(r, activeProvider === 'resend' ? 500 : 100));
   }
 
   return { sent, failed, logIds };

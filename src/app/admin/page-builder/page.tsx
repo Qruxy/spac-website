@@ -40,26 +40,73 @@ const PAGES: PageDef[] = [
     description: 'The first page visitors see when they come to the site.',
     icon: Home,
     fields: [
-      { key: 'hero_title', label: 'Main Headline', hint: 'The big bold text front and center — the first thing everyone reads.', type: 'text', placeholder: 'e.g. St. Petersburg Astronomy Club', maxLength: 80, section: 'Hero Section (Top of Page)', defaultValue: 'St. Petersburg Astronomy Club' },
-      { key: 'hero_subtitle', label: 'Tagline / Subheading', hint: 'A short sentence below the headline that describes the club.', type: 'textarea', placeholder: 'e.g. Exploring the universe together since 1975', maxLength: 200, section: 'Hero Section (Top of Page)', defaultValue: "Tampa Bay's home for stargazers, educators, and night sky enthusiasts since 1927." },
-      { key: 'hero_image', label: 'Hero Background Photo', hint: 'The full-width background image behind the headline. Use a high-quality astronomy or night sky photo.', type: 'image', section: 'Hero Section (Top of Page)' },
-      { key: 'cta_primary_text', label: 'Join Button Text', hint: 'The text on the main call-to-action button (usually "Join the Club" or "Become a Member").', type: 'text', placeholder: 'Join the Club', maxLength: 40, section: 'Buttons', defaultValue: 'Join Today' },
-      { key: 'cta_secondary_text', label: 'Secondary Button Text', hint: 'The text on the second button (usually something like "Learn More" or "View Events").', type: 'text', placeholder: 'View Events', maxLength: 40, section: 'Buttons', defaultValue: 'View Events' },
-      { key: 'intro_text', label: 'Welcome Paragraph', hint: 'A short welcome message shown below the hero section introducing the club.', type: 'textarea', placeholder: 'Welcome to the St. Petersburg Astronomy Club...', maxLength: 500, section: 'Welcome Section', defaultValue: 'We are a nonprofit organization dedicated to astronomy education, outreach, and community observing.' },
+      // Hero
+      { key: 'hero_title', label: 'Main Headline', hint: 'The big bold text front and center — the first thing everyone reads.', type: 'text', placeholder: 'e.g. St. Petersburg Astronomy Club', maxLength: 80, section: 'Hero Section', defaultValue: 'St. Petersburg Astronomy Club' },
+      { key: 'hero_subtitle', label: 'Tagline / Subheading', hint: 'A short sentence below the headline that describes the club.', type: 'textarea', placeholder: 'e.g. Exploring the universe together since 1975', maxLength: 200, section: 'Hero Section', defaultValue: "Tampa Bay's home for stargazers, educators, and night sky enthusiasts since 1927." },
+      { key: 'hero_image', label: 'Hero Background Photo', hint: 'The full-width background image behind the headline. Use a high-quality astronomy or night sky photo.', type: 'image', section: 'Hero Section' },
+      { key: 'cta_primary_text', label: 'Join Button Text', hint: 'The text on the main call-to-action button.', type: 'text', placeholder: 'Join the Club', maxLength: 40, section: 'Hero Section', defaultValue: 'Join Today' },
+      // Features / Activity Cards
+      { key: 'feature_star_parties_title', label: 'Feature 1 — Title', hint: 'Title for the Monthly Star Parties card.', type: 'text', placeholder: 'Monthly Star Parties', maxLength: 60, section: 'Activity Cards', defaultValue: 'Monthly Star Parties' },
+      { key: 'feature_star_parties_desc', label: 'Feature 1 — Description', hint: 'Short description for the Monthly Star Parties card.', type: 'textarea', placeholder: 'Join us at our dark sky site...', maxLength: 200, section: 'Activity Cards', defaultValue: 'Join us at our dark sky site at Withlacoochee River Park for new moon observing sessions.' },
+      { key: 'feature_general_meetings_title', label: 'Feature 2 — Title', hint: 'Title for the General Meetings card.', type: 'text', placeholder: 'General Meetings', maxLength: 60, section: 'Activity Cards', defaultValue: 'General Meetings' },
+      { key: 'feature_general_meetings_desc', label: 'Feature 2 — Description', hint: 'Short description for the General Meetings card.', type: 'textarea', placeholder: 'Learn from expert speakers...', maxLength: 200, section: 'Activity Cards', defaultValue: 'Learn from expert speakers and fellow astronomers at our monthly meetings.' },
+      { key: 'feature_obs_title', label: 'Feature 3 — Title', hint: 'Title for the Orange Blossom Special card.', type: 'text', placeholder: 'Orange Blossom Special', maxLength: 60, section: 'Activity Cards', defaultValue: 'Orange Blossom Special' },
+      { key: 'feature_obs_desc', label: 'Feature 3 — Description', hint: 'Short description for the Orange Blossom Special card.', type: 'textarea', placeholder: 'Our annual multi-day star party...', maxLength: 200, section: 'Activity Cards', defaultValue: 'Our annual multi-day star party featuring camping, observing, and community.' },
+      { key: 'feature_mirror_lab_title', label: 'Feature 4 — Title', hint: 'Title for the Mirror Lab card.', type: 'text', placeholder: 'Mirror Lab', maxLength: 60, section: 'Activity Cards', defaultValue: 'Mirror Lab' },
+      { key: 'feature_mirror_lab_desc', label: 'Feature 4 — Description', hint: 'Short description for the Mirror Lab card.', type: 'textarea', placeholder: 'Learn to grind your own telescope mirror...', maxLength: 200, section: 'Activity Cards', defaultValue: 'Learn to grind your own telescope mirror with hands-on instruction from experts.' },
+      { key: 'feature_outreach_title', label: 'Feature 5 — Title', hint: 'Title for the Public Outreach card.', type: 'text', placeholder: 'Public Outreach', maxLength: 60, section: 'Activity Cards', defaultValue: 'Public Outreach' },
+      { key: 'feature_outreach_desc', label: 'Feature 5 — Description', hint: 'Short description for the Public Outreach card.', type: 'textarea', placeholder: 'We bring the stars to schools...', maxLength: 200, section: 'Activity Cards', defaultValue: 'We bring the stars to schools, scout troops, and community organizations.' },
+      { key: 'feature_classifieds_title', label: 'Feature 6 — Title', hint: 'Title for the Classifieds card.', type: 'text', placeholder: 'Equipment Classifieds', maxLength: 60, section: 'Activity Cards', defaultValue: 'Equipment Classifieds' },
+      { key: 'feature_classifieds_desc', label: 'Feature 6 — Description', hint: 'Short description for the Classifieds card.', type: 'textarea', placeholder: 'Buy, sell, and trade astronomy equipment...', maxLength: 200, section: 'Activity Cards', defaultValue: 'Buy, sell, and trade astronomy equipment with fellow club members.' },
+      // Upcoming Events section
+      { key: 'events_heading', label: 'Events Section Heading', hint: 'The title above the upcoming events list.', type: 'text', placeholder: 'Upcoming Events', maxLength: 60, section: 'Events Section', defaultValue: 'Upcoming Events' },
+      { key: 'events_subheading', label: 'Events Section Subheading', hint: 'The small line below the events heading.', type: 'text', placeholder: 'Join us for star parties, meetings, and special events', maxLength: 120, section: 'Events Section', defaultValue: 'Join us for star parties, meetings, and special events' },
+      // Stats bar
+      { key: 'stat_founded', label: 'Stat: Founded Year', hint: 'The founding year displayed in the stats bar. Default: 1927', type: 'text', placeholder: '1927', maxLength: 10, section: 'Stats Bar', defaultValue: '1927' },
+      { key: 'stat_founded_label', label: 'Stat: Founded Label', hint: 'Label under the founding year.', type: 'text', placeholder: 'Founded', maxLength: 30, section: 'Stats Bar', defaultValue: 'Founded' },
+      { key: 'stat_members', label: 'Stat: Member Count', hint: 'Number shown in the Members stat. Just the number, e.g. 300', type: 'text', placeholder: '300', maxLength: 10, section: 'Stats Bar', defaultValue: '300' },
+      { key: 'stat_members_label', label: 'Stat: Members Label', hint: 'Label under the member count.', type: 'text', placeholder: 'Members', maxLength: 30, section: 'Stats Bar', defaultValue: 'Members' },
+      { key: 'stat_members_suffix', label: 'Stat: Members Suffix', hint: 'Character after the member count, usually "+" or "k+".', type: 'text', placeholder: '+', maxLength: 5, section: 'Stats Bar', defaultValue: '+' },
+      { key: 'stat_events_per_year', label: 'Stat: Events Per Year', hint: 'Number of events per year shown in the stats bar.', type: 'text', placeholder: '12', maxLength: 10, section: 'Stats Bar', defaultValue: '12' },
+      { key: 'stat_events_label', label: 'Stat: Events Label', hint: 'Label under the events count.', type: 'text', placeholder: 'Events/Year', maxLength: 30, section: 'Stats Bar', defaultValue: 'Events/Year' },
+      { key: 'stat_years_strong', label: 'Stat: Years Active', hint: 'Number of years the club has been active. Auto-calculated from 1927 if left blank.', type: 'text', placeholder: 'Auto', maxLength: 10, section: 'Stats Bar' },
+      { key: 'stat_years_label', label: 'Stat: Years Label', hint: 'Label under the years active count.', type: 'text', placeholder: 'Years Strong', maxLength: 30, section: 'Stats Bar', defaultValue: 'Years Strong' },
+      // CTA
+      { key: 'cta_heading', label: 'CTA Heading', hint: 'The heading above the "Join Us" call-to-action at the bottom of the page.', type: 'text', placeholder: 'Ready to Explore the Universe?', maxLength: 80, section: 'Call to Action (Bottom)', defaultValue: 'Ready to Explore the Universe?' },
+      { key: 'cta_body', label: 'CTA Body Text', hint: 'The paragraph below the CTA heading encouraging visitors to join.', type: 'textarea', placeholder: 'Whether you\'re a seasoned astronomer or just starting out...', maxLength: 300, section: 'Call to Action (Bottom)', defaultValue: "Whether you're a seasoned astronomer or just starting out, there's a place for you at SPAC. Join our community of stargazers today." },
     ],
   },
   {
     key: 'about',
     label: 'About Page',
     href: '/about',
-    description: 'Tells visitors who the club is, its history, and its mission.',
+    description: 'Tells visitors who the club is, its history, mission, board, and affiliations.',
     icon: Users,
     fields: [
+      // Header
       { key: 'hero_title', label: 'Page Title', hint: 'The large heading at the top of the About page.', type: 'text', placeholder: 'About SPAC', maxLength: 60, section: 'Page Header', defaultValue: 'About SPAC' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description shown just below the title.', type: 'textarea', placeholder: 'Dedicated to astronomy education and stargazing...', maxLength: 200, section: 'Page Header', defaultValue: 'St. Petersburg Astronomy Club has been serving the Tampa Bay area since 1927.' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description shown just below the title.', type: 'textarea', placeholder: 'Dedicated to astronomy education and stargazing...', maxLength: 200, section: 'Page Header', defaultValue: "For nearly a century, SPAC has been bringing the wonders of the night sky to Tampa Bay." },
       { key: 'hero_image', label: 'Header Photo', hint: 'Optional: a photo used at the top of the About page.', type: 'image', section: 'Page Header' },
-      { key: 'about_body', label: 'About Us Text', hint: 'The main body of the About page — who you are, what you do, why you exist. You can include paragraphs, headings, and bullet points.', type: 'richtext', section: 'Page Content' },
-      { key: 'history_snippet', label: 'History Summary', hint: "A short 1-2 sentence summary of the club's history (shown in a callout or sidebar).", type: 'textarea', placeholder: 'Founded in 1975, SPAC has been serving the Tampa Bay area for over 45 years...', maxLength: 300, section: 'Page Content' },
+      // Body
+      { key: 'about_body', label: 'About Us Body Content', hint: 'An optional extra block of text below the hero. Use this for a custom intro, announcements, or featured content.', type: 'richtext', section: 'Body Content (Optional)' },
+      // Mission
+      { key: 'mission_heading', label: 'Mission Section Heading', hint: 'The heading above the "Our Mission" section.', type: 'text', placeholder: 'Making Astronomy Accessible to All', maxLength: 80, section: 'Mission Section', defaultValue: 'Making Astronomy Accessible to All' },
+      { key: 'mission_body', label: 'Mission Description', hint: 'The text in the Mission section describing what the club is about. Can be 1–3 paragraphs.', type: 'richtext', section: 'Mission Section' },
+      // Mission stats cards
+      { key: 'stat_years', label: 'Stat Card 1 — Years Active', hint: 'Displayed as the big number in the first stat card. Example: 97+', type: 'text', placeholder: '97+', maxLength: 10, section: 'Mission Stats Cards', defaultValue: '97+' },
+      { key: 'stat_years_label', label: 'Stat Card 1 — Label', hint: 'Label under the years number.', type: 'text', placeholder: 'Years Active', maxLength: 30, section: 'Mission Stats Cards', defaultValue: 'Years Active' },
+      { key: 'stat_members', label: 'Stat Card 2 — Members', hint: 'Member count displayed in the second stat card. Example: 300+', type: 'text', placeholder: '300+', maxLength: 10, section: 'Mission Stats Cards', defaultValue: '300+' },
+      { key: 'stat_members_label', label: 'Stat Card 2 — Label', hint: 'Label under the members number.', type: 'text', placeholder: 'Members', maxLength: 30, section: 'Mission Stats Cards', defaultValue: 'Members' },
+      { key: 'stat_events', label: 'Stat Card 3 — Annual Events', hint: 'Number of events per year. Example: 12+', type: 'text', placeholder: '12+', maxLength: 10, section: 'Mission Stats Cards', defaultValue: '12+' },
+      { key: 'stat_events_label', label: 'Stat Card 3 — Label', hint: 'Label under the events number.', type: 'text', placeholder: 'Annual Events', maxLength: 30, section: 'Mission Stats Cards', defaultValue: 'Annual Events' },
+      { key: 'stat_students', label: 'Stat Card 4 — Students Reached', hint: 'Students/people reached. Example: 1000s', type: 'text', placeholder: '1000s', maxLength: 10, section: 'Mission Stats Cards', defaultValue: '1000s' },
+      { key: 'stat_students_label', label: 'Stat Card 4 — Label', hint: 'Label under the students number.', type: 'text', placeholder: 'Students Reached', maxLength: 30, section: 'Mission Stats Cards', defaultValue: 'Students Reached' },
+      // History / Timeline
+      { key: 'history_heading', label: 'History Section Heading', hint: 'The heading above the club history/timeline section.', type: 'text', placeholder: 'A Legacy of Stargazing', maxLength: 80, section: 'History / Timeline', defaultValue: 'A Legacy of Stargazing' },
+      { key: 'milestones_body', label: 'History / Timeline Content', hint: 'The full club history. You can use headings for eras, bullet lists for milestones, or any format you like. This replaces the automatic timeline when filled in.', type: 'richtext', section: 'History / Timeline' },
+      // Affiliations
+      { key: 'affiliations_heading', label: 'Affiliations Section Heading', hint: 'The heading above the affiliations section.', type: 'text', placeholder: 'Our Partners & Affiliations', maxLength: 80, section: 'Affiliations', defaultValue: 'Our Partners & Affiliations' },
+      { key: 'affiliations_body', label: 'Affiliations Content', hint: 'Details about organizations SPAC is affiliated with. Use headings for each org name, followed by a short description and link. This replaces the default ASP + IDA cards when filled in.', type: 'richtext', section: 'Affiliations' },
     ],
   },
   {
@@ -174,12 +221,26 @@ const PAGES: PageDef[] = [
     key: 'general-meetings',
     label: 'General Meetings',
     href: '/general-meetings',
-    description: "Information about the club's regular monthly meetings.",
+    description: "Information about the club's regular monthly meetings — schedule, location, contact, and past presentations.",
     icon: MessageSquare,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the General Meetings page.', type: 'text', placeholder: 'General Meetings', maxLength: 60, section: 'Page Header', defaultValue: 'General Meetings' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description of when and where meetings are held.', type: 'textarea', placeholder: 'Join us every third Friday of the month...', maxLength: 200, section: 'Page Header', defaultValue: 'Join us every third Friday for presentations, Q&A, and community.' },
-      { key: 'body', label: 'Meetings Content', hint: 'Full details about general meetings — day, time, location, parking, what happens at a meeting, etc.', type: 'richtext', section: 'Page Content' },
+      // Header
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'The line below the "General Meetings" heading at the top of the page.', type: 'textarea', placeholder: 'Join us for presentations, discussions, and club news...', maxLength: 200, section: 'Page Header', defaultValue: 'Join fellow astronomers for presentations, discussions, and club news. Free and open to the public.' },
+      // Optional intro block
+      { key: 'body', label: 'Intro / Announcement Block', hint: 'Optional: an intro paragraph or announcement shown above the schedule card. Leave blank to hide this section.', type: 'richtext', section: 'Intro (Optional)' },
+      // Meeting schedule — each field maps to a line in the schedule card
+      { key: 'meeting_day', label: 'Meeting Day / Frequency', hint: 'When meetings are held. Example: "Fourth Thursday of each month (except November and December, when the third Thursday is used)"', type: 'textarea', placeholder: 'Fourth Thursday of each month', maxLength: 300, section: 'Meeting Schedule', defaultValue: 'Fourth Thursday of each month (except November and December, when meetings are held on the third Thursday)' },
+      { key: 'meeting_time', label: 'Meeting Start Time', hint: 'What time the meeting starts. Example: 7:30 PM', type: 'text', placeholder: '7:30 PM', maxLength: 30, section: 'Meeting Schedule', defaultValue: '7:30 PM' },
+      { key: 'meeting_location_name', label: 'Venue / Location Name', hint: 'The name of the building or venue. Example: "St. Petersburg College — Gibbs Campus"', type: 'text', placeholder: 'St. Petersburg College — Gibbs Campus', maxLength: 150, section: 'Meeting Schedule', defaultValue: 'St. Petersburg College — Gibbs Campus' },
+      { key: 'meeting_location_address', label: 'Venue Street Address', hint: 'Full street address of the venue. Example: "6605 5th Ave North, Saint Petersburg, FL 33710"', type: 'textarea', placeholder: '6605 5th Ave North, Saint Petersburg, FL 33710', maxLength: 300, section: 'Meeting Schedule', defaultValue: '6605 5th Ave North, Saint Petersburg, FL 33710' },
+      { key: 'meeting_room', label: 'Room / Building', hint: 'The specific room or building within the venue. Example: "Natural Sciences Building, Room SC236"', type: 'text', placeholder: 'Natural Sciences Building, Room SC236', maxLength: 150, section: 'Meeting Schedule', defaultValue: 'Natural Sciences Building, Room SC236' },
+      { key: 'open_to_public_note', label: 'Open to Public Note', hint: 'A note about whether meetings are open to the public, shown in the schedule card.', type: 'textarea', placeholder: 'Meetings are free and open to the public. Everyone is welcome!', maxLength: 300, section: 'Meeting Schedule', defaultValue: 'Meetings are free and open to the public. Everyone is welcome!' },
+      { key: 'social_room', label: 'Parties & Picnics Room', hint: 'The room/location used for special social events like holiday parties. Leave blank to hide this.', type: 'text', placeholder: 'Philip Benjamin Social Arts Building, Room SA114', maxLength: 150, section: 'Meeting Schedule', defaultValue: 'Philip Benjamin Social Arts Building, Room SA114' },
+      // Contact
+      { key: 'contact_name', label: 'Contact Person Name', hint: "The person's name displayed in the 'Questions? Contact...' line. Leave blank to show just the email.", type: 'text', placeholder: 'Peter McLean', maxLength: 80, section: 'Contact', defaultValue: 'Peter McLean' },
+      { key: 'contact_email', label: 'Contact Email Address', hint: 'The email address displayed for meeting questions.', type: 'text', placeholder: 'Info@StPeteAstronomyClub.org', maxLength: 150, section: 'Contact', defaultValue: 'Info@StPeteAstronomyClub.org' },
+      // Past Presentations
+      { key: 'past_presentations', label: 'Past Presentations Content', hint: 'The full list or table of past presentations. Use a table, bullet list, or any format. When filled in, this replaces the default hardcoded table. TIP: Use a table with columns: Date, Title, Video, PDF — add links using the link button in the toolbar.', type: 'richtext', section: 'Past Presentations' },
     ],
   },
   {
@@ -238,9 +299,20 @@ const PAGES: PageDef[] = [
     description: "SPAC's smart telescope loaner program — current targets, how to participate, and program details.",
     icon: Telescope,
     fields: [
-      { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the VSA page.', type: 'text', placeholder: 'Very Small Array', maxLength: 60, section: 'Page Header', defaultValue: 'Very Small Array' },
-      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short tagline describing the VSA program.', type: 'textarea', placeholder: "SPAC's smart telescope loaner program...", maxLength: 200, section: 'Page Header', defaultValue: "SPAC's smart telescope loaner program for members." },
-      { key: 'body', label: 'Program Description', hint: 'Full details about the VSA program — what it is, how it works, who can participate, current targets, and how to sign up.', type: 'richtext', section: 'Page Content' },
+      // Header
+      { key: 'hero_title', label: 'Page Title', hint: 'The large heading at the top of the VSA page.', type: 'text', placeholder: 'Very Small Array', maxLength: 60, section: 'Page Header', defaultValue: 'Very Small Array' },
+      { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short tagline describing the VSA program.', type: 'textarea', placeholder: "SPAC's smart telescope loaner program...", maxLength: 200, section: 'Page Header', defaultValue: "SPAC's innovative smart telescope program for all skill levels." },
+      { key: 'hero_image', label: 'Header Photo', hint: 'Optional: a photo at the top of the VSA page (e.g. a smart telescope setup or night sky shot).', type: 'image', section: 'Page Header' },
+      // What is VSA section
+      { key: 'what_is_vsa_heading', label: '"What is the VSA?" Heading', hint: 'The heading for the left column of the about section.', type: 'text', placeholder: 'What is the VSA?', maxLength: 80, section: '"What is the VSA?" Section', defaultValue: 'What is the VSA?' },
+      { key: 'what_is_vsa_body', label: '"What is the VSA?" Body Text', hint: 'The description of the VSA program — what it is, how it works, who can participate. This replaces the default 3 paragraphs when filled in.', type: 'richtext', section: '"What is the VSA?" Section' },
+      // Join the Community section
+      { key: 'community_heading', label: '"Join the Community" Heading', hint: 'The heading for the right column of the about section.', type: 'text', placeholder: 'Join the Community', maxLength: 80, section: '"Join the Community" Section', defaultValue: 'Join the Community' },
+      { key: 'community_body', label: '"Join the Community" Body Text', hint: 'Text encouraging people to join the VSA community, shown above the Facebook button.', type: 'richtext', section: '"Join the Community" Section' },
+      { key: 'facebook_url', label: 'Facebook Group URL', hint: 'The full URL to the VSA Facebook group. Example: https://www.facebook.com/groups/spacvsa', type: 'text', placeholder: 'https://www.facebook.com/groups/spacvsa', maxLength: 300, section: '"Join the Community" Section', defaultValue: 'https://www.facebook.com/groups/spacvsa' },
+      { key: 'facebook_button_text', label: 'Facebook Button Label', hint: 'The text shown on the Facebook group button.', type: 'text', placeholder: 'Join VSA Facebook Group', maxLength: 60, section: '"Join the Community" Section', defaultValue: 'Join VSA Facebook Group' },
+      // Targets / Details content
+      { key: 'body', label: 'Current Targets / Additional Content', hint: 'Any additional content shown on the page — current observation targets, schedule, equipment specs, etc.', type: 'richtext', section: 'Additional Content (Optional)' },
     ],
   },
 ];
