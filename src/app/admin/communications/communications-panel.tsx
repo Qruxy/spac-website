@@ -232,13 +232,8 @@ function ComposeTab() {
     if (file.size > MAX) { setToast({ type: 'error', message: 'Attachment must be under 15 MB' }); return; }
     setUploadingAttachment(true);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('pageKey', 'email-attachments');
-      fd.append('fieldKey', 'attach');
-      const res = await fetch('/api/admin/page-builder/upload', { method: 'POST', body: fd });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Upload failed'); }
-      const { url } = await res.json();
+      const { uploadFile } = await import('@/lib/upload-file');
+      const url = await uploadFile(file, 'email-attachments', 'attach');
       setAttachments((a) => [...a, { filename: file.name, url, size: file.size }]);
     } catch (e: unknown) {
       setToast({ type: 'error', message: e instanceof Error ? e.message : 'Attachment upload failed' });

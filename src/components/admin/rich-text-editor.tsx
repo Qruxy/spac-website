@@ -119,13 +119,8 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     if (!editor) return;
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('pageKey', 'richtext');
-      fd.append('fieldKey', 'inline');
-      const res = await fetch('/api/admin/page-builder/upload', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error('Upload failed');
-      const { url } = await res.json() as { url: string };
+      const { uploadFile } = await import('@/lib/upload-file');
+      const url = await uploadFile(file, 'richtext', 'inline');
       editor.chain().focus().setImage({ src: url }).run();
     } catch (err) {
       console.error('Image upload failed:', err);

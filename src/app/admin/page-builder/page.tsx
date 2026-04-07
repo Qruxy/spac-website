@@ -376,13 +376,8 @@ export default function PageBuilderPage() {
     const k = `${selectedPage.key}:${fieldKey}`;
     setUploadingField(k);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('pageKey', selectedPage.key);
-      fd.append('fieldKey', fieldKey);
-      const res = await fetch('/api/admin/page-builder/upload', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error();
-      const { url } = await res.json();
+      const { uploadFile } = await import('@/lib/upload-file');
+      const url = await uploadFile(file, selectedPage.key, fieldKey);
       save(fieldKey, url);
     } catch {
       setSaveStatus(prev => ({ ...prev, [k]: 'error' }));

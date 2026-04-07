@@ -254,6 +254,46 @@ export default async function HomePage() {
       {/* Hero — above the fold, renders immediately */}
       <HeroSection />
 
+      {/* Dark Sky Forecast — Clear Sky Chart for Withlacoochee River Park */}
+      <section className="bg-background/70 border-y border-white/5 py-10">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="shrink-0">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">
+                Dark Sky Forecast — Withlacoochee River Park
+              </p>
+              <a
+                href="https://cleardarksky.com/c/WthccRPFLkey.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block hover:opacity-90 transition-opacity"
+                title="Withlacoochee River Park Clear Sky Chart"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://www.cleardarksky.com/c/WthccRPFLkey.png"
+                  alt="Withlacoochee River Park Clear Sky Chart — cloud cover, transparency, seeing, darkness forecast"
+                  className="rounded-lg max-w-full"
+                  width={750}
+                  height={90}
+                />
+              </a>
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                Click chart for full forecast ·{' '}
+                <a
+                  href="https://cleardarksky.com/c/WthccRPFLkey.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-foreground transition-colors"
+                >
+                  cleardarksky.com
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Below-fold client components — deferred bundle, don't block hero */}
       <FeaturesSection features={mergedFeatures} />
 

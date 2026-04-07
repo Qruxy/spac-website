@@ -101,6 +101,8 @@ const nextConfig = {
       CLOUDFRONT_DOMAIN: process.env.CLOUDFRONT_DOMAIN,
       SES_REGION: process.env.SES_REGION,
       EMAIL_FROM: process.env.EMAIL_FROM,
+      RESEND_API_KEY: process.env.RESEND_API_KEY,
+      RESEND_FROM: process.env.RESEND_FROM,
       PAYPAL_SANDBOX: process.env.PAYPAL_SANDBOX,
       PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID,
       PAYPAL_CLIENT_SECRET: process.env.PAYPAL_CLIENT_SECRET,
