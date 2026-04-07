@@ -123,7 +123,42 @@ function htmlToPlainText(html: string): string {
     .trim();
 }
 
-async function sendViaResend(to: string, subject: string, html: string, text?: string): Promise<void> {
+export interface EmailAttachment {
+  filename: string;
+  /** Public URL — fetched once before bulk send and cached as a buffer */
+  url?: string;
+  /** Pre-fetched content (base64 or Buffer) */
+  content?: string | Buffer;
+}
+
+async function resolveAttachments(
+  attachments?: EmailAttachment[],
+): Promise<Array<{ filename: string; content: Buffer }>> {
+  if (!attachments?.length) return [];
+  return Promise.all(
+    attachments.map(async (a) => {
+      if (a.content) {
+        const buf = typeof a.content === 'string' ? Buffer.from(a.content, 'base64') : a.content;
+        return { filename: a.filename, content: buf };
+      }
+      if (a.url) {
+        const res = await fetch(a.url);
+        if (!res.ok) throw new Error(`Failed to fetch attachment ${a.filename}: ${res.status}`);
+        const buf = Buffer.from(await res.arrayBuffer());
+        return { filename: a.filename, content: buf };
+      }
+      throw new Error(`Attachment ${a.filename} has no url or content`);
+    }),
+  );
+}
+
+async function sendViaResend(
+  to: string,
+  subject: string,
+  html: string,
+  text?: string,
+  attachments?: Array<{ filename: string; content: Buffer }>,
+): Promise<void> {
   if (!resendClient) throw new Error('Resend client not initialized');
   const { error } = await resendClient.emails.send({
     from: resendFrom,
@@ -131,6 +166,9 @@ async function sendViaResend(to: string, subject: string, html: string, text?: s
     subject,
     html,
     text: text || htmlToPlainText(html),
+    attachments: attachments?.length
+      ? attachments.map((a) => ({ filename: a.filename, content: a.content }))
+      : undefined,
   });
   if (error) throw new Error(error.message);
 }
@@ -174,6 +212,8 @@ export interface SendEmailOptions {
   templateId?: string;
   recipientUserId?: string;
   metadata?: Record<string, unknown>;
+  /** Pre-resolved attachments (buffers already fetched) */
+  resolvedAttachments?: Array<{ filename: string; content: Buffer }>;
 }
 
 export async function sendEmail(opts: SendEmailOptions): Promise<{ success: boolean; logId?: string; error?: string }> {
@@ -211,7 +251,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
 
   try {
     if (activeProvider === 'resend') {
-      await sendViaResend(opts.to, opts.subject, html, opts.text);
+      await sendViaResend(opts.to, opts.subject, html, opts.text, opts.resolvedAttachments);
     } else if (activeProvider === 'ses') {
       await sendViaSES(opts.to, opts.subject, html, opts.text);
     } else {
@@ -241,12 +281,17 @@ export interface BulkSendOptions {
   html: string;
   templateId?: string;
   metadata?: Record<string, unknown>;
+  /** Attachment URLs to fetch once and include in every email */
+  attachments?: EmailAttachment[];
 }
 
 export async function sendBulkEmail(opts: BulkSendOptions): Promise<{ sent: number; failed: number; logIds: string[] }> {
   let sent = 0;
   let failed = 0;
   const logIds: string[] = [];
+
+  // Resolve attachments once for the whole batch (avoid re-fetching per recipient)
+  const resolvedAttachments = await resolveAttachments(opts.attachments);
 
   for (const recipient of opts.recipients) {
     const personalizedHtml = recipient.variables
@@ -264,6 +309,7 @@ export async function sendBulkEmail(opts: BulkSendOptions): Promise<{ sent: numb
       templateId: opts.templateId,
       recipientUserId: recipient.userId,
       metadata: opts.metadata,
+      resolvedAttachments: resolvedAttachments.length > 0 ? resolvedAttachments : undefined,
     });
 
     if (result.success) sent++;

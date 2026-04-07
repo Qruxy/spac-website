@@ -16,12 +16,22 @@ export async function POST(req: NextRequest) {
 
   if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 });
 
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const isEmailAttachment = pageKey === 'email-attachments';
+  const allowedTypes = isEmailAttachment
+    ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf',
+       'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    : ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const maxSize = isEmailAttachment ? 15 * 1024 * 1024 : 20 * 1024 * 1024;
+
   if (!allowedTypes.includes(file.type)) {
-    return NextResponse.json({ error: `File type not allowed. Use JPG, PNG, WEBP, or GIF.` }, { status: 400 });
+    return NextResponse.json({
+      error: isEmailAttachment
+        ? 'File type not allowed. Use PDF, JPG, PNG, or DOCX.'
+        : 'File type not allowed. Use JPG, PNG, WEBP, or GIF.',
+    }, { status: 400 });
   }
-  if (file.size > 20 * 1024 * 1024) {
-    return NextResponse.json({ error: 'File too large. Max 20 MB.' }, { status: 400 });
+  if (file.size > maxSize) {
+    return NextResponse.json({ error: `File too large. Max ${maxSize / 1024 / 1024} MB.` }, { status: 400 });
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());

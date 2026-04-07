@@ -5,13 +5,13 @@
  * Redesigned with dark-terminal aesthetic (TYDE/Nexus-inspired).
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Mail, Send, Eye, Plus, Edit2, Trash2, Users, FileText, Clock,
   CheckCircle2, XCircle, Loader2, AlertCircle, ChevronLeft, ChevronRight,
   X, FolderPlus, UserPlus, UserMinus, Search, AtSign, Zap, ChevronDown,
   ChevronUp, ToggleLeft, ToggleRight, ImagePlus, BarChart2, Sparkles,
-  Tag, RefreshCw,
+  Tag, RefreshCw, Paperclip,
 } from 'lucide-react';
 import { RichTextEditor } from '@/components/admin/rich-text-editor';
 import { SocialCrossPostPanel } from '@/components/admin/social-cross-post-panel';
@@ -173,6 +173,9 @@ function ComposeTab() {
   const [manualEmails, setManualEmails] = useState<string[]>([]);
   const [manualEmailInput, setManualEmailInput] = useState('');
   const [insertingImage, setInsertingImage] = useState(false);
+  const [attachments, setAttachments] = useState<Array<{ filename: string; url: string; size: number }>>([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const attachInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -224,6 +227,26 @@ function ComposeTab() {
     if (t) { setSubject(t.subject || ''); setBodyHtml(t.bodyHtml || ''); }
   };
 
+  const handleAttachFile = useCallback(async (file: File) => {
+    const MAX = 15 * 1024 * 1024;
+    if (file.size > MAX) { setToast({ type: 'error', message: 'Attachment must be under 15 MB' }); return; }
+    setUploadingAttachment(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('pageKey', 'email-attachments');
+      fd.append('fieldKey', 'attach');
+      const res = await fetch('/api/admin/page-builder/upload', { method: 'POST', body: fd });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Upload failed'); }
+      const { url } = await res.json();
+      setAttachments((a) => [...a, { filename: file.name, url, size: file.size }]);
+    } catch (e: unknown) {
+      setToast({ type: 'error', message: e instanceof Error ? e.message : 'Attachment upload failed' });
+    } finally {
+      setUploadingAttachment(false);
+    }
+  }, []);
+
   const handleSendEmail = async () => {
     setShowConfirm(false);
     setLoading(true);
@@ -237,6 +260,7 @@ function ComposeTab() {
           recipientFilter: recipientFilter.all || recipientFilter.roles?.length || recipientFilter.membershipTypes?.length || recipientFilter.membershipStatuses?.length || recipientFilter.groupIds?.length
             ? recipientFilter : undefined,
           manualEmails: manualEmails.length > 0 ? manualEmails : undefined,
+          attachments: attachments.length > 0 ? attachments.map(({ filename, url }) => ({ filename, url })) : undefined,
         }),
       });
       if (res.ok) {
@@ -244,6 +268,7 @@ function ComposeTab() {
         setToast({ type: 'success', message: `Sent to ${result.totalRecipients} recipient${result.totalRecipients !== 1 ? 's' : ''}` });
         setSubject(''); setBodyHtml(''); setSelectedTemplate('');
         setRecipientFilter({}); setManualEmails([]); setManualEmailInput('');
+        setAttachments([]);
       } else {
         const e = await res.json();
         setToast({ type: 'error', message: e.error || 'Failed to send email' });
@@ -437,10 +462,7 @@ function ComposeTab() {
               {/* From */}
               <div className="flex items-center gap-3 px-5 py-3">
                 <span className="text-[11px] font-semibold text-white/30 w-16 shrink-0">FROM</span>
-                <span className="text-sm text-white/60 font-mono">SPAC &lt;onboarding@resend.dev&gt;</span>
-                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/20">
-                  pending domain
-                </span>
+                <span className="text-sm text-white/60 font-mono">SPAC &lt;noreply@stpeteastronomyclub.org&gt;</span>
               </div>
               {/* To */}
               <div className="flex items-start gap-3 px-5 py-3 min-h-[46px]">
@@ -471,6 +493,28 @@ function ComposeTab() {
                   placeholder="Enter email subject…"
                   className="flex-1 bg-transparent text-sm text-white placeholder-white/25 focus:outline-none"
                 />
+              </div>
+              {/* Attachments row */}
+              <div className="flex items-start gap-3 px-5 py-2.5 min-h-[40px]">
+                <span className="text-[11px] font-semibold text-white/30 w-16 shrink-0 mt-0.5">ATTACH</span>
+                <div className="flex-1 flex flex-wrap gap-2 items-center">
+                  {attachments.map((a, i) => (
+                    <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.06] border border-white/10 text-xs text-white/70 max-w-[220px]">
+                      <Paperclip className="h-3 w-3 text-white/40 shrink-0" />
+                      <span className="truncate">{a.filename}</span>
+                      <span className="text-white/30 text-[10px] shrink-0">{(a.size / 1024).toFixed(0)}KB</span>
+                      <button type="button" onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))} className="ml-0.5 text-white/30 hover:text-red-400 transition-colors">×</button>
+                    </span>
+                  ))}
+                  <input ref={attachInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx" multiple className="sr-only"
+                    onChange={(e) => { Array.from(e.target.files || []).forEach(handleAttachFile); e.target.value = ''; }}
+                  />
+                  <button type="button" onClick={() => attachInputRef.current?.click()} disabled={uploadingAttachment}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-white/10 text-xs text-white/40 hover:text-white/70 hover:border-white/20 transition-colors disabled:opacity-40">
+                    {uploadingAttachment ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
+                    {uploadingAttachment ? 'Uploading…' : 'Attach file'}
+                  </button>
+                </div>
               </div>
             </div>
 

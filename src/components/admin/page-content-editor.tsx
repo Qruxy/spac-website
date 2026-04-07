@@ -7,11 +7,12 @@ import TextAlign from '@tiptap/extension-text-align';
 import TextStyle from '@tiptap/extension-text-style';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useEffect, useState } from 'react';
+import Image from '@tiptap/extension-image';
+import { useEffect, useRef, useState } from 'react';
 import {
   Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon,
   AlignLeft, AlignCenter, AlignRight, List, ListOrdered,
-  Eye, EyeOff, Minus,
+  Eye, EyeOff, Minus, Image as ImageIcon, Loader2,
 } from 'lucide-react';
 
 interface PageContentEditorProps {
@@ -23,15 +24,18 @@ interface PageContentEditorProps {
 
 export function PageContentEditor({ value, onChange, placeholder, minHeight = 200 }: PageContentEditorProps) {
   const [showPreview, setShowPreview] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
+      Image.configure({ inline: false, allowBase64: false }),
       Link.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TextStyle,
-      Placeholder.configure({ placeholder: placeholder || 'Start writing...' }),
+      Placeholder.configure({ placeholder: placeholder || 'Write your content here... Use the toolbar above to add headings, links, and photos.' }),
     ],
     content: value,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -58,6 +62,25 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
     editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   };
 
+  const handleImageUpload = async (file: File) => {
+    if (!editor) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('pageKey', 'richtext');
+      fd.append('fieldKey', 'inline');
+      const res = await fetch('/api/admin/page-builder/upload', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Upload failed');
+      const { url } = await res.json() as { url: string };
+      editor.chain().focus().setImage({ src: url }).run();
+    } catch (err) {
+      console.error('Image upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (!editor) return null;
 
   return (
@@ -68,8 +91,8 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
         <Btn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Italic"><Italic className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Underline"><UnderlineIcon className="h-3.5 w-3.5" /></Btn>
         <div className="w-px h-5 bg-white/10 mx-1" />
-        <Btn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} title="Heading"><span className="text-[11px] font-bold">H2</span></Btn>
-        <Btn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive('heading', { level: 3 })} title="Subheading"><span className="text-[11px] font-bold">H3</span></Btn>
+        <Btn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} title="Heading 2"><span className="text-[11px] font-bold">H2</span></Btn>
+        <Btn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive('heading', { level: 3 })} title="Heading 3"><span className="text-[11px] font-bold">H3</span></Btn>
         <div className="w-px h-5 bg-white/10 mx-1" />
         <Btn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} title="Bullet list"><List className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Numbered list"><ListOrdered className="h-3.5 w-3.5" /></Btn>
@@ -80,11 +103,42 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
         <Btn onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Align left"><AlignLeft className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })} title="Align center"><AlignCenter className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Align right"><AlignRight className="h-3.5 w-3.5" /></Btn>
+        <div className="w-px h-5 bg-white/10 mx-1" />
+        {/* Image upload button */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          title="Insert photo"
+          className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+            uploading
+              ? 'text-slate-500 cursor-wait'
+              : 'text-orange-300 hover:bg-orange-500/20 hover:text-orange-200'
+          }`}
+        >
+          {uploading
+            ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span>Uploading…</span></>
+            : <><ImageIcon className="h-3.5 w-3.5" /><span>Photo</span></>
+          }
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={e => {
+            const f = e.target.files?.[0];
+            if (f) void handleImageUpload(f);
+            e.target.value = '';
+          }}
+        />
         <div className="flex-1" />
         <button
           type="button"
           onClick={() => setShowPreview(v => !v)}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${showPreview ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${
+            showPreview ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+          }`}
         >
           {showPreview ? <><EyeOff className="h-3.5 w-3.5" />Editing</> : <><Eye className="h-3.5 w-3.5" />Preview</>}
         </button>
@@ -107,6 +161,7 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
             [&_.ProseMirror_hr]:border-white/20 [&_.ProseMirror_hr]:my-4
             [&_.ProseMirror_strong]:font-bold
             [&_.ProseMirror_em]:italic
+            [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded-lg [&_.ProseMirror_img]:my-3 [&_.ProseMirror_img]:block
             [&_.ProseMirror_.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]
             [&_.ProseMirror_.is-editor-empty:first-child::before]:text-slate-500
             [&_.ProseMirror_.is-editor-empty:first-child::before]:float-left
@@ -122,7 +177,7 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
         <div className="p-4">
           <div className="bg-white rounded-lg p-6 max-w-2xl mx-auto shadow-lg">
             <div
-              className="prose prose-sm max-w-none text-gray-800"
+              className="prose prose-sm max-w-none text-gray-800 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-3"
               dangerouslySetInnerHTML={{ __html: editor.getHTML() }}
             />
           </div>

@@ -8,7 +8,8 @@ import { Color } from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useState, useEffect } from 'react';
+import Image from '@tiptap/extension-image';
+import { useState, useEffect, useRef } from 'react';
 import {
   Bold,
   Italic,
@@ -21,6 +22,8 @@ import {
   ListOrdered,
   Eye,
   EyeOff,
+  Image as ImageIcon,
+  Loader2,
 } from 'lucide-react';
 
 interface RichTextEditorProps {
@@ -50,18 +53,35 @@ const CONTENT_BLOCKS = [
 
 const TOKENS = ['{{firstName}}', '{{lastName}}', '{{email}}'];
 
+const TEXT_COLORS = [
+  { label: 'Default', value: '' },
+  { label: 'Blue', value: '#3b82f6' },
+  { label: 'Green', value: '#22c55e' },
+  { label: 'Red', value: '#ef4444' },
+  { label: 'Yellow', value: '#eab308' },
+  { label: 'Orange', value: '#f97316' },
+  { label: 'Purple', value: '#a855f7' },
+  { label: 'White', value: '#ffffff' },
+  { label: 'Gray', value: '#94a3b8' },
+];
+
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
   const [showPreview, setShowPreview] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
+      Image.configure({ inline: false, allowBase64: false }),
       Link.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer' } }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TextStyle,
       Color,
-      Placeholder.configure({ placeholder: placeholder || 'Compose your email...' }),
+      Placeholder.configure({
+        placeholder: placeholder || 'Write your content here... Use the toolbar above to add headings, links, and photos.',
+      }),
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -93,6 +113,25 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
       return;
     }
     editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!editor) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('pageKey', 'richtext');
+      fd.append('fieldKey', 'inline');
+      const res = await fetch('/api/admin/page-builder/upload', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Upload failed');
+      const { url } = await res.json() as { url: string };
+      editor.chain().focus().setImage({ src: url }).run();
+    } catch (err) {
+      console.error('Image upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (!editor) return null;
@@ -196,6 +235,69 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
           <AlignRight className="h-4 w-4" />
         </ToolbarButton>
 
+        <div className="w-px bg-white/10 mx-1" />
+
+        {/* Color picker */}
+        <div className="relative group">
+          <button
+            type="button"
+            title="Text Color"
+            className="p-1.5 rounded transition-colors text-slate-300 hover:bg-slate-700 hover:text-white flex items-center gap-1"
+          >
+            <span className="text-xs font-bold" style={{ color: editor.getAttributes('textStyle').color || '#ffffff' }}>A</span>
+            <span className="text-[9px] text-slate-400">▼</span>
+          </button>
+          <div className="absolute left-0 top-full mt-1 z-50 hidden group-hover:flex flex-wrap gap-1 p-2 bg-slate-800 border border-white/20 rounded-lg shadow-xl w-40">
+            {TEXT_COLORS.map(c => (
+              <button
+                key={c.value || 'default'}
+                type="button"
+                title={c.label}
+                onClick={() => {
+                  if (c.value === '') {
+                    editor.chain().focus().unsetColor().run();
+                  } else {
+                    editor.chain().focus().setColor(c.value).run();
+                  }
+                }}
+                className="w-6 h-6 rounded border border-white/20 transition-transform hover:scale-110"
+                style={{ backgroundColor: c.value || '#475569' }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="w-px bg-white/10 mx-1" />
+
+        {/* Image upload */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          title="Insert photo"
+          className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+            uploading
+              ? 'text-slate-500 cursor-wait'
+              : 'text-orange-300 hover:bg-orange-500/20 hover:text-orange-200'
+          }`}
+        >
+          {uploading
+            ? <><Loader2 className="h-4 w-4 animate-spin" /><span>Uploading…</span></>
+            : <><ImageIcon className="h-4 w-4" /><span>Photo</span></>
+          }
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={e => {
+            const f = e.target.files?.[0];
+            if (f) void handleImageUpload(f);
+            e.target.value = '';
+          }}
+        />
+
         <div className="flex-1" />
 
         {/* Preview toggle */}
@@ -237,7 +339,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
 
       {/* Editor content */}
       {!showPreview && (
-        <div className="p-4 min-h-[200px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-slate-500 [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-bold [&_.ProseMirror_h2]:text-white [&_.ProseMirror_h3]:text-lg [&_.ProseMirror_h3]:font-semibold [&_.ProseMirror_h3]:text-white [&_.ProseMirror_p]:text-white [&_.ProseMirror_a]:text-blue-400 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6 [&_.ProseMirror_li]:text-white [&_.ProseMirror_strong]:font-bold [&_.ProseMirror_em]:italic [&_.ProseMirror_u]:underline [&_.ProseMirror_hr]:border-white/20">
+        <div className="p-4 min-h-[200px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-slate-500 [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-bold [&_.ProseMirror_h2]:text-white [&_.ProseMirror_h3]:text-lg [&_.ProseMirror_h3]:font-semibold [&_.ProseMirror_h3]:text-white [&_.ProseMirror_p]:text-white [&_.ProseMirror_a]:text-blue-400 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6 [&_.ProseMirror_li]:text-white [&_.ProseMirror_strong]:font-bold [&_.ProseMirror_em]:italic [&_.ProseMirror_u]:underline [&_.ProseMirror_hr]:border-white/20 [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded-lg [&_.ProseMirror_img]:my-3 [&_.ProseMirror_img]:block">
           <EditorContent editor={editor} />
         </div>
       )}
@@ -255,6 +357,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
             {/* Content */}
             <div
               style={{ padding: '32px 24px', background: '#fff', color: '#1e293b', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', lineHeight: '1.6' }}
+              className="[&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-3"
               dangerouslySetInnerHTML={{ __html: editor.getHTML() }}
             />
             {/* Mock footer */}

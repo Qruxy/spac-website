@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     if (!auth.authorized) return auth.error!;
 
     const body = await request.json();
-    const { subject, html, templateId, recipientFilter, sendNotification, manualEmails } = body as {
+    const { subject, html, templateId, recipientFilter, sendNotification, manualEmails, attachments } = body as {
       subject: string;
       html: string;
       templateId?: string;
@@ -87,6 +87,7 @@ export async function POST(request: Request) {
       };
       sendNotification?: boolean;
       manualEmails?: string[];
+      attachments?: Array<{ filename: string; url: string }>;
     };
 
     if (!subject || !html) {
@@ -195,6 +196,7 @@ export async function POST(request: Request) {
       subject: finalSubject,
       html: finalHtml,
       templateId,
+      attachments: attachments?.length ? attachments : undefined,
     });
 
     // Also create in-app notifications if requested
