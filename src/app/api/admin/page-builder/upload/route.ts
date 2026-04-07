@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 
   const uploadUrl = await getSignedUrl(
     s3,
-    new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }),
+    new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType, CacheControl: 'public, max-age=31536000, immutable' }),
     { expiresIn: 300 }, // 5 minutes
   );
 

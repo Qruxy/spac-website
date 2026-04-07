@@ -164,55 +164,80 @@ export function GallerySubmitForm() {
     setError(null);
 
     try {
-      // Step 1: Presigned URL
-      setProgress(10);
-      const presignedRes = await fetch('/api/upload/presigned', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filename: selectedFile.name,
-          contentType: selectedFile.type,
-          size: selectedFile.size,
-          folder: 'gallery',
-        }),
-      });
+      // Step 1: Compress image + generate thumbnail client-side (free, no server cost)
+      setProgress(5);
+      const { compressForUpload, isCompressibleImage } = await import('@/lib/media/compress');
 
-      if (!presignedRes.ok) {
-        const data = await presignedRes.json();
-        throw new Error(data.error || 'Failed to get upload URL');
+      let fullFile = selectedFile;
+      let thumbFile: File | null = null;
+
+      if (isCompressibleImage(selectedFile)) {
+        const { full, thumb } = await compressForUpload(selectedFile);
+        fullFile = full;
+        thumbFile = new File([thumb], `thumb_${selectedFile.name}`, { type: 'image/jpeg' });
       }
+      setProgress(20);
 
-      const { uploadUrl, key } = await presignedRes.json();
-      setProgress(30);
+      // Step 2: Get presigned URLs for full + thumbnail concurrently
+      const getPresigned = async (file: File) => {
+        const res = await fetch('/api/upload/presigned', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type,
+            size: file.size,
+            folder: 'gallery',
+          }),
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({})) as { error?: string };
+          throw new Error(d.error || 'Failed to get upload URL');
+        }
+        return res.json() as Promise<{ uploadUrl: string; key: string; publicUrl: string }>;
+      };
 
-      // Step 2: Upload to S3
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: selectedFile,
-        headers: { 'Content-Type': selectedFile.type },
-      });
+      const [fullPresign, thumbPresign] = await Promise.all([
+        getPresigned(fullFile),
+        thumbFile ? getPresigned(thumbFile) : Promise.resolve(null),
+      ]);
+      setProgress(35);
 
-      if (!uploadRes.ok) throw new Error('Failed to upload to storage');
-      setProgress(70);
+      // Step 3: Upload full + thumbnail to S3 concurrently
+      const s3Put = async (url: string, file: File) => {
+        const res = await fetch(url, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type },
+        });
+        if (!res.ok) throw new Error('Failed to upload to storage');
+      };
 
-      // Step 3: Record in DB
+      await Promise.all([
+        s3Put(fullPresign.uploadUrl, fullFile),
+        thumbPresign ? s3Put(thumbPresign.uploadUrl, thumbFile!) : Promise.resolve(),
+      ]);
+      setProgress(75);
+
+      // Step 4: Record in DB
+      const altText = [
+        description.trim(),
+        equipment.trim() ? `Equipment: ${equipment.trim()}` : '',
+      ].filter(Boolean).join(' | ') || caption.trim();
+
       const body: Record<string, unknown> = {
-        key,
+        key: fullPresign.key,
         originalName: selectedFile.name,
-        mimeType: selectedFile.type,
-        size: selectedFile.size,
+        mimeType: fullFile.type,
+        size: fullFile.size,
         category,
         caption: caption.trim(),
-        altText: description.trim() || caption.trim(),
+        altText,
         folder: 'gallery',
       };
 
       if (selectedEventId) body.eventId = selectedEventId;
-      // Store equipment in the folder field isn't ideal; pass as altText note for now.
-      // The API stores altText → media.alt; equipment is surfaced in the modal via alt.
-      if (equipment.trim()) {
-        body.altText = [description.trim(), `Equipment: ${equipment.trim()}`].filter(Boolean).join(' | ');
-      }
+      if (thumbPresign) body.thumbnailKey = thumbPresign.key;
 
       const completeRes = await fetch('/api/upload/complete', {
         method: 'POST',
@@ -221,7 +246,7 @@ export function GallerySubmitForm() {
       });
 
       if (!completeRes.ok) {
-        const data = await completeRes.json();
+        const data = await completeRes.json().catch(() => ({})) as { error?: string };
         throw new Error(data.error || 'Failed to record upload');
       }
 
@@ -485,7 +510,7 @@ export function GallerySubmitForm() {
           {status === 'uploading' ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              Uploading… {progress}%
+              {progress < 20 ? 'Optimizing…' : progress < 75 ? `Uploading… ${progress}%` : 'Saving…'}
             </>
           ) : (
             <>

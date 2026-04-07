@@ -26,6 +26,7 @@ const UploadCompleteSchema = z.object({
   listingId: z.string().uuid().optional(),
   category: z.enum(['DEEP_SKY', 'PLANETS', 'MOON', 'SUN', 'EVENTS', 'EQUIPMENT', 'NIGHTSCAPE', 'OTHER']).optional(),
   folder: z.string().max(100).optional(),
+  thumbnailKey: z.string().max(500).optional(),
 });
 
 export async function POST(request: Request) {
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
       listingId,
       category,
       folder,
+      thumbnailKey,
     } = result.data;
 
     // Validate key starts with an allowed folder prefix — prevents writes to
@@ -113,18 +115,19 @@ export async function POST(request: Request) {
     const mediaStatus = isTrustedUser ? 'APPROVED' : 'PENDING';
 
     const url = getPublicUrl(key);
-    // Note: thumbnailUrl not stored - Next.js Image handles optimization
+    const thumbnailUrl = thumbnailKey ? getPublicUrl(thumbnailKey) : null;
 
     // Create media record with correct Prisma schema field names
     const media = await prisma.media.create({
       data: {
         uploaded_by_id: session.user.id,
         type,
-        status: mediaStatus, // Auto-approved for trusted users
+        status: mediaStatus,
         filename: originalName,
         mimeType,
         size,
         url,
+        thumbnailUrl,
         width,
         height,
         caption,

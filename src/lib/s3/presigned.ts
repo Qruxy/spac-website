@@ -104,6 +104,7 @@ export async function createPresignedUploadUrl({
     Bucket: bucket,
     Key: key,
     ContentType: contentType,
+    CacheControl: 'public, max-age=31536000, immutable',
   });
 
   const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn });
