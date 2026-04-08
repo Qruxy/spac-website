@@ -32,7 +32,7 @@ const CountUp = nextDynamic(
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'VSA - Very Small Array',
+  title: 'The Very Small Array (VSA)',
   description: 'Learn about SPAC\'s Very Small Array smart telescope program, current observation targets, and how to get involved.',
 };
 
@@ -82,19 +82,16 @@ export default async function VSAPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <FadeIn>
-              {/* "VSA" accent badge */}
-              <div className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10">
+              {/* Main title */}
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-tight">
+                {content['hero_title'] || 'The Very Small Array'}{' '}
                 <GradientText
-                  colors={['#818cf8', '#a78bfa', '#818cf8']}
-                  className="text-sm font-bold tracking-widest uppercase"
+                  colors={['#818cf8', '#a78bfa', '#c084fc', '#818cf8']}
+                  className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight"
                   animationSpeed={8}
                 >
-                  VSA
+                  (VSA)
                 </GradientText>
-              </div>
-              {/* Main title — uses DB field if set, otherwise default */}
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-tight">
-                {content['hero_title'] || 'The Very Small Array'}
               </h1>
             </FadeIn>
             <FadeIn delay={0.2}>
@@ -118,7 +115,82 @@ export default async function VSAPage() {
         </div>
       </section>
 
-      {/* Current Targets — directly under hero */}
+      {/* What is VSA + Community — directly under hero */}
+      <section className="py-20 lg:py-28">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-16 max-w-6xl mx-auto">
+            <FadeIn>
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-8">
+                  {content['what_is_vsa_heading'] || 'What is the VSA?'}
+                </h2>
+                {content['what_is_vsa_body'] ? (
+                  <div
+                    className="prose prose-invert max-w-none prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground
+                               prose-img:rounded-xl prose-img:my-8 prose-img:block prose-img:max-w-full
+                               [&_img]:rounded-xl [&_img]:my-6 [&_img]:block [&_img]:max-w-full"
+                    dangerouslySetInnerHTML={{ __html: content['what_is_vsa_body'] }}
+                  />
+                ) : (
+                  <div className="space-y-5 text-muted-foreground leading-relaxed">
+                    <p>
+                      The Very Small Array is SPAC&apos;s innovative program that brings the power of
+                      smart telescopes to our members. Using automated imaging systems, we capture detailed
+                      images of deep-sky objects, planets, and other celestial wonders.
+                    </p>
+                    <p>
+                      Whether you&apos;re a seasoned astronomer or just starting your journey, the VSA provides
+                      an accessible way to explore the cosmos. Our smart telescopes handle the complex tracking
+                      and imaging, allowing you to focus on learning and discovery.
+                    </p>
+                    <p>
+                      Members can participate in observing sessions, learn image processing techniques,
+                      and contribute to our growing collection of astronomical images.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={0.15}>
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-8">
+                  {content['community_heading'] || 'Join the Community'}
+                </h2>
+                {content['community_body'] ? (
+                  <div
+                    className="prose prose-invert max-w-none mb-8 prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
+                    dangerouslySetInnerHTML={{ __html: content['community_body'] }}
+                  />
+                ) : (
+                  <div className="space-y-5 text-muted-foreground leading-relaxed mb-8">
+                    <p>
+                      Connect with fellow VSA enthusiasts on our Facebook group. Share your observations,
+                      ask questions, and stay updated on upcoming sessions and targets.
+                    </p>
+                    <p>
+                      Our active community includes experienced astrophotographers who are always happy
+                      to help newcomers get started with smart telescope imaging.
+                    </p>
+                  </div>
+                )}
+                <a
+                  href={content['facebook_url'] || 'https://www.facebook.com/groups/spacvsa'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#1877F2] text-white rounded-full px-6 py-3 font-medium hover:bg-[#1877F2]/90 transition-colors"
+                >
+                  <Facebook className="w-5 h-5" />
+                  {content['facebook_button_text'] || 'Join VSA Facebook Group'}
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* Current Targets */}
       <section className="py-20 lg:py-28">
         <div className="container mx-auto px-4">
           <FadeIn>
@@ -248,81 +320,6 @@ export default async function VSAPage() {
           </div>
         </section>
       )}
-
-      {/* About & Community — all text editable via Admin > Page Builder */}
-      <section className="py-24 lg:py-32">
-        <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-16 max-w-6xl mx-auto">
-            <FadeIn>
-              <div>
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-8">
-                  {content['what_is_vsa_heading'] || 'What is the VSA?'}
-                </h2>
-                {content['what_is_vsa_body'] ? (
-                  <div
-                    className="prose prose-invert max-w-none prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground
-                               prose-img:rounded-xl prose-img:my-8 prose-img:block prose-img:max-w-full
-                               [&_img]:rounded-xl [&_img]:my-6 [&_img]:block [&_img]:max-w-full [&_p:empty]:hidden"
-                    dangerouslySetInnerHTML={{ __html: content['what_is_vsa_body'] }}
-                  />
-                ) : (
-                  <div className="space-y-5 text-muted-foreground leading-relaxed">
-                    <p>
-                      The Very Small Array is SPAC&apos;s innovative program that brings the power of
-                      smart telescopes to our members. Using automated imaging systems, we capture detailed
-                      images of deep-sky objects, planets, and other celestial wonders.
-                    </p>
-                    <p>
-                      Whether you&apos;re a seasoned astronomer or just starting your journey, the VSA provides
-                      an accessible way to explore the cosmos. Our smart telescopes handle the complex tracking
-                      and imaging, allowing you to focus on learning and discovery.
-                    </p>
-                    <p>
-                      Members can participate in observing sessions, learn image processing techniques,
-                      and contribute to our growing collection of astronomical images.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.15}>
-              <div>
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-8">
-                  {content['community_heading'] || 'Join the Community'}
-                </h2>
-                {content['community_body'] ? (
-                  <div
-                    className="prose prose-invert max-w-none mb-8 prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
-                    dangerouslySetInnerHTML={{ __html: content['community_body'] }}
-                  />
-                ) : (
-                  <div className="space-y-5 text-muted-foreground leading-relaxed mb-8">
-                    <p>
-                      Connect with fellow VSA enthusiasts on our Facebook group. Share your observations,
-                      ask questions, and stay updated on upcoming sessions and targets.
-                    </p>
-                    <p>
-                      Our active community includes experienced astrophotographers who are always happy
-                      to help newcomers get started with smart telescope imaging.
-                    </p>
-                  </div>
-                )}
-                <a
-                  href={content['facebook_url'] || 'https://www.facebook.com/groups/spacvsa'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-[#1877F2] text-white rounded-full px-6 py-3 font-medium hover:bg-[#1877F2]/90 transition-colors"
-                >
-                  <Facebook className="w-5 h-5" />
-                  {content['facebook_button_text'] || 'Join VSA Facebook Group'}
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
 
       {/* CTA */}
       <section className="py-24 lg:py-32 bg-gradient-to-b from-transparent via-primary/8 to-transparent">
