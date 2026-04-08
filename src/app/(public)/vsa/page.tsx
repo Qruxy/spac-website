@@ -11,6 +11,7 @@ import Image from 'next/image';
 import nextDynamic from 'next/dynamic';
 import { prisma } from '@/lib/db/prisma';
 import { ArrowRight, Facebook, ExternalLink, Star, Calendar } from 'lucide-react';
+import { PageHero } from '@/components/ui/page-hero';
 
 const FadeIn = nextDynamic(
   () => import('@/components/animated/fade-in').then((mod) => mod.FadeIn),
@@ -60,22 +61,12 @@ export default async function VSAPage() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="relative py-32 lg:py-44 overflow-hidden">
-        {content['hero_image'] ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={content['hero_image']}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-background/60 to-background" />
-          </>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/40 via-background to-background" />
-        )}
-        <div className="container mx-auto px-4 relative z-10">
+      <PageHero
+        photoUrl={content['hero_image'] || null}
+        photoPosition={content['hero_photo_position'] || null}
+        auroraColors={['#4F46E5', '#0891B2', '#6B21A8']}
+        className="pt-24 pb-44 lg:pb-52"
+      >
           <div className="max-w-4xl mx-auto text-center">
             <FadeIn>
               {/* Main title */}
@@ -101,8 +92,7 @@ export default async function VSAPage() {
               </div>
             </FadeIn>
           </div>
-        </div>
-      </section>
+      </PageHero>
 
       {/* What is VSA + Community — directly under hero */}
       <section className="py-20 lg:py-28">

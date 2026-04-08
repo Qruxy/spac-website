@@ -82,7 +82,10 @@ export default async function AboutPage() {
   return (
     <div>
       {/* Hero with Aurora Background */}
-      <AboutHeroWithAurora>
+      <AboutHeroWithAurora
+        photoUrl={content['hero_image'] || null}
+        photoPosition={content['hero_photo_position'] || null}
+      >
         <div className="py-8">
           <AboutHeroTitle />
           <p className="text-xl text-muted-foreground max-w-3xl">

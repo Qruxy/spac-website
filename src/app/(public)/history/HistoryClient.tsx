@@ -14,13 +14,16 @@ import { GradientText } from '@/components/animated/gradient-text';
 import { CountUp } from '@/components/animated/count-up';
 import { TiltedCard } from '@/components/animated/tilted-card';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { PageHero } from '@/components/ui/page-hero';
 
 export function HistoryHero() {
   return (
-    <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-slate-900 via-amber-950/20 to-background">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
-
-      <div className="relative z-10 container mx-auto px-4 py-32 text-center">
+    <PageHero
+      auroraColors={['#fcd34d', '#f59e0b', '#7c3aed']}
+      auroraAmplitude={0.9}
+      className="pt-24 pb-44"
+    >
+      <div className="text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -58,7 +61,7 @@ export function HistoryHero() {
           our story spans nearly a century.
         </motion.p>
       </div>
-    </section>
+    </PageHero>
   );
 }
 

@@ -12,7 +12,7 @@ import { PageContentEditor } from '@/components/admin/page-content-editor';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type FieldType = 'text' | 'textarea' | 'richtext' | 'image';
+type FieldType = 'text' | 'textarea' | 'richtext' | 'image' | 'select';
 
 interface FieldDef {
   key: string;
@@ -23,6 +23,7 @@ interface FieldDef {
   maxLength?: number;
   section?: string;
   defaultValue?: string;
+  options?: { value: string; label: string }[];
 }
 
 interface PageDef {
@@ -85,6 +86,13 @@ const PAGES: PageDef[] = [
       { key: 'hero_title', label: 'Page Title', hint: 'The large heading at the top of the About page.', type: 'text', placeholder: 'About SPAC', maxLength: 60, section: 'Page Header', defaultValue: 'About SPAC' },
       { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short description shown just below the title.', type: 'textarea', placeholder: 'Dedicated to astronomy education and stargazing...', maxLength: 200, section: 'Page Header', defaultValue: "For nearly a century, SPAC has been bringing the wonders of the night sky to Tampa Bay." },
       { key: 'hero_image', label: 'Header Photo', hint: 'Optional: a photo used at the top of the About page.', type: 'image', section: 'Page Header' },
+      { key: 'hero_photo_position', label: 'Photo Position', hint: 'Controls which part of the photo is centered in the frame. Useful when the subject is off-center.', type: 'select', section: 'Page Header', defaultValue: 'center center', options: [
+        { value: 'center center', label: 'Center (default)' },
+        { value: 'top center', label: 'Top' },
+        { value: 'bottom center', label: 'Bottom' },
+        { value: 'center left', label: 'Left' },
+        { value: 'center right', label: 'Right' },
+      ]},
       { key: 'about_body', label: 'About Us Body Content', hint: 'An optional extra block of text below the hero. Use this for a custom intro, announcements, or featured content.', type: 'richtext', section: 'Body Content (Optional)' },
       { key: 'mission_heading', label: 'Mission Section Heading', hint: 'The heading above the "Our Mission" section.', type: 'text', placeholder: 'Making Astronomy Accessible to All', maxLength: 80, section: 'Mission Section', defaultValue: 'Making Astronomy Accessible to All' },
       { key: 'mission_body', label: 'Mission Description', hint: 'The text in the Mission section describing what the club is about. Can be 1–3 paragraphs.', type: 'richtext', section: 'Mission Section' },
@@ -195,6 +203,13 @@ const PAGES: PageDef[] = [
       { key: 'hero_title', label: 'Page Title', hint: 'The heading at the top of the Mirror Lab page.', type: 'text', placeholder: 'Mirror Lab', maxLength: 60, section: 'Page Header', defaultValue: 'Mirror Lab' },
       { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short tagline for the mirror lab.', type: 'textarea', placeholder: 'Build your own telescope mirror with guidance from expert club members.', maxLength: 200, section: 'Page Header', defaultValue: 'Build your own telescope mirror with expert guidance from club members.' },
       { key: 'hero_image', label: 'Header Photo', hint: 'A photo for the top of the Mirror Lab page (e.g., someone grinding a mirror).', type: 'image', section: 'Page Header' },
+      { key: 'hero_photo_position', label: 'Photo Position', hint: 'Controls which part of the photo is centered in the frame. Useful when the subject is off-center.', type: 'select', section: 'Page Header', defaultValue: 'center center', options: [
+        { value: 'center center', label: 'Center (default)' },
+        { value: 'top center', label: 'Top' },
+        { value: 'bottom center', label: 'Bottom' },
+        { value: 'center left', label: 'Left' },
+        { value: 'center right', label: 'Right' },
+      ]},
       { key: 'body', label: 'Mirror Lab Content', hint: 'All the details about the mirror lab — how it works, how to participate, schedule, etc.', type: 'richtext', section: 'Page Content' },
     ],
   },
@@ -290,6 +305,13 @@ const PAGES: PageDef[] = [
       { key: 'hero_title', label: 'Page Title', hint: 'The large heading at the top of the VSA page.', type: 'text', placeholder: 'Very Small Array', maxLength: 60, section: 'Page Header', defaultValue: 'Very Small Array' },
       { key: 'hero_subtitle', label: 'Page Subtitle', hint: 'A short tagline describing the VSA program.', type: 'textarea', placeholder: "SPAC's smart telescope loaner program...", maxLength: 200, section: 'Page Header', defaultValue: "SPAC's innovative smart telescope program for all skill levels." },
       { key: 'hero_image', label: 'Header Photo', hint: 'Optional: a photo at the top of the VSA page (e.g. a smart telescope setup or night sky shot).', type: 'image', section: 'Page Header' },
+      { key: 'hero_photo_position', label: 'Photo Position', hint: 'Controls which part of the photo is centered in the frame. Useful when the subject is off-center.', type: 'select', section: 'Page Header', defaultValue: 'center center', options: [
+        { value: 'center center', label: 'Center (default)' },
+        { value: 'top center', label: 'Top' },
+        { value: 'bottom center', label: 'Bottom' },
+        { value: 'center left', label: 'Left' },
+        { value: 'center right', label: 'Right' },
+      ]},
       { key: 'what_is_vsa_heading', label: '"What is the VSA?" Heading', hint: 'The heading for the left column of the about section.', type: 'text', placeholder: 'What is the VSA?', maxLength: 80, section: '"What is the VSA?" Section', defaultValue: 'What is the VSA?' },
       { key: 'what_is_vsa_body', label: '"What is the VSA?" Body Text', hint: 'The description of the VSA program — what it is, how it works, who can participate. This replaces the default 3 paragraphs when filled in.', type: 'richtext', section: '"What is the VSA?" Section' },
       { key: 'community_heading', label: '"Join the Community" Heading', hint: 'The heading for the right column of the about section.', type: 'text', placeholder: 'Join the Community', maxLength: 80, section: '"Join the Community" Section', defaultValue: 'Join the Community' },
@@ -308,6 +330,7 @@ const FIELD_TYPE_META: Record<FieldType, { label: string; pillClass: string; dot
   textarea: { label: 'Paragraph',    pillClass: 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-400/20',      dotClass: 'bg-blue-400'   },
   richtext: { label: 'Rich Content', pillClass: 'bg-purple-500/15 text-purple-300 ring-1 ring-purple-400/20', dotClass: 'bg-purple-400' },
   image:    { label: 'Image',        pillClass: 'bg-orange-500/15 text-orange-300 ring-1 ring-orange-400/20', dotClass: 'bg-orange-400' },
+  select:   { label: 'Select',       pillClass: 'bg-cyan-500/15 text-cyan-300 ring-1 ring-cyan-400/20',       dotClass: 'bg-cyan-400'   },
 };
 
 // Section accent colors (cycles through a palette)
@@ -759,6 +782,14 @@ function FieldCard({
           />
         )}
 
+        {field.type === 'select' && (
+          <SelectInput
+            value={value}
+            options={field.options || []}
+            onChange={onSave}
+          />
+        )}
+
         {hasError && (
           <p className="mt-2 text-xs text-red-400 flex items-center gap-1.5">
             <AlertCircle className="h-3 w-3 shrink-0" />
@@ -829,6 +860,37 @@ function TextareaInput({
           {' / '}{maxLength}
         </p>
       )}
+    </div>
+  );
+}
+
+// ─── Select Input ─────────────────────────────────────────────────────────────
+
+function SelectInput({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex items-center bg-black/30 border border-white/[0.09] rounded-xl focus-within:border-indigo-500/60 focus-within:ring-1 focus-within:ring-indigo-500/20 transition-all px-3.5">
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="flex-1 py-2.5 bg-transparent text-white/90 text-sm focus:outline-none appearance-none cursor-pointer"
+      >
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value} style={{ background: '#0d1117', color: '#e2e8f0' }}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <svg className="h-4 w-4 text-white/30 shrink-0 pointer-events-none" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 10.94L2.53 5.47l1.06-1.06L8 8.82l4.41-4.41 1.06 1.06z"/>
+      </svg>
     </div>
   );
 }

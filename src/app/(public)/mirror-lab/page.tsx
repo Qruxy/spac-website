@@ -11,6 +11,9 @@ import Image from 'next/image';
 import nextDynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
 import { MirrorLabHero, MirrorLabGallery, ProcessStep } from './MirrorLabClient';
+import { prisma } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 const GradientText = nextDynamic(
   () => import('@/components/animated/gradient-text').then((mod) => mod.GradientText),
@@ -98,11 +101,15 @@ const galleryImages = [
   { src: 'https://picsum.photos/seed/mirror6/600/400', alt: 'Polishing session', caption: 'Fine polishing with pitch lap' },
 ];
 
-export default function MirrorLabPage() {
+export default async function MirrorLabPage() {
+  const contentRows = await prisma.siteContent.findMany({ where: { pageKey: 'mirror-lab' } });
+  const content: Record<string, string> = {};
+  for (const r of contentRows) content[r.fieldKey] = r.value;
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <MirrorLabHero />
+      <MirrorLabHero heroImage={content['hero_image'] || null} heroPosition={content['hero_photo_position'] || null} />
 
       {/* What is Mirror Grinding */}
       <section className="py-24 lg:py-32">

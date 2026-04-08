@@ -11,6 +11,7 @@ import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
 import { MapPin, Clock, Calendar, Mail, Video, FileText, ExternalLink, ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/db';
+import { PageHero } from '@/components/ui/page-hero';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,28 +60,25 @@ export default async function GeneralMeetingsPage() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="relative py-32 lg:py-40 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
-        <div className="container mx-auto px-4 relative">
-          <FadeIn>
-            <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-5xl md:text-7xl font-bold text-foreground tracking-tight mb-6">
-                General{' '}
-                <GradientText
-                  colors={['#818cf8', '#a78bfa', '#818cf8']}
-                  className="text-5xl md:text-7xl font-bold"
-                  animationSpeed={8}
-                >
-                  Meetings
-                </GradientText>
-              </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                {heroSubtitle}
-              </p>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
+      <PageHero auroraColors={['#6B21A8', '#4F46E5', '#0891B2']}>
+        <FadeIn>
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-5xl md:text-7xl font-bold text-foreground tracking-tight mb-6">
+              General{' '}
+              <GradientText
+                colors={['#818cf8', '#a78bfa', '#818cf8']}
+                className="text-5xl md:text-7xl font-bold"
+                animationSpeed={8}
+              >
+                Meetings
+              </GradientText>
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {heroSubtitle}
+            </p>
+          </div>
+        </FadeIn>
+      </PageHero>
 
       {/* Page Builder Body Content — edited via Admin > Page Builder */}
       {body && (

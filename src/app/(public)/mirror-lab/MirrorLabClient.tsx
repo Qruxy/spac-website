@@ -12,13 +12,17 @@ import Image from 'next/image';
 import { motion, useInView } from 'motion/react';
 import { GradientText } from '@/components/animated/gradient-text';
 import { CountUp } from '@/components/animated/count-up';
+import { PageHero } from '@/components/ui/page-hero';
 
-export function MirrorLabHero() {
+export function MirrorLabHero({ heroImage, heroPosition }: { heroImage?: string | null; heroPosition?: string | null }) {
   return (
-    <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-slate-900 via-indigo-950/50 to-background">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
-
-      <div className="relative z-10 container mx-auto px-4 py-32 text-center">
+    <PageHero
+      photoUrl={heroImage}
+      photoPosition={heroPosition}
+      auroraColors={['#818cf8', '#a78bfa', '#818cf8']}
+      className="pt-24 pb-44"
+    >
+      <div className="text-center">
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -59,17 +63,17 @@ export function MirrorLabHero() {
             <div className="text-4xl md:text-5xl font-bold text-foreground tabular-nums">
               <CountUp to={100} duration={2} />+
             </div>
-            <div className="text-sm text-muted-foreground mt-1">Mirrors Completed</div>
+            <div className="text-sm text-muted-foreground mt-1">Mirrors Made</div>
           </div>
           <div className="text-center">
             <div className="text-4xl md:text-5xl font-bold text-foreground tabular-nums">
-              6&quot;&ndash;16&quot;
+              <CountUp to={12} duration={2} />
             </div>
-            <div className="text-sm text-muted-foreground mt-1">Mirror Sizes</div>
+            <div className="text-sm text-muted-foreground mt-1">Max Aperture (in)</div>
           </div>
         </motion.div>
       </div>
-    </section>
+    </PageHero>
   );
 }
 
