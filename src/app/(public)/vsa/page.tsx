@@ -12,10 +12,6 @@ import nextDynamic from 'next/dynamic';
 import { prisma } from '@/lib/db/prisma';
 import { ArrowRight, Facebook, ExternalLink, Star, Calendar } from 'lucide-react';
 
-const GradientText = nextDynamic(
-  () => import('@/components/animated/gradient-text').then((mod) => mod.GradientText),
-  { ssr: false }
-);
 const FadeIn = nextDynamic(
   () => import('@/components/animated/fade-in').then((mod) => mod.FadeIn),
   { ssr: false }
@@ -84,14 +80,7 @@ export default async function VSAPage() {
             <FadeIn>
               {/* Main title */}
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-tight">
-                {content['hero_title'] || 'The Very Small Array'}{' '}
-                <GradientText
-                  colors={['#818cf8', '#a78bfa', '#c084fc', '#818cf8']}
-                  className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight"
-                  animationSpeed={8}
-                >
-                  (VSA)
-                </GradientText>
+                {content['hero_title'] || 'The Very Small Array'}
               </h1>
             </FadeIn>
             <FadeIn delay={0.2}>
@@ -204,7 +193,7 @@ export default async function VSAPage() {
             </div>
           </FadeIn>
 
-          {targets.length > 0 ? (
+          {targets.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {targets.map((target, index) => (
                 <FadeIn key={target.id} delay={index * 0.1}>
@@ -251,14 +240,6 @@ export default async function VSAPage() {
                 </FadeIn>
               ))}
             </div>
-          ) : (
-            <FadeIn>
-              <div className="text-center py-16">
-                <p className="text-lg text-muted-foreground">
-                  No current targets. New observation targets are added regularly\u2014check back soon.
-                </p>
-              </div>
-            </FadeIn>
           )}
         </div>
       </section>

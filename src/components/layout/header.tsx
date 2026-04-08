@@ -49,7 +49,7 @@ const navigation = [
 
 // Additional pages for expanded navigation (mobile menu & dropdown)
 const moreLinks = [
-  { name: 'VSA', href: '/vsa', icon: GraduationCap, membersOnly: false },
+  { name: 'Very Small Array', href: '/vsa', icon: GraduationCap, membersOnly: false },
   { name: 'Newsletter', href: '/newsletter', icon: Newspaper, membersOnly: true },
   { name: 'Donations', href: '/donations', icon: Heart, membersOnly: false },
   { name: 'OBS Star Party', href: '/obs', icon: Star, membersOnly: false },
