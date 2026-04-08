@@ -5,6 +5,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import TextStyle from '@tiptap/extension-text-style';
+import FontSize from '@tiptap/extension-font-size';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
@@ -12,8 +13,17 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon,
   AlignLeft, AlignCenter, AlignRight, List, ListOrdered,
-  Eye, EyeOff, Minus, Image as ImageIcon, Loader2,
+  Eye, EyeOff, Minus, Image as ImageIcon, Loader2, ChevronDown,
 } from 'lucide-react';
+
+// ─── Font size presets ────────────────────────────────────────────────────────
+const FONT_SIZES = [
+  { label: 'Small',   value: '0.8rem'  },
+  { label: 'Normal',  value: ''        },   // empty = remove custom size
+  { label: 'Large',   value: '1.2rem'  },
+  { label: 'X-Large', value: '1.5rem'  },
+  { label: 'Huge',    value: '2rem'    },
+];
 
 interface PageContentEditorProps {
   value: string;
@@ -25,6 +35,7 @@ interface PageContentEditorProps {
 export function PageContentEditor({ value, onChange, placeholder, minHeight = 200 }: PageContentEditorProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [fontSizeOpen, setFontSizeOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -35,14 +46,13 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
       Link.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TextStyle,
-      Placeholder.configure({ placeholder: placeholder || 'Write your content here... Use the toolbar above to add headings, links, and photos.' }),
+      FontSize,
+      Placeholder.configure({ placeholder: placeholder || 'Write your content here… Use the toolbar to add headings, font sizes, links, and photos.' }),
     ],
     content: value,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
-      attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none',
-      },
+      attributes: { class: 'prose prose-sm max-w-none focus:outline-none' },
     },
     immediatelyRender: false,
   });
@@ -76,30 +86,88 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
     }
   };
 
+  // Get the label of the currently active font size
+  const activeFontSize = editor?.getAttributes('textStyle').fontSize as string | undefined;
+  const activeFontLabel = FONT_SIZES.find(f => f.value === (activeFontSize ?? ''))?.label ?? 'Size';
+
   if (!editor) return null;
 
   return (
     <div className="border border-white/10 rounded-xl overflow-hidden bg-slate-900/40">
-      {/* Toolbar */}
+      {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center gap-0.5 p-2 bg-slate-800/80 border-b border-white/10">
+
+        {/* Text style */}
         <Btn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Bold"><Bold className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Italic"><Italic className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Underline"><UnderlineIcon className="h-3.5 w-3.5" /></Btn>
+
         <div className="w-px h-5 bg-white/10 mx-1" />
+
+        {/* Font size dropdown */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setFontSizeOpen(v => !v)}
+            title="Font size"
+            className="flex items-center gap-1 px-2 py-1.5 rounded text-xs text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+          >
+            <span className="min-w-[3.5rem] text-left">{activeFontLabel}</span>
+            <ChevronDown className="h-3 w-3 opacity-60" />
+          </button>
+          {fontSizeOpen && (
+            <div className="absolute top-full left-0 mt-1 z-50 bg-slate-800 border border-white/10 rounded-lg shadow-xl py-1 min-w-[7rem]">
+              {FONT_SIZES.map(({ label, value }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    if (value) {
+                      editor.chain().focus().setFontSize(value).run();
+                    } else {
+                      editor.chain().focus().unsetFontSize().run();
+                    }
+                    setFontSizeOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs transition-colors hover:bg-slate-700 ${
+                    (activeFontSize ?? '') === value ? 'text-indigo-400 font-medium' : 'text-slate-200'
+                  }`}
+                >
+                  <span style={{ fontSize: value || '0.875rem' }}>{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="w-px h-5 bg-white/10 mx-1" />
+
+        {/* Headings */}
         <Btn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} title="Heading 2"><span className="text-[11px] font-bold">H2</span></Btn>
         <Btn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive('heading', { level: 3 })} title="Heading 3"><span className="text-[11px] font-bold">H3</span></Btn>
+
         <div className="w-px h-5 bg-white/10 mx-1" />
+
+        {/* Lists */}
         <Btn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} title="Bullet list"><List className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Numbered list"><ListOrdered className="h-3.5 w-3.5" /></Btn>
+
         <div className="w-px h-5 bg-white/10 mx-1" />
+
+        {/* Link + rule */}
         <Btn onClick={setLink} active={editor.isActive('link')} title="Insert link"><LinkIcon className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => editor.chain().focus().setHorizontalRule().run()} active={false} title="Divider line"><Minus className="h-3.5 w-3.5" /></Btn>
+
         <div className="w-px h-5 bg-white/10 mx-1" />
+
+        {/* Alignment */}
         <Btn onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Align left"><AlignLeft className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })} title="Align center"><AlignCenter className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Align right"><AlignRight className="h-3.5 w-3.5" /></Btn>
+
         <div className="w-px h-5 bg-white/10 mx-1" />
-        {/* Image upload button */}
+
+        {/* Image upload */}
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -127,7 +195,10 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
             e.target.value = '';
           }}
         />
+
         <div className="flex-1" />
+
+        {/* Preview toggle */}
         <button
           type="button"
           onClick={() => setShowPreview(v => !v)}
@@ -139,7 +210,7 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
         </button>
       </div>
 
-      {/* Editor */}
+      {/* ── Editor area ── */}
       {!showPreview && (
         <div
           style={{ minHeight }}
@@ -148,7 +219,7 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
             [&_.ProseMirror]:text-slate-100
             [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-bold [&_.ProseMirror_h2]:text-white [&_.ProseMirror_h2]:mt-4 [&_.ProseMirror_h2]:mb-2
             [&_.ProseMirror_h3]:text-lg [&_.ProseMirror_h3]:font-semibold [&_.ProseMirror_h3]:text-white [&_.ProseMirror_h3]:mt-3 [&_.ProseMirror_h3]:mb-1
-            [&_.ProseMirror_p]:leading-relaxed [&_.ProseMirror_p]:mb-2
+            [&_.ProseMirror_p]:leading-relaxed [&_.ProseMirror_p]:mb-3 [&_.ProseMirror_p]:min-h-[1.4em]
             [&_.ProseMirror_a]:text-blue-400 [&_.ProseMirror_a]:underline
             [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6 [&_.ProseMirror_ul]:mb-2
             [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6 [&_.ProseMirror_ol]:mb-2
@@ -162,17 +233,18 @@ export function PageContentEditor({ value, onChange, placeholder, minHeight = 20
             [&_.ProseMirror_.is-editor-empty:first-child::before]:float-left
             [&_.ProseMirror_.is-editor-empty:first-child::before]:pointer-events-none
           `}
+          onClick={() => fontSizeOpen && setFontSizeOpen(false)}
         >
           <EditorContent editor={editor} />
         </div>
       )}
 
-      {/* Preview — renders like actual site content */}
+      {/* ── Preview ── */}
       {showPreview && (
         <div className="p-4">
           <div className="bg-white rounded-lg p-6 max-w-2xl mx-auto shadow-lg">
             <div
-              className="prose prose-sm max-w-none text-gray-800 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-3"
+              className="prose prose-sm max-w-none text-gray-800 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-3 [&_p:empty]:min-h-[1.2em]"
               dangerouslySetInnerHTML={{ __html: editor.getHTML() }}
             />
           </div>

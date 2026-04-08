@@ -245,3 +245,13 @@ select option {
   border: none;
   margin: 0;
 }
+
+/* ── Rich text output: empty paragraphs keep their height so pressing Enter
+   twice creates visible spacing. Tiptap outputs <p></p> for blank lines —
+   without min-height they collapse due to CSS margin-collapsing.           */
+.prose p:empty {
+  min-height: 1.2em;
+}
+.prose p:empty::before {
+  content: '\00a0';   /* non-breaking space — prevents full collapse */
+}
