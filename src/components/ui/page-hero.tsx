@@ -71,7 +71,7 @@ export function PageHero({
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(to bottom, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.68) 45%, rgba(0,0,0,0.35) 72%, var(--background) 100%)',
+              'linear-gradient(to bottom, rgba(0,0,0,0.93) 0%, rgba(0,0,0,0.90) 50%, rgba(0,0,0,0.65) 78%, var(--background) 100%)',
           }}
         />
       ) : (
