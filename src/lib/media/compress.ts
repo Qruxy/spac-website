@@ -25,7 +25,11 @@ export async function compressForUpload(file: File): Promise<CompressResult> {
   // Dynamically import to avoid SSR issues (canvas is browser-only)
   const imageCompression = (await import('browser-image-compression')).default;
 
-  const [full, thumb] = await Promise.all([
+  // NOTE: preserveExif is intentionally omitted. browser-image-compression v2.0.2
+  // has a bug where preserveExif on JPEG files resolves the promise with a
+  // Promise<Blob> instead of a File (copyExifWithoutOrientation is not awaited
+  // internally), which causes filename/contentType/size to be undefined on upload.
+  const [rawFull, rawThumb] = await Promise.all([
     imageCompression(file, {
       maxWidthOrHeight: 2400,
       maxSizeMB: 1.5,
@@ -33,7 +37,6 @@ export async function compressForUpload(file: File): Promise<CompressResult> {
       useWebWorker: true,
       fileType: 'image/jpeg',
       alwaysKeepResolution: false,
-      preserveExif: true, // keep EXIF for astronomy metadata
     }),
     imageCompression(file, {
       maxWidthOrHeight: 600,
@@ -43,6 +46,15 @@ export async function compressForUpload(file: File): Promise<CompressResult> {
       fileType: 'image/jpeg',
     }),
   ]);
+
+  // Normalise to a real File — some browser-image-compression paths return a
+  // Blob (no .name / .size) rather than a File. Always wrap to be safe.
+  const toFile = (blob: Blob, name: string) =>
+    blob instanceof File && blob.name ? blob : new File([blob], name, { type: 'image/jpeg' });
+
+  const baseName = file.name.replace(/\.[^.]+$/, '');
+  const full  = toFile(rawFull  as unknown as Blob, `${baseName}.jpg`);
+  const thumb = toFile(rawThumb as unknown as Blob, `thumb_${baseName}.jpg`);
 
   return { full, thumb };
 }
