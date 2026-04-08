@@ -9,6 +9,7 @@ import TextStyle from '@tiptap/extension-text-style';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
+import { Extension } from '@tiptap/core';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Bold,
@@ -39,6 +40,41 @@ const ResizableImage = Image.extend({
     };
   },
 });
+
+// Custom FontSize extension — works on top of TextStyle (no external package needed)
+const FontSize = Extension.create({
+  name: 'fontSize',
+  addOptions() { return { types: ['textStyle'] }; },
+  addGlobalAttributes() {
+    return [{
+      types: this.options.types,
+      attributes: {
+        fontSize: {
+          default: null,
+          parseHTML: (el) => el.style.fontSize || null,
+          renderHTML: (attrs) => attrs.fontSize ? { style: `font-size: ${attrs.fontSize as string}` } : {},
+        },
+      },
+    }];
+  },
+  addCommands() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return {
+      setFontSize: (size: string) => ({ chain }: any) =>
+        chain().setMark('textStyle', { fontSize: size }).run(),
+      unsetFontSize: () => ({ chain }: any) =>
+        chain().setMark('textStyle', { fontSize: null }).run(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+  },
+});
+
+const FONT_SIZES = [
+  { label: 'Small',  value: '0.85em' },
+  { label: 'Normal', value: ''       },
+  { label: 'Large',  value: '1.2em'  },
+  { label: 'XL',     value: '1.5em'  },
+];
 
 interface RichTextEditorProps {
   value: string;
@@ -93,6 +129,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
       Link.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer' } }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TextStyle,
+      FontSize,
       Color,
       Placeholder.configure({
         placeholder: placeholder || 'Write your content here... Use the toolbar above to add headings, links, and photos.',
@@ -108,7 +145,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[200px] text-white',
+        class: 'prose prose-invert max-w-none focus:outline-none min-h-[200px]',
       },
     },
     immediatelyRender: false,
@@ -203,6 +240,38 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
         >
           <span className="text-xs font-bold">H3</span>
         </ToolbarButton>
+
+        <div className="w-px bg-white/10 mx-1" />
+
+        {/* Font size */}
+        <div className="relative group">
+          <button
+            type="button"
+            title="Font size"
+            className="px-2 py-1.5 rounded text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white flex items-center gap-1 transition-colors"
+          >
+            <span>Aa</span>
+            <span className="text-[9px] text-slate-400">▼</span>
+          </button>
+          <div className="absolute left-0 top-full mt-1 z-50 hidden group-hover:flex flex-col gap-0.5 p-1.5 bg-slate-800 border border-white/20 rounded-lg shadow-xl min-w-[100px]">
+            {FONT_SIZES.map((s) => (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const chain = editor.chain().focus() as any;
+                  if (!s.value) chain.unsetFontSize().run();
+                  else chain.setFontSize(s.value).run();
+                }}
+                className="px-3 py-1.5 rounded text-left text-slate-200 hover:bg-slate-700 transition-colors"
+                style={{ fontSize: s.value || '1em' }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="w-px bg-white/10 mx-1" />
 
