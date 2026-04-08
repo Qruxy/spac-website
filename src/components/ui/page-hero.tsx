@@ -65,12 +65,13 @@ export function PageHero({
 
       {/* ── Overlay: darkens photo / stabilises bg for text legibility ──── */}
       {hasPhoto ? (
-        /* Photo pages: cinematic top-dark → bg colour blend */
+        /* Photo pages: heavy dark overlay so text is always readable,
+           fading to page background at the bottom for a seamless blend. */
         <div
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 40%, var(--background) 100%)',
+              'linear-gradient(to bottom, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.68) 45%, rgba(0,0,0,0.35) 72%, var(--background) 100%)',
           }}
         />
       ) : (
