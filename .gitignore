@@ -69,3 +69,4 @@ data/
 
 # OS files
 Thumbs.db
+pnpm-lock.yaml
