@@ -13,29 +13,38 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM   = process.env.RESEND_FROM ?? 'SPAC <noreply@stpeteastronomyclub.org>';
 
 function dateRange(group: string) {
-  const now    = new Date();
-  const DAY    = 24 * 60 * 60 * 1000;
+  const now = new Date();
+  const DAY = 24 * 60 * 60 * 1000;
+
+  // Helper: matches members regardless of whether their renewal date is in
+  // paypalCurrentPeriodEnd (live PayPal subscribers) or endDate (legacy imports).
+  function renewalBetween(gte: Date, lte: Date) {
+    return {
+      OR: [
+        { paypalCurrentPeriodEnd: { gte, lte } },
+        { AND: [{ paypalCurrentPeriodEnd: null }, { endDate: { gte, lte } }] },
+      ],
+    };
+  }
+
   if (group === 'upcoming30') {
-    // Expiring in next 30 days — still active
     return {
       status: 'ACTIVE' as const,
-      paypalCurrentPeriodEnd: { gte: now, lte: new Date(now.getTime() + 30 * DAY) },
+      ...renewalBetween(now, new Date(now.getTime() + 30 * DAY)),
     };
   }
   if (group === 'thisMonth') {
-    // Expiring this calendar month
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
     return {
       status: 'ACTIVE' as const,
-      paypalCurrentPeriodEnd: { gte: start, lte: end },
+      ...renewalBetween(start, end),
     };
   }
   if (group === 'expired30') {
-    // Expired in last 30 days
     return {
       status: 'EXPIRED' as const,
-      paypalCurrentPeriodEnd: { gte: new Date(now.getTime() - 30 * DAY), lte: now },
+      ...renewalBetween(new Date(now.getTime() - 30 * DAY), now),
     };
   }
   return null;
@@ -56,7 +65,9 @@ export async function POST(request: Request) {
   try {
     const memberships = await prisma.membership.findMany({
       where,
-      include: {
+      select: {
+        endDate:               true,
+        paypalCurrentPeriodEnd: true,
         user: { select: { firstName: true, lastName: true, email: true } },
       },
     });
@@ -80,8 +91,9 @@ export async function POST(request: Request) {
 
     for (const m of memberships) {
       const firstName = m.user.firstName || m.user.lastName || 'Member';
-      const expires   = m.paypalCurrentPeriodEnd
-        ? new Date(m.paypalCurrentPeriodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      const renewalDate = m.paypalCurrentPeriodEnd ?? m.endDate;
+      const expires = renewalDate
+        ? new Date(renewalDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
         : 'soon';
 
       const body = customMessage

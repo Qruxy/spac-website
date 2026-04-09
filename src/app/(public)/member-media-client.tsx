@@ -33,8 +33,8 @@ export function MemberMediaClient({ images }: MemberMediaClientProps) {
   if (!isMounted) {
     // SSR placeholder
     return (
-      <div className="w-[400px] h-[400px] md:w-[600px] md:h-[400px] flex items-center justify-center">
-        <div className="animate-pulse bg-muted rounded-[20px] w-[200px] h-[200px]" />
+      <div className="w-full max-w-[600px] h-[300px] sm:h-[400px] flex items-center justify-center">
+        <div className="animate-pulse bg-muted rounded-[20px] w-[160px] h-[160px] sm:w-[200px] sm:h-[200px]" />
       </div>
     );
   }

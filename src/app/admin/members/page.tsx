@@ -577,7 +577,7 @@ export default function AdminMembersPage() {
                   <p className="text-sm text-gray-400">Loading...</p>
                 ) : membershipDetail ? (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs text-gray-400 block mb-0.5">Type</label>
                         <p className="text-sm font-medium capitalize">{membershipDetail.type.toLowerCase()}</p>

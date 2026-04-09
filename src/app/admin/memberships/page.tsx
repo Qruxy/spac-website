@@ -16,6 +16,7 @@ interface MembershipRecord {
   type: MembershipType;
   interval: string | null;
   startDate: string | null;
+  endDate: string | null;
   paypalCurrentPeriodEnd: string | null;
   paypalSubscriptionId: string | null;
   createdAt: string;
@@ -286,7 +287,9 @@ export default function AdminMembershipsPage() {
               ) : (
                 memberships.map(m => {
                   const sc = STATUS_CONFIG[m.status] ?? STATUS_CONFIG.EXPIRED;
-                  const days = daysUntil(m.paypalCurrentPeriodEnd);
+                  // Use paypalCurrentPeriodEnd for live PayPal subscribers, endDate for imported members
+                  const effectiveRenewalDate = m.paypalCurrentPeriodEnd ?? m.endDate;
+                  const days = daysUntil(effectiveRenewalDate);
                   const renewalUrgent = days !== null && days <= 30 && m.status === 'ACTIVE';
                   const renewalSoon   = days !== null && days <= 60 && m.status === 'ACTIVE';
                   return (
@@ -321,10 +324,10 @@ export default function AdminMembershipsPage() {
 
                       {/* Renewal */}
                       <td className="px-4 py-3">
-                        {m.paypalCurrentPeriodEnd ? (
+                        {effectiveRenewalDate ? (
                           <div>
                             <p className={`text-sm font-medium ${renewalUrgent ? 'text-orange-400' : renewalSoon ? 'text-yellow-400' : 'text-foreground'}`}>
-                              {fmt(m.paypalCurrentPeriodEnd)}
+                              {fmt(effectiveRenewalDate)}
                             </p>
                             {days !== null && m.status === 'ACTIVE' && (
                               <p className={`text-xs ${renewalUrgent ? 'text-orange-400' : renewalSoon ? 'text-yellow-400' : 'text-muted-foreground'}`}>

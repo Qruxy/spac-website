@@ -65,10 +65,15 @@ export async function GET(request: Request) {
   if (type)   where.type   = type;
 
   if (renewalDays !== null) {
-    const now = new Date();
+    const now    = new Date();
     const cutoff = new Date(now.getTime() + renewalDays * 24 * 60 * 60 * 1000);
     where.status = 'ACTIVE';
-    where.paypalCurrentPeriodEnd = { gte: now, lte: cutoff };
+    // Use endDate as the canonical renewal date; paypalCurrentPeriodEnd overrides
+    // for PayPal subscribers but is NULL for all legacy-imported members.
+    where.OR = [
+      { paypalCurrentPeriodEnd: { gte: now, lte: cutoff } },
+      { AND: [{ paypalCurrentPeriodEnd: null }, { endDate: { gte: now, lte: cutoff } }] },
+    ];
   }
 
   if (search) {
@@ -114,7 +119,7 @@ export async function GET(request: Request) {
           m.type,
           m.status,
           fmt(m.startDate),
-          fmt(m.paypalCurrentPeriodEnd),
+          fmt(m.paypalCurrentPeriodEnd ?? m.endDate),
           m.paypalSubscriptionId ?? '',
         ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')),
       ].join('\n');

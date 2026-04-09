@@ -12,6 +12,7 @@ interface RenewalMember {
   id: string;
   status: string;
   type: string;
+  endDate: string | null;
   paypalCurrentPeriodEnd: string | null;
   user: { id: string; firstName: string | null; lastName: string | null; email: string; phone: string | null };
 }
@@ -62,9 +63,10 @@ function RenewalGroup({
     try {
       const p = new URLSearchParams({ renewalDays: group === 'upcoming30' ? '30' : group === 'thisMonth' ? '31' : '0', status: group === 'expired30' ? 'EXPIRED' : 'ACTIVE', limit: '200' });
       // Use the memberships API with appropriate filter
-      let url = `/api/admin/memberships?limit=200&sort=paypalCurrentPeriodEnd&order=asc`;
+      // renewalDays param filters on endDate (with paypalCurrentPeriodEnd fallback for PayPal members)
+      let url = `/api/admin/memberships?limit=200&sort=endDate&order=asc`;
       if (group === 'upcoming30') url += '&renewalDays=30';
-      if (group === 'thisMonth')  url += '&renewalDays=31'; // approximate
+      if (group === 'thisMonth')  url += '&renewalDays=31';
       if (group === 'expired30')  url += '&status=EXPIRED';
       const res = await fetch(url);
       const data = await res.json();
@@ -166,7 +168,7 @@ function RenewalGroup({
                       <td className="px-4 py-2 font-medium text-foreground">{memberName(m.user)}</td>
                       <td className="px-4 py-2 text-muted-foreground">{m.user.email}</td>
                       <td className="px-4 py-2 text-muted-foreground capitalize">{m.type.toLowerCase()}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{fmt(m.paypalCurrentPeriodEnd)}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{fmt(m.paypalCurrentPeriodEnd ?? m.endDate)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -266,7 +268,7 @@ function PayPalTransactions() {
 
       {/* Totals */}
       {loaded && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Gross Revenue', value: fmtAmt(gross), color: 'text-green-500' },
             { label: 'PayPal Fees',   value: fmtAmt(fees),  color: 'text-red-400'   },
@@ -283,7 +285,8 @@ function PayPalTransactions() {
       {/* Table */}
       {loaded && (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-0">
+
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
@@ -370,7 +373,7 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Tab nav */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-none">
         {([
           { id: 'renewal', label: 'Renewal Email Groups', icon: <Mail className="h-4 w-4" /> },
           { id: 'paypal',  label: 'PayPal Transactions',  icon: <CreditCard className="h-4 w-4" /> },

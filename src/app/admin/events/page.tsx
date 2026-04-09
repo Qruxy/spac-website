@@ -901,7 +901,7 @@ function EventFormPanel({ event, onClose, onSubmit }: EventFormPanelProps) {
           </div>
 
           {/* Type and Status */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-white/70 mb-2">
                 Type <span className="text-red-400">*</span>
@@ -939,7 +939,7 @@ function EventFormPanel({ event, onClose, onSubmit }: EventFormPanelProps) {
           </div>
 
           {/* Dates */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-white/70 mb-2">
                 Start Date <span className="text-red-400">*</span>
@@ -1133,7 +1133,7 @@ function EventFormPanel({ event, onClose, onSubmit }: EventFormPanelProps) {
 
           {/* Pricing */}
           {!formData.isFreeEvent && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white/70 mb-2">
                   Member Price
