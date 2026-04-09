@@ -61,14 +61,17 @@ export async function compressForUpload(file: File): Promise<CompressResult> {
 
 /**
  * Compress a single image without generating a thumbnail.
- * Use for non-gallery images (event covers, page builder, etc.)
+ * Use for non-gallery images (event covers, page builder, rich-text, etc.)
+ *
+ * Uses the same toFile() normaliser as compressForUpload so that .name,
+ * .type, and .size are always defined regardless of what the library returns.
  */
 export async function compressImage(
   file: File,
   opts: { maxPx?: number; maxMB?: number; quality?: number } = {}
 ): Promise<File> {
   const imageCompression = (await import('browser-image-compression')).default;
-  return imageCompression(file, {
+  const result = await imageCompression(file, {
     maxWidthOrHeight: opts.maxPx ?? 2400,
     maxSizeMB: opts.maxMB ?? 1.5,
     initialQuality: opts.quality ?? 0.85,
@@ -76,6 +79,12 @@ export async function compressImage(
     fileType: 'image/jpeg',
     alwaysKeepResolution: false,
   });
+  // Normalise: library may return a Blob (no .name/.size) on some browsers/versions
+  const baseName = file.name.replace(/\.[^.]+$/, '');
+  const blob = result as unknown as Blob;
+  return blob instanceof File && (blob as File).name
+    ? (blob as File)
+    : new File([blob], `${baseName}.jpg`, { type: 'image/jpeg' });
 }
 
 /** Returns true if the file is an image (safe to compress) */
