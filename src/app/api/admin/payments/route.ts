@@ -71,6 +71,12 @@ export async function GET(request: Request) {
               lastName:  true,
               name:      true,
               email:     true,
+              membership: {
+                select: {
+                  type:     true,
+                  interval: true,
+                },
+              },
             },
           },
           registrations: {
