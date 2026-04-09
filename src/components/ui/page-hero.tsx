@@ -65,15 +65,15 @@ export function PageHero({
 
       {/* ── Overlay: darkens photo / stabilises bg for text legibility ──── */}
       {hasPhoto ? (
-        /* Photo pages: heavy dark overlay so text is always readable,
-           fading to page background at the bottom for a seamless blend. */
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(to bottom, rgba(0,0,0,0.93) 0%, rgba(0,0,0,0.90) 50%, rgba(0,0,0,0.65) 78%, var(--background) 100%)',
-          }}
-        />
+        <>
+          {/* Flat dark scrim — photo is just a subtle texture behind text */}
+          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.91)' }} />
+          {/* Fade to page bg at bottom so hero blends into content */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-40 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, var(--background) 0%, transparent 100%)' }}
+          />
+        </>
       ) : (
         /* Aurora-only pages: subtle tint so aurora reads on page bg */
         <div className="absolute inset-0 bg-background/10" />
