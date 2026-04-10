@@ -402,14 +402,20 @@ export default function EventsView({ events, initialType = 'all' }: EventsViewPr
             <div className="w-16 h-16 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
               <Binoculars className="h-7 w-7 text-slate-500" />
             </div>
-            <h2 className="text-lg font-semibold text-foreground mb-2">Nothing on the schedule yet</h2>
-            <p className="text-sm text-muted-foreground mb-4">No upcoming events match this filter.</p>
-            <button
-              onClick={() => setTypeFilter('all')}
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              Show all events
-            </button>
+            <h2 className="text-lg font-semibold text-foreground mb-2">No upcoming events scheduled</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              {typeFilter !== 'all'
+                ? 'No events match this filter — try showing all events.'
+                : 'Check back soon — events are added regularly. Monthly star parties and meetings are scheduled each new moon weekend.'}
+            </p>
+            {typeFilter !== 'all' && (
+              <button
+                onClick={() => setTypeFilter('all')}
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Show all events
+              </button>
+            )}
           </motion.div>
         ) : (
           <div>

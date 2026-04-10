@@ -118,6 +118,12 @@ export default function RootLayout({
         >
           {organizationJsonLd}
         </Script>
+        {/* Auto-reload on stale chunk load failures (e.g. after a new deploy) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var r=0;window.addEventListener('error',function(e){if(e&&e.message&&/Loading chunk/.test(e.message)&&r<2){r++;window.location.reload();}},true);})();`,
+          }}
+        />
       </head>
       <body className={`${exo2.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>

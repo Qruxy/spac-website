@@ -28,6 +28,8 @@ interface DonationTier {
 
 interface DonationFormProps {
   tiers: DonationTier[];
+  initialAmount?: number;
+  initialNote?: string;
 }
 
 // Map icon names to components (icons can't be passed from server to client)
@@ -37,9 +39,9 @@ const iconMap: Record<string, LucideIcon> = {
   Award: Award,
 };
 
-export function DonationForm({ tiers }: DonationFormProps) {
+export function DonationForm({ tiers, initialAmount = 0, initialNote = '' }: DonationFormProps) {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
-  const [customAmount, setCustomAmount] = useState<string>('');
+  const [customAmount, setCustomAmount] = useState<string>(initialAmount > 0 ? String(initialAmount) : '');
   const [isRecurring, setIsRecurring] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +118,15 @@ export function DonationForm({ tiers }: DonationFormProps) {
 
   return (
     <div className="space-y-10">
+      {/* Pre-filled note banner (e.g. from camping fee links) */}
+      {initialNote && (
+        <div className="max-w-md mx-auto rounded-xl border border-primary/30 bg-primary/10 px-5 py-3 text-center">
+          <p className="text-sm font-medium text-primary">{initialNote}</p>
+          {customAmount && (
+            <p className="text-xs text-muted-foreground mt-1">Amount pre-filled: ${customAmount}</p>
+          )}
+        </div>
+      )}
       {/* One-time vs Recurring Toggle */}
       <div className="flex justify-center">
         <div className="inline-flex items-center rounded-full bg-muted/50 p-1 border border-border">

@@ -70,7 +70,14 @@ const donationTiers = [
   },
 ];
 
-export default function DonationsPage() {
+export default function DonationsPage({
+  searchParams,
+}: {
+  searchParams: { amount?: string; note?: string };
+}) {
+  const initialAmount = searchParams.amount ? parseInt(searchParams.amount, 10) || 0 : 0;
+  const initialNote = searchParams.note || '';
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
@@ -94,7 +101,7 @@ export default function DonationsPage() {
             <FadeIn delay={0.15}>
               <p className="mt-8 text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                 Your tax-deductible donation supports public outreach, telescope maintenance, and our
-                historic mirror lab\u2014keeping astronomy accessible for nearly a century.
+                historic mirror lab — keeping astronomy accessible for nearly a century.
               </p>
             </FadeIn>
             <FadeIn delay={0.25}>
@@ -113,7 +120,7 @@ export default function DonationsPage() {
       <section id="donate" className="py-24 lg:py-32">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
-            <DonationForm tiers={donationTiers} />
+            <DonationForm tiers={donationTiers} initialAmount={initialAmount} initialNote={initialNote} />
           </div>
         </div>
       </section>
@@ -129,7 +136,7 @@ export default function DonationsPage() {
                 together... it&apos;s transformed how I see our place in the cosmos.&rdquo;
               </blockquote>
               <p className="mt-8 text-muted-foreground">
-                \u2014 SPAC Member since 2018
+                — SPAC Member since 2018
               </p>
             </div>
           </FadeIn>

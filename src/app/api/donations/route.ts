@@ -18,7 +18,7 @@ const donationSchema = z.object({
     .min(5, 'Minimum donation amount is $5')
     .max(999999, 'Amount exceeds maximum limit'),
   recurring: z.boolean().optional().default(false),
-  tier: z.enum(['SUPPORTER', 'PATRON', 'BENEFACTOR']).optional(),
+  tier: z.enum(['SUPPORTER', 'PATRON', 'BENEFACTOR']).optional().nullable(),
 });
 
 export async function POST(request: Request) {
