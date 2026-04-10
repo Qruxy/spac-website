@@ -220,10 +220,11 @@ export function GallerySubmitForm() {
       setProgress(75);
 
       // Step 4: Record in DB
-      const altText = [
+      const altTextRaw = [
         description.trim(),
         equipment.trim() ? `Equipment: ${equipment.trim()}` : '',
       ].filter(Boolean).join(' | ') || caption.trim();
+      const altText = altTextRaw.slice(0, 200);
 
       const body: Record<string, unknown> = {
         key: fullPresign.key,

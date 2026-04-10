@@ -205,21 +205,57 @@ export default function ViewingPage() {
                 </div>
               </div>
 
-              <div className="space-y-2 text-sm text-muted-foreground border-t border-border pt-4">
-                <p>
+              <div className="space-y-4 border-t border-border pt-5">
+                <p className="text-sm text-muted-foreground">
                   <span className="text-foreground font-medium">Important:</span> Only pay through
                   SPAC if you are camping on a New Moon Weekend. All other times contact the park
                   directly.
                 </p>
-                <p>
+                <p className="text-sm text-muted-foreground">
                   Camping fees must be paid in advance online or upon arrival.{' '}
                   <span className="text-foreground font-semibold">NO EXCEPTIONS.</span>
                 </p>
-                <p>
-                  <Link href="/donations" className="text-primary hover:underline font-medium">
-                    Pay online via our donations page →
-                  </Link>
-                </p>
+
+                {/* Quick-pay buttons */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Pay online — select your option:
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Link
+                      href="/donations?amount=15&note=Member+camping+%E2%80%94+with+electric+%2415%2Fnight"
+                      className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 hover:bg-primary/10 transition-colors text-sm font-medium text-foreground"
+                    >
+                      <span>Member — with electric</span>
+                      <span className="text-primary font-bold">$15/night</span>
+                    </Link>
+                    <Link
+                      href="/donations?amount=10&note=Member+camping+%E2%80%94+without+electric+%2410%2Fnight"
+                      className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 hover:bg-primary/10 transition-colors text-sm font-medium text-foreground"
+                    >
+                      <span>Member — without electric</span>
+                      <span className="text-primary font-bold">$10/night</span>
+                    </Link>
+                    <Link
+                      href="/donations?amount=25&note=Non-member+camping+%E2%80%94+with+electric+%2425%2Fnight"
+                      className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3 hover:bg-muted/40 transition-colors text-sm font-medium text-foreground"
+                    >
+                      <span>Non-member — with electric</span>
+                      <span className="text-foreground font-bold">$25/night</span>
+                    </Link>
+                    <Link
+                      href="/donations?amount=10&note=Non-member+camping+%E2%80%94+without+electric+%2410%2Fnight"
+                      className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3 hover:bg-muted/40 transition-colors text-sm font-medium text-foreground"
+                    >
+                      <span>Non-member — without electric</span>
+                      <span className="text-foreground font-bold">$10/night</span>
+                    </Link>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    You&apos;ll be redirected to our secure PayPal checkout.
+                    Pay for multiple nights by adjusting the amount on the next page.
+                  </p>
+                </div>
               </div>
             </div>
           </FadeIn>
