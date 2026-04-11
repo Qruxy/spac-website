@@ -18,10 +18,13 @@ export async function GET(request: Request) {
   const interval = searchParams.get('interval');
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
-  // Auth required — userId comes from session, NOT from the URL
+  // Auth required — userId comes from session, NOT from the URL.
+  // If session is missing (e.g. lost during PayPal redirect), send back to login
+  // with the full activation URL as callbackUrl so it completes after re-auth.
   const session = await getSession();
   if (!session?.user) {
-    return NextResponse.redirect(`${baseUrl}/auth/signin?error=auth_required`);
+    const callbackUrl = encodeURIComponent(request.url);
+    return NextResponse.redirect(`${baseUrl}/auth/signin?callbackUrl=${callbackUrl}`);
   }
   const userId = session.user.id;
 
@@ -38,11 +41,20 @@ export async function GET(request: Request) {
     }
 
     // SECURITY: Verify the subscription's custom_id matches the session user.
-    // At subscription creation time, custom_id is set to the userId so we can
-    // verify ownership here.
-    const customId = subscription.custom_id as string | undefined;
-    if (customId && customId !== userId) {
-      console.error(`[membership/activate] Subscription ${subscriptionId} custom_id ${customId} does not match session user ${userId}`);
+    // custom_id may be a raw userId string OR a JSON object { userId, ... } depending
+    // on when the subscription was created — parse both formats.
+    const rawCustomId = subscription.custom_id as string | undefined;
+    let customUserId: string | undefined;
+    if (rawCustomId) {
+      try {
+        const parsed = JSON.parse(rawCustomId);
+        customUserId = typeof parsed === 'object' ? parsed.userId : rawCustomId;
+      } catch {
+        customUserId = rawCustomId; // not JSON — treat as raw userId
+      }
+    }
+    if (customUserId && customUserId !== userId) {
+      console.error(`[membership/activate] Subscription ${subscriptionId} custom_id userId ${customUserId} does not match session user ${userId}`);
       return NextResponse.redirect(`${baseUrl}/billing?error=subscription_mismatch`);
     }
 
