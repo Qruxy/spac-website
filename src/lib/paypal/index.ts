@@ -187,7 +187,8 @@ export async function createPayPalSubscription({
         email_address: subscriberEmail,
         name: subscriberName ? { given_name: subscriberName } : undefined,
       } : undefined,
-      custom_id: metadata ? JSON.stringify(metadata) : undefined,
+      // custom_id = userId (plain string) for ownership verification on return
+      custom_id: metadata?.userId ?? (metadata ? JSON.stringify(metadata) : undefined),
       application_context: {
         brand_name: 'St. Petersburg Astronomy Club',
         locale: 'en-US',
