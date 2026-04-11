@@ -14,6 +14,8 @@ interface BounceCardsProps {
   easeType?: string;
   transformStyles?: string[];
   enableHover?: boolean;
+  /** Card side length in px (square). Defaults to 200. */
+  cardSize?: number;
 }
 
 export default function BounceCards({
@@ -32,6 +34,7 @@ export default function BounceCards({
     'rotate(2deg) translate(170px)',
   ],
   enableHover = false,
+  cardSize = 200,
 }: BounceCardsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -144,8 +147,9 @@ export default function BounceCards({
       {images.map((src, idx) => (
         <div
           key={idx}
-          className={`bounce-card bounce-card-${idx} absolute w-[200px] aspect-square border-4 border-white/20 rounded-[20px] overflow-hidden cursor-pointer`}
+          className={`bounce-card bounce-card-${idx} absolute aspect-square border-4 border-white/20 rounded-[20px] overflow-hidden cursor-pointer`}
           style={{
+            width: cardSize,
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
             transform: transformStyles[idx] || 'none',
           }}
@@ -157,7 +161,7 @@ export default function BounceCards({
             src={src}
             alt={`Gallery photo ${idx + 1}`}
             fill
-            sizes="200px"
+            sizes={`${cardSize}px`}
           />
         </div>
       ))}

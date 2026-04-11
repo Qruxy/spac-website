@@ -16,7 +16,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ExternalLink, GraduationCap, Star, Users, Gem, Heart } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import { HeroSection, HomeCtaButton } from './hero-section';
 import { MemberMediaSection } from './member-media-section';
@@ -294,6 +294,82 @@ export default async function HomePage() {
       {/* Below-fold client components — deferred bundle, don't block hero */}
       <FeaturesSection features={mergedFeatures} />
 
+      {/* Newsletter Cover — latest issue, links to Google Drive (right above gallery) */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+              Official Newsletter
+            </p>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+              <span className="text-white">SPAC</span><span style={{ color: '#e53e3e' }}>E</span>
+              <span className="text-muted-foreground text-xl font-normal ml-3">
+                St. Petersburg Astronomy Club{' '}
+                <span style={{ color: '#e53e3e' }}>Examiner</span>
+              </span>
+            </h2>
+            <p className="text-muted-foreground text-sm mb-6">
+              {content['newsletter_tagline'] || 'Our monthly newsletter — club news, observing reports, and celestial previews.'}
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              {/* Cover photo / drive link */}
+              <Link
+                href={content['newsletter_drive_url'] || 'https://drive.google.com/drive/folders/0B9dsr9BUsMaYSnkxZ0E1SFBHbTQ?usp=sharing'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block rounded-xl overflow-hidden border border-border/40 hover:border-primary/40 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10 max-w-xs w-full"
+              >
+                {content['newsletter_cover_url'] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={content['newsletter_cover_url']}
+                    alt="Latest SPACE Newsletter"
+                    className="w-full object-cover"
+                  />
+                ) : (
+                  <div className="bg-card/60 border border-border/20 rounded-xl p-8 flex flex-col items-center gap-2">
+                    <div className="text-5xl font-black leading-none">
+                      <span className="text-white">SPAC</span><span style={{ color: '#e53e3e' }}>E</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Latest Issue on Google Drive</p>
+                  </div>
+                )}
+                <div className="bg-card/80 px-4 py-2.5 flex items-center justify-between text-sm">
+                  <span className="font-medium text-foreground">
+                    {content['newsletter_issue_label'] || 'Current Issue'}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-primary">
+                    <ExternalLink className="h-3 w-3" />
+                    Google Drive
+                  </span>
+                </div>
+              </Link>
+
+              <div className="text-left space-y-3 max-w-xs">
+                <Link
+                  href="/newsletter"
+                  className="flex items-center gap-2 text-primary hover:underline font-medium text-sm"
+                >
+                  Browse full archive
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Published monthly by Editor Guy Earle. Members receive it directly in their inbox.
+                </p>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 text-sm font-medium transition-colors"
+                >
+                  Join to get it in your inbox
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Server component — Suspense streams it, won't block above-fold content */}
       <Suspense fallback={<div className="py-24" aria-hidden="true" />}>
         <MemberMediaSection />
@@ -338,6 +414,53 @@ export default async function HomePage() {
               className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
             >
               View all events
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Membership Tiers — quick links below events */}
+      <section className="pb-16">
+        <div className="container mx-auto px-4">
+          <div className="flex items-baseline justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Become a Member</h2>
+              <p className="text-sm text-muted-foreground mt-1">Annual memberships — join today and start exploring</p>
+            </div>
+            <Link href="/membership" className="hidden sm:flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+              See all plans
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[
+              { name: 'Student', price: 'Free', icon: GraduationCap, accent: 'text-emerald-400', border: 'border-emerald-500/30', tier: 'STUDENT', note: 'Valid student ID' },
+              { name: 'Individual', price: '$30/yr', icon: Star, accent: 'text-blue-400', border: 'border-blue-500/30', tier: 'INDIVIDUAL', note: '1 adult + minors' },
+              { name: 'Family', price: '$35/yr', icon: Users, accent: 'text-violet-400', border: 'border-violet-500/30', tier: 'FAMILY', note: '2 adults + minors' },
+              { name: 'Patron', price: '$50/yr', icon: Heart, accent: 'text-rose-400', border: 'border-rose-500/30', tier: 'PATRON', note: 'All privileges' },
+              { name: 'Benefactor', price: '$100/yr', icon: Gem, accent: 'text-amber-400', border: 'border-amber-500/30', tier: 'BENEFACTOR', note: 'All privileges' },
+            ].map((tier) => (
+              <Link
+                key={tier.tier}
+                href={`/register?tier=${tier.tier}`}
+                className={`group flex flex-col items-center gap-2 p-4 rounded-xl bg-card/50 border ${tier.border} hover:bg-card hover:scale-[1.03] transition-all duration-200 text-center`}
+              >
+                <tier.icon className={`h-6 w-6 ${tier.accent}`} />
+                <div>
+                  <p className="font-semibold text-foreground text-sm">{tier.name}</p>
+                  <p className={`text-xs font-bold ${tier.accent}`}>{tier.price}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{tier.note}</p>
+                </div>
+                <span className={`text-xs ${tier.accent} group-hover:underline`}>Join →</span>
+              </Link>
+            ))}
+          </div>
+
+          <div className="sm:hidden mt-4 text-center">
+            <Link href="/membership" className="inline-flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+              View all membership plans
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

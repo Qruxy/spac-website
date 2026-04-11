@@ -6,7 +6,6 @@
  */
 
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ArrowRight, ExternalLink, LogIn } from 'lucide-react';
@@ -14,10 +13,6 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { NewsletterClient } from './newsletter-client';
 
-const GradientText = nextDynamic(
-  () => import('@/components/animated/gradient-text').then((mod) => mod.GradientText),
-  { ssr: false }
-);
 const FadeIn = nextDynamic(
   () => import('@/components/animated/fade-in').then((mod) => mod.FadeIn),
   { ssr: false }
@@ -28,9 +23,9 @@ const CountUp = nextDynamic(
 );
 
 export const metadata: Metadata = {
-  title: 'S.P.A.C.E. Newsletter Archive',
+  title: 'SPACE Newsletter Archive | SPAC',
   description:
-    'Browse the complete archive of S.P.A.C.E. (St. Petersburg Astronomy Club Examiner), the official newsletter of the St. Petersburg Astronomy Club.',
+    'Browse the complete archive of SPACE (St. Petersburg Astronomy Club Examiner), the official newsletter of the St. Petersburg Astronomy Club.',
 };
 
 export const dynamic = 'force-dynamic';
@@ -105,9 +100,7 @@ async function getNewsletters() {
 
 export default async function NewsletterPage() {
   const session = await getSession();
-  if (!session?.user) {
-    redirect('/login?callbackUrl=/newsletter');
-  }
+  // Newsletter is now public — login only required to download PDFs directly
 
   const [{ newsletters, total, totalPages, years }, contentRows] = await Promise.all([
     getNewsletters(),
@@ -124,18 +117,16 @@ export default async function NewsletterPage() {
           <FadeIn>
             <div className="text-center max-w-4xl mx-auto">
               <p className="text-lg text-muted-foreground mb-4">Official Newsletter of SPAC</p>
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-foreground tracking-tight">
-                <GradientText
-                  colors={['#818cf8', '#a78bfa', '#818cf8']}
-                  className="text-5xl md:text-7xl lg:text-8xl font-bold"
-                  animationSpeed={8}
-                >
-                  S.P.A.C.E.
-                </GradientText>
+
+              {/* SPACE title — white SPAC, red E — matching newsletter cover */}
+              <h1 className="text-7xl md:text-8xl lg:text-9xl font-black tracking-tight leading-none select-none">
+                <span className="text-white">SPAC</span><span style={{ color: '#e53e3e' }}>E</span>
               </h1>
-              <p className="text-base text-muted-foreground mt-2">
-                St. Petersburg Astronomy Club Examiner
+              <p className="text-base md:text-lg text-muted-foreground mt-3">
+                St. Petersburg Astronomy Club{' '}
+                <span style={{ color: '#e53e3e' }} className="font-semibold">Examiner</span>
               </p>
+
               <p className="mt-8 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                 {content['hero_subtitle'] || 'Explore our archive of monthly newsletters featuring club news, observing reports, member articles, and celestial event previews.'}
               </p>
@@ -176,6 +167,50 @@ export default async function NewsletterPage() {
           </FadeIn>
         </div>
       </section>
+
+      {/* Latest Issue Cover — links to Google Drive */}
+      {(content['cover_photo_url'] || content['cover_drive_url']) && (
+        <section className="container mx-auto px-4 pb-8">
+          <FadeIn delay={0.1}>
+            <div className="max-w-2xl mx-auto text-center">
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-4">
+                Current Issue
+              </p>
+              <Link
+                href={content['cover_drive_url'] || 'https://drive.google.com/drive/folders/0B9dsr9BUsMaYSnkxZ0E1SFBHbTQ?usp=sharing'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block mx-auto max-w-sm rounded-xl overflow-hidden border border-border/40 hover:border-primary/40 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10"
+              >
+                {content['cover_photo_url'] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={content['cover_photo_url']}
+                    alt="Current SPACE Newsletter Cover"
+                    className="w-full object-cover"
+                  />
+                ) : (
+                  <div className="bg-card/50 p-8 flex flex-col items-center gap-3">
+                    <div className="text-4xl font-black">
+                      <span className="text-white">SPAC</span><span style={{ color: '#e53e3e' }}>E</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Click to view on Google Drive</p>
+                  </div>
+                )}
+                <div className="bg-card/80 px-4 py-3 flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">
+                    {content['cover_issue_label'] || 'Latest Issue'}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-primary group-hover:underline">
+                    <ExternalLink className="h-3 w-3" />
+                    Open on Google Drive
+                  </span>
+                </div>
+              </Link>
+            </div>
+          </FadeIn>
+        </section>
+      )}
 
       {/* Google Drive Archive Banner */}
       <section className="container mx-auto px-4 pb-8">

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   BarChart3, Mail, RefreshCw, AlertCircle, CheckCircle,
   Clock, XCircle, CreditCard, ExternalLink, ChevronDown, ChevronRight,
-  Download, Send,
+  Download, Send, Users, UserPlus, Gem,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -357,9 +357,140 @@ function PayPalTransactions() {
   );
 }
 
+// ─── Member List (New Members / Patron+Benefactor) ────────────────────────────
+interface MemberRow {
+  id: string;
+  type: string;
+  status: string;
+  createdAt: string;
+  startDate: string | null;
+  endDate: string | null;
+  user: { id: string; firstName: string | null; lastName: string | null; email: string; phone: string | null };
+}
+
+function MemberListPanel({
+  title, subtitle, icon, fetchUrl, emptyMsg, showJoinDate,
+}: {
+  title: string; subtitle: string; icon: React.ReactNode; fetchUrl: string; emptyMsg: string; showJoinDate?: boolean;
+}) {
+  const [members, setMembers] = useState<MemberRow[]>([]);
+  const [loading, setLoading]  = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res  = await fetch(fetchUrl);
+      const data = await res.json();
+      const rows: MemberRow[] = data.data ?? [];
+      setMembers(rows);
+    } finally { setLoading(false); }
+  }, [fetchUrl]);
+
+  useEffect(() => { load(); }, [load]);
+
+  function exportCSV() {
+    const header = ['Name', 'Email', 'Type', 'Status', showJoinDate ? 'Joined' : 'Expires', 'Phone'].join(',');
+    const rows = members.map(m => [
+      `"${[m.user.firstName, m.user.lastName].filter(Boolean).join(' ') || m.user.email}"`,
+      m.user.email,
+      m.type,
+      m.status,
+      showJoinDate ? (m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '') : (m.endDate ? new Date(m.endDate).toLocaleDateString() : ''),
+      m.user.phone || '',
+    ].join(','));
+    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `${title.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          {icon}
+          <div>
+            <p className="font-semibold text-foreground">{title}</p>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          </div>
+        </div>
+        {!loading && members.length > 0 && (
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm hover:bg-muted transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground text-sm">
+          <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-2 opacity-50" />
+          Loading…
+        </div>
+      ) : members.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground text-sm">
+          {emptyMsg}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border overflow-hidden">
+          <div className="bg-muted/20 px-4 py-2 text-xs text-muted-foreground font-medium">
+            {members.length} member{members.length !== 1 ? 's' : ''}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/30">
+                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Name</th>
+                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Email</th>
+                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Type</th>
+                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
+                    {showJoinDate ? 'Joined' : 'Expires'}
+                  </th>
+                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Phone</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m) => (
+                  <tr key={m.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      {[m.user.firstName, m.user.lastName].filter(Boolean).join(' ') || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      <a href={`mailto:${m.user.email}`} className="hover:text-primary hover:underline">
+                        {m.user.email}
+                      </a>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {m.type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground tabular-nums text-xs">
+                      {showJoinDate
+                        ? fmt(m.createdAt)
+                        : fmt(m.endDate)}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {m.user.phone || '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AdminReportsPage() {
-  const [tab, setTab] = useState<'renewal' | 'paypal'>('renewal');
+  const [tab, setTab] = useState<'renewal' | 'paypal' | 'new' | 'vip'>('renewal');
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -368,7 +499,7 @@ export default function AdminReportsPage() {
         <BarChart3 className="h-7 w-7 text-primary" />
         <div>
           <h1 className="text-2xl font-bold text-foreground">Reports</h1>
-          <p className="text-sm text-muted-foreground">Renewal reminders · PayPal transactions</p>
+          <p className="text-sm text-muted-foreground">Renewal reminders · PayPal transactions · Member lists</p>
         </div>
       </div>
 
@@ -376,10 +507,12 @@ export default function AdminReportsPage() {
       <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-none">
         {([
           { id: 'renewal', label: 'Renewal Email Groups', icon: <Mail className="h-4 w-4" /> },
-          { id: 'paypal',  label: 'PayPal Transactions',  icon: <CreditCard className="h-4 w-4" /> },
+          { id: 'new',     label: 'New Members (30 Days)', icon: <UserPlus className="h-4 w-4" /> },
+          { id: 'vip',     label: 'Patron & Benefactor',   icon: <Gem className="h-4 w-4" /> },
+          { id: 'paypal',  label: 'PayPal Transactions',   icon: <CreditCard className="h-4 w-4" /> },
         ] as const).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               tab === t.id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -420,6 +553,39 @@ export default function AdminReportsPage() {
             group="expired30"
             accentColor="border-red-500/30"
             badgeColor="text-red-400 bg-red-400/10"
+          />
+        </div>
+      )}
+
+      {/* New Members (last 30 days) */}
+      {tab === 'new' && (
+        <MemberListPanel
+          title="New Members — Last 30 Days"
+          subtitle="Members whose membership was created in the past 30 days. Use for newsletter welcome notes."
+          icon={<UserPlus className="h-5 w-5 text-emerald-400" />}
+          fetchUrl="/api/admin/memberships?sort=createdAt&order=desc&limit=200&newWithin=30"
+          emptyMsg="No new members in the last 30 days"
+          showJoinDate
+        />
+      )}
+
+      {/* Patron & Benefactor */}
+      {tab === 'vip' && (
+        <div className="space-y-8">
+          <MemberListPanel
+            title="Patron Members"
+            subtitle="All active Patron-tier members ($50/yr)"
+            icon={<Gem className="h-5 w-5 text-rose-400" />}
+            fetchUrl="/api/admin/memberships?type=PATRON&status=ACTIVE&sort=createdAt&order=desc&limit=200"
+            emptyMsg="No active Patron members"
+          />
+          <div className="border-t border-border" />
+          <MemberListPanel
+            title="Benefactor Members"
+            subtitle="All active Benefactor-tier members ($100/yr)"
+            icon={<Gem className="h-5 w-5 text-amber-400" />}
+            fetchUrl="/api/admin/memberships?type=BENEFACTOR&status=ACTIVE&sort=createdAt&order=desc&limit=200"
+            emptyMsg="No active Benefactor members"
           />
         </div>
       )}
