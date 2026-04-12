@@ -264,7 +264,7 @@ export default async function NewsletterPage() {
                 Never miss an issue
               </h2>
               <p className="text-lg text-muted-foreground mb-10">
-                Join SPAC to receive S.P.A.C.E. directly in your inbox each month,
+                Join SPAC to receive SPACE directly in your inbox each month,
                 plus get access to member-exclusive content and events.
               </p>
               <Link
