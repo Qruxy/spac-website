@@ -61,38 +61,60 @@ export default async function VSAPage() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
+      {/* Hero — aurora only (no photo bg), title + subtitle above the photo */}
       <PageHero
-        photoUrl={content['hero_image'] || null}
-        photoPosition={content['hero_photo_position'] || null}
+        photoUrl={null}
         auroraColors={['#4F46E5', '#0891B2', '#6B21A8']}
-        className="pt-24 pb-44 lg:pb-52"
+        className="pt-24 pb-16 lg:pb-20"
       >
-          <div className="max-w-4xl mx-auto text-center">
-            <FadeIn>
-              {/* Main title */}
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-tight">
-                {content['hero_title'] || 'The Very Small Array'}
-              </h1>
-            </FadeIn>
-            <FadeIn delay={0.2}>
-              <p className="mt-8 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                {content['hero_subtitle'] || 'Smart telescopes that make deep-sky imaging accessible to everyone. Point. Capture. Discover.'}
-              </p>
-            </FadeIn>
-            <FadeIn delay={0.35}>
-              <div className="mt-10 flex items-center justify-center">
-                <RotatingText
-                  texts={['Observe', 'Image', 'Discover', 'Learn', 'Share']}
-                  mainClassName="text-3xl md:text-4xl font-bold text-primary overflow-hidden h-[1.2em]"
-                  staggerFrom="last"
-                  staggerDuration={0.025}
-                  rotationInterval={2500}
-                  splitBy="characters"
+        <div className="max-w-4xl mx-auto text-center">
+          <FadeIn>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-tight">
+              {content['hero_title'] || 'The Very Small Array'}
+            </h1>
+          </FadeIn>
+          <FadeIn delay={0.2}>
+            <p className="mt-8 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              {content['hero_subtitle'] || 'Smart telescopes that make deep-sky imaging accessible to everyone. Point. Capture. Discover.'}
+            </p>
+          </FadeIn>
+        </div>
+      </PageHero>
+
+      {/* Header photo — visible below title/subtitle (not as background) */}
+      {content['hero_image'] && (
+        <section className="w-full">
+          <div className="container mx-auto px-4">
+            <FadeIn delay={0.1}>
+              <div className="relative w-full max-w-5xl mx-auto rounded-2xl overflow-hidden" style={{ maxHeight: '520px' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={content['hero_image']}
+                  alt="VSA Header"
+                  className="w-full object-cover"
+                  style={{ objectPosition: content['hero_photo_position'] || 'center center' }}
                 />
               </div>
             </FadeIn>
           </div>
-      </PageHero>
+        </section>
+      )}
+
+      {/* "Observe, Image, Share" rotating text — directly under header photo */}
+      <section className="py-10">
+        <FadeIn delay={0.2}>
+          <div className="flex items-center justify-center">
+            <RotatingText
+              texts={['Observe', 'Image', 'Discover', 'Learn', 'Share']}
+              mainClassName="text-3xl md:text-4xl font-bold text-primary overflow-hidden h-[1.2em]"
+              staggerFrom="last"
+              staggerDuration={0.025}
+              rotationInterval={2500}
+              splitBy="characters"
+            />
+          </div>
+        </FadeIn>
+      </section>
 
       {/* What is VSA + Community — directly under hero */}
       <section className="py-20 lg:py-28">

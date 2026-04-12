@@ -54,6 +54,10 @@ export async function GET(request: Request) {
   const renewalDaysParam = searchParams.get('renewalDays');
   const renewalDays = renewalDaysParam ? parseInt(renewalDaysParam, 10) : null;
 
+  // newWithin=30 → only memberships created in the last N days
+  const newWithinParam = searchParams.get('newWithin');
+  const newWithin = newWithinParam ? parseInt(newWithinParam, 10) : null;
+
   // CSV export flag
   const exportCsv = searchParams.get('export') === 'csv';
   if (exportCsv) limit === 200; // already capped above; for export bump take to all
@@ -74,6 +78,11 @@ export async function GET(request: Request) {
       { paypalCurrentPeriodEnd: { gte: now, lte: cutoff } },
       { AND: [{ paypalCurrentPeriodEnd: null }, { endDate: { gte: now, lte: cutoff } }] },
     ];
+  }
+
+  if (newWithin !== null) {
+    const cutoff = new Date(Date.now() - newWithin * 24 * 60 * 60 * 1000);
+    where.createdAt = { gte: cutoff };
   }
 
   if (search) {
